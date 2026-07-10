@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: amar-db
+    environment:
+      POSTGRES_USER: amar_admin
+      POSTGRES_PASSWORD: SecurePasswordChangeMe!
+      POSTGRES_DB: amar_hospital
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: amar-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USERNAME=amar_admin
+      - DB_PASSWORD=SecurePasswordChangeMe!
+      - DB_DATABASE=amar_hospital
+      - JWT_SECRET=super_secret_jwt_sign_key_change_in_production
+      - JWT_EXPIRATION=90d
+      - AUTHORIZED_DOCTORS=9876543210
+    depends_on:
+      - postgres
+    restart: always
+
+  portal:
+    build:
+      context: ./portal
+      dockerfile: Dockerfile
+    container_name: amar-portal
+    ports:
+      - "8080:8080"
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  postgres_data:

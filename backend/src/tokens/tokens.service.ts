@@ -1,0 +1,265 @@
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { Repository, MoreThanOrEqual, DataSource } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Token } from '../entities/token.entity';
+import { Patient } from '../entities/patient.entity';
+import { AuditLog } from '../entities/audit-log.entity';
+import { QueueGateway } from '../queue/queue.gateway';
+
+@Injectable()
+export class TokensService {
+  constructor(
+    @InjectRepository(Token)
+    private tokenRepository: Repository<Token>,
+    @InjectRepository(Patient)
+    private patientRepository: Repository<Patient>,
+    @InjectRepository(AuditLog)
+    private auditLogRepository: Repository<AuditLog>,
+    @InjectDataSource()
+    private dataSource: DataSource,
+    private queueGateway: QueueGateway,
+  ) {}
+
+  async generateToken(userId: string, serviceType: string): Promise<Token> {
+    // 1. Verify patient is active
+    const patient = await this.patientRepository.findOne({ where: { id: userId } });
+    if (!patient) {
+      throw new NotFoundException('Patient profile not found. Please register first.');
+    }
+
+    if (patient.status !== 'active') {
+      throw new BadRequestException(
+        'Your registration is under verification. You will be able to generate tokens once your Patient ID has been assigned by the clinic.'
+      );
+    }
+
+    if (serviceType !== 'medicine' && serviceType !== 'treatment') {
+      throw new BadRequestException('Invalid service type. Must be medicine or treatment.');
+    }
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+
+    // 2. Token Generation Timing: 6:00 AM and 4:30 PM (16:30) (BYPASSED FOR TESTING)
+    /*
+    const isTooEarly = currentHour < 6;
+    const isTooLate = currentHour > 16 || (currentHour === 16 && currentMinute > 30);
+
+    if (isTooEarly || isTooLate) {
+      throw new BadRequestException(
+        'Token generation is closed for today. Please generate your token tomorrow after 6:00 AM.'
+      );
+    }
+    */
+
+    // 3. Treatment Availability: Tuesday (2) and Wednesday (3) only (BYPASSED FOR TESTING)
+    /*
+    if (serviceType === 'treatment') {
+      const dayOfWeek = now.getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
+      if (dayOfWeek !== 2 && dayOfWeek !== 3) {
+        throw new BadRequestException('Treatment services are available only on Tuesday and Wednesday.');
+      }
+    }
+    */
+
+    // 4. One Token Per Patient per day
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const existingToken = await this.tokenRepository.findOne({
+      where: {
+        patientId: patient.id,
+        generatedAt: MoreThanOrEqual(startOfToday),
+      },
+    });
+
+    if (existingToken) {
+      throw new BadRequestException("You have already generated today's token.");
+    }
+
+    // 5. Calculate Sequence and Token Number (e.g. M001 or T001)
+    let nextSequence: number;
+    const isPostgres = this.dataSource.options.type === 'postgres';
+
+    if (isPostgres) {
+      const year = now.getFullYear();
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const day = now.getDate().toString().padStart(2, '0');
+      const dateSuffix = `${year}_${month}_${day}`;
+      const seqName = `${serviceType}_token_seq_${dateSuffix}`;
+
+      // Create sequence dynamically for the current day if it does not exist
+      await this.dataSource.query(`CREATE SEQUENCE IF NOT EXISTS ${seqName} START WITH 1`);
+      
+      // Increment and fetch next value atomically
+      const result = await this.dataSource.query(`SELECT nextval('${seqName}') as val`);
+      nextSequence = parseInt(result[0].val, 10);
+    } else {
+      // Fallback for local SQLite development
+      const countToday = await this.tokenRepository.count({
+        where: {
+          serviceType,
+          generatedAt: MoreThanOrEqual(startOfToday),
+        },
+      });
+      nextSequence = countToday + 1;
+    }
+
+    const prefix = serviceType === 'medicine' ? 'M' : 'T';
+    const paddedSequence = nextSequence.toString().padStart(3, '0');
+    const tokenNumber = `${prefix}${paddedSequence}`;
+
+    const token = this.tokenRepository.create({
+      tokenNumber,
+      serviceType,
+      sequenceNumber: nextSequence,
+      patientId: patient.id,
+      status: 'waiting',
+    });
+
+    const savedToken = await this.tokenRepository.save(token);
+
+    // Audit log
+    await this.logAction(
+      patient.id,
+      'TOKEN_GENERATE',
+      `Generated token ${tokenNumber} for ${serviceType} queue. Sequence: ${nextSequence}`,
+    );
+
+    // Broadcast real-time queue update
+    this.queueGateway.emitQueueUpdate();
+
+    return savedToken;
+  }
+
+  async getTodayToken(userId: string): Promise<any> {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const token = await this.tokenRepository.findOne({
+      where: {
+        patientId: userId,
+        generatedAt: MoreThanOrEqual(startOfToday),
+      },
+      order: { generatedAt: 'DESC' },
+    });
+
+    if (!token) {
+      return { token: null };
+    }
+
+    // Calculate Patients Ahead: tokens of same type today, status = 'waiting' and sequence < current
+    const patientsAhead = await this.tokenRepository.count({
+      where: {
+        serviceType: token.serviceType,
+        status: 'waiting',
+        generatedAt: MoreThanOrEqual(startOfToday),
+        sequenceNumber: MoreThanOrEqual(1), // TypeORM operator fallback
+      },
+    });
+
+    // We can refine this using query builder to get exact sequence ahead
+    const exactAhead = await this.tokenRepository.createQueryBuilder('token')
+      .where('token.serviceType = :serviceType', { serviceType: token.serviceType })
+      .andWhere('token.status = :status', { status: 'waiting' })
+      .andWhere('token.generatedAt >= :startOfToday', { startOfToday })
+      .andWhere('token.sequenceNumber < :mySeq', { mySeq: token.sequenceNumber })
+      .getCount();
+
+    // Get current serving token
+    const currentServingToken = await this.tokenRepository.findOne({
+      where: {
+        serviceType: token.serviceType,
+        status: 'in_progress',
+        generatedAt: MoreThanOrEqual(startOfToday),
+      },
+    });
+
+    // Estimate waiting time: 5 minutes per patient ahead
+    const estimatedWaitingTimeMinutes = exactAhead * 5;
+
+    return {
+      token: {
+        id: token.id,
+        tokenNumber: token.tokenNumber,
+        status: token.status,
+        serviceType: token.serviceType,
+        sequenceNumber: token.sequenceNumber,
+        patientsAhead: exactAhead,
+        estimatedWaitingTimeMinutes,
+        currentServing: currentServingToken ? currentServingToken.tokenNumber : 'None',
+        generatedAt: token.generatedAt,
+      },
+    };
+  }
+
+  async getQueueStatus(): Promise<any> {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const getStatusForType = async (type: string) => {
+      const currentServing = await this.tokenRepository.findOne({
+        where: {
+          serviceType: type,
+          status: 'in_progress',
+          generatedAt: MoreThanOrEqual(startOfToday),
+        },
+      });
+
+      const totalWaiting = await this.tokenRepository.count({
+        where: {
+          serviceType: type,
+          status: 'waiting',
+          generatedAt: MoreThanOrEqual(startOfToday),
+        },
+      });
+
+      return {
+        currentServing: currentServing ? currentServing.tokenNumber : 'None',
+        totalWaiting,
+      };
+    };
+
+    return {
+      medicine: await getStatusForType('medicine'),
+      treatment: await getStatusForType('treatment'),
+    };
+  }
+
+  // 6. Token Validity: automatically expire all active/waiting tokens at 5:00 PM daily
+  @Cron('0 17 * * *')
+  async handleDailyExpiration() {
+    console.log('[CRON] Running daily token expiration reset at 5:00 PM');
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const activeTokens = await this.tokenRepository.createQueryBuilder('token')
+      .where('token.status IN (:...statuses)', { statuses: ['waiting', 'in_progress'] })
+      .andWhere('token.generatedAt >= :startOfToday', { startOfToday })
+      .getMany();
+
+    if (activeTokens.length > 0) {
+      for (const token of activeTokens) {
+        token.status = 'expired';
+      }
+      await this.tokenRepository.save(activeTokens);
+      console.log(`[CRON] Expired ${activeTokens.length} active/waiting tokens`);
+    }
+
+    // Write system audit log
+    await this.logAction(
+      null,
+      'SYSTEM_CRON_RESET',
+      `Auto-expired active tokens at 5:00 PM. Total expired: ${activeTokens.length}`,
+    );
+  }
+
+  private async logAction(userId: string | null, action: string, details: string) {
+    const log = this.auditLogRepository.create({
+      userId,
+      action,
+      details,
+    });
+    await this.auditLogRepository.save(log);
+  }
+}

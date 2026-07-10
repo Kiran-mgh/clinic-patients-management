@@ -1,0 +1,202 @@
+import React from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+
+interface ContactScreenProps {
+  onGoBack: () => void;
+}
+
+export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
+  return (
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Hospital Info</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={onGoBack}>
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Clinic Timings */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>📅 Clinic Timings</Text>
+        <View style={styles.timingRow}>
+          <Text style={styles.dayText}>Monday - Friday</Text>
+          <Text style={styles.timeText}>7:00 AM – 7:00 PM</Text>
+        </View>
+        <View style={styles.timingRow}>
+          <Text style={styles.dayText}>Saturday</Text>
+          <Text style={styles.timeText}>7:00 AM – 11:00 AM</Text>
+        </View>
+        <View style={styles.timingRow}>
+          <Text style={styles.dayText}>Sunday</Text>
+          <Text style={[styles.timeText, { color: '#f43f5e' }]}>Closed</Text>
+        </View>
+      </View>
+
+      {/* Doctor Availability */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>👨‍⚕️ Doctor Availability</Text>
+        <View style={styles.timingRow}>
+          <Text style={styles.dayText}>Morning Session</Text>
+          <Text style={styles.timeText}>8:00 AM – 11:00 AM</Text>
+        </View>
+        <View style={styles.timingRow}>
+          <Text style={styles.dayText}>Evening Session</Text>
+          <Text style={styles.timeText}>4:00 PM – 5:00 PM</Text>
+        </View>
+      </View>
+
+      {/* Patient Guidelines */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>📋 Patient Guidelines</Text>
+        <View style={styles.bulletRow}>
+          <Text style={styles.bullet}>•</Text>
+          <Text style={styles.bulletText}>Follow your assigned token number strictly.</Text>
+        </View>
+        <View style={styles.bulletRow}>
+          <Text style={styles.bullet}>•</Text>
+          <Text style={styles.bulletText}>Medicine services are available daily.</Text>
+        </View>
+        <View style={styles.bulletRow}>
+          <Text style={styles.bullet}>•</Text>
+          <Text style={styles.bulletText}>Treatment services are available only on Tuesday and Wednesday.</Text>
+        </View>
+        <View style={styles.bulletRow}>
+          <Text style={styles.bullet}>•</Text>
+          <Text style={styles.bulletText}>Medicine patients will be attended before Treatment patients on treatment days.</Text>
+        </View>
+        <View style={styles.bulletRow}>
+          <Text style={styles.bullet}>•</Text>
+          <Text style={styles.bulletText}>Patients are advised to rest after treatment as instructed by the doctor.</Text>
+        </View>
+      </View>
+
+      {/* Contact Details */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>📞 Contact Details</Text>
+        <View style={styles.contactItem}>
+          <Text style={styles.contactLabel}>Hospital Name:</Text>
+          <Text style={styles.contactValue}>Amar Hospital</Text>
+        </View>
+        <View style={styles.contactItem}>
+          <Text style={styles.contactLabel}>Address:</Text>
+          <Text style={styles.contactValue}>Amar Hospital Road, Near Town Junction, Palakkad, Kerala</Text>
+        </View>
+        <View style={styles.contactItem}>
+          <Text style={styles.contactLabel}>Phone:</Text>
+          <Text style={styles.contactValue}>+91 491 254 3210</Text>
+        </View>
+        <View style={styles.contactItem}>
+          <Text style={styles.contactLabel}>WhatsApp:</Text>
+          <Text style={styles.contactValue}>+91 98460 12345</Text>
+        </View>
+        <View style={styles.contactItem}>
+          <Text style={styles.contactLabel}>Location:</Text>
+          <Text style={[styles.contactValue, { color: '#213932', textDecorationLine: 'underline', fontWeight: '700' }]}>
+            Open in Google Maps
+          </Text>
+        </View>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+    backgroundColor: '#f7f6f2',
+  },
+  container: {
+    padding: 20,
+    gap: 20,
+    paddingBottom: 40,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  title: {
+    color: '#213932',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  backBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+  },
+  backText: {
+    color: '#213932',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#213932',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.02,
+    shadowRadius: 10,
+    elevation: 1,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#213932',
+    marginBottom: 16,
+  },
+  timingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  dayText: {
+    color: '#718096',
+    fontSize: 14,
+  },
+  timeText: {
+    color: '#1a202c',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+    alignItems: 'flex-start',
+  },
+  bullet: {
+    color: '#213932',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  bulletText: {
+    color: '#4a5568',
+    fontSize: 13,
+    lineHeight: 18,
+    flex: 1,
+  },
+  contactItem: {
+    marginBottom: 12,
+  },
+  contactLabel: {
+    color: '#718096',
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  contactValue: {
+    color: '#1a202c',
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+});

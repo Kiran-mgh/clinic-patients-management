@@ -1,0 +1,20 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Navigate to the portal subdirectory and install dependencies
+        - cd portal
+        - npm ci
+    build:
+      commands:
+        # Compile the Vite production build
+        - npm run build
+  artifacts:
+    # Tell Amplify to deploy the compiled distribution files from portal/dist
+    baseDirectory: portal/dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - portal/node_modules/**/*

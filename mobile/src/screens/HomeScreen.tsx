@@ -38,7 +38,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
     fetchProfileAndToken();
 
     // Connect to WebSocket server
-    const socketUrl = 'http://localhost:3000';
+    const socketUrl = 'https://amar.vistarafabtech.com';
     const socket = io(socketUrl);
 
     socket.on('connect', () => {

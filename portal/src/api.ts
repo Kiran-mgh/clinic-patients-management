@@ -1,5 +1,9 @@
 // API Client with automatic mock data fallback
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+let API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.endsWith('/api')) {
+  API_BASE = `${import.meta.env.VITE_API_URL}/api`;
+}
 
 // Helper to get auth header
 const getHeaders = (token: string | null) => {

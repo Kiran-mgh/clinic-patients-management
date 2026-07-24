@@ -64,22 +64,23 @@ export class AuthService implements OnModuleInit {
       return '000000';
     }
 
-    // Generate 6-digit code
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 5); // 5 minutes expiration
+    // Dispatch OTP request using SmsService (MSG91 generates code on-the-fly)
+    const otpCode = await this.smsService.sendOtp(trimmed);
 
-    const otpSession = this.otpSessionRepository.create({
-      mobileNumber,
-      otpCode,
-      expiresAt,
-      verified: false,
-    });
+    // Save to local database sessions only if using the local mock provider
+    if ((process.env.SMS_PROVIDER || 'mock') === 'mock') {
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 
-    await this.otpSessionRepository.save(otpSession);
+      const otpSession = this.otpSessionRepository.create({
+        mobileNumber: trimmed,
+        otpCode,
+        expiresAt,
+        verified: false,
+      });
 
-    // Send via SMS service (MSG91 / Twilio / Mock)
-    await this.smsService.sendOtp(trimmed, otpCode);
+      await this.otpSessionRepository.save(otpSession);
+    }
 
     return otpCode;
   }
@@ -96,6 +97,13 @@ export class AuthService implements OnModuleInit {
     if ((mobileNumber === '+919999999999' || mobileNumber === '9999999999') && otpCode === '000000') {
       isValid = true;
       role = 'admin';
+    } else if ((process.env.SMS_PROVIDER || 'mock') === 'msg91') {
+      // Validate OTP using MSG91 OTP Verify API
+      const isMsg91Valid = await this.smsService.verifyOtp(mobileNumber, otpCode);
+      if (!isMsg91Valid) {
+        throw new UnauthorizedException('Invalid or expired OTP code');
+      }
+      isValid = true;
     } else {
       const session = await this.otpSessionRepository.findOne({
         where: { mobileNumber, otpCode, verified: false },

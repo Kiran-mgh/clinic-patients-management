@@ -195,9 +195,20 @@ export class AuthService implements OnModuleInit {
       const trimmed = mobileNumber.trim();
       const isAdminBypass = trimmed === '+919999999999' || trimmed === '9999999999';
 
-      // If logging into staff console, check doctor whitelist
-      if (isStaff && !isAdminBypass) {
-        const user = await this.userRepository.findOne({ where: { mobileNumber: trimmed } });
+      // Parse doctor whitelist dynamically with format tolerance (+91 vs plain digits)
+      const doctorsEnv = process.env.AUTHORIZED_DOCTORS || '';
+      const doctorList = doctorsEnv.split(',').map((n) => n.trim().replace('+', ''));
+      const cleanMobile = trimmed.replace('+', '');
+      const isAuthorizedDoctor = doctorList.some((d) => d && (d === cleanMobile || cleanMobile.endsWith(d)));
+
+      if (isStaff && !isAdminBypass && !isAuthorizedDoctor) {
+        const user = await this.userRepository.findOne({
+          where: [
+            { mobileNumber: trimmed },
+            { mobileNumber: cleanMobile },
+            { mobileNumber: `+${cleanMobile}` },
+          ],
+        });
         if (!user || (user.role !== 'doctor' && user.role !== 'admin')) {
           throw new BadRequestException('This mobile number is not registered as clinic staff.');
         }
@@ -206,10 +217,19 @@ export class AuthService implements OnModuleInit {
       let role = 'patient';
       if (isAdminBypass) {
         role = 'admin';
+      } else if (isAuthorizedDoctor) {
+        role = 'doctor';
       }
 
       // Check if user profile exists
-      let user = await this.userRepository.findOne({ where: { mobileNumber: trimmed }, relations: ['patient'] });
+      let user = await this.userRepository.findOne({
+        where: [
+          { mobileNumber: trimmed },
+          { mobileNumber: cleanMobile },
+          { mobileNumber: `+${cleanMobile}` },
+        ],
+        relations: ['patient'],
+      });
       let isNewUser = false;
 
       if (!user) {
@@ -219,6 +239,9 @@ export class AuthService implements OnModuleInit {
         });
         user = await this.userRepository.save(user);
         isNewUser = true;
+      } else if (isAuthorizedDoctor && user.role !== 'doctor' && user.role !== 'admin') {
+        user.role = 'doctor';
+        user = await this.userRepository.save(user);
       }
 
       const payload = { sub: user.id, role: user.role };

@@ -2,6 +2,7 @@ import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RequestOtpDto } from './dto/request-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { LoginFirebaseDto } from './dto/login-firebase.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -30,5 +31,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
     return this.authService.verifyOtp(verifyOtpDto.mobileNumber, verifyOtpDto.otpCode);
+  }
+
+  @Post('firebase/login')
+  @HttpCode(HttpStatus.OK)
+  async loginFirebase(@Body() loginFirebaseDto: LoginFirebaseDto) {
+    return this.authService.verifyFirebaseToken(loginFirebaseDto.idToken, loginFirebaseDto.isStaff);
   }
 }

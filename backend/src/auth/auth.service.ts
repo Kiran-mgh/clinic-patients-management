@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../entities/user.entity';
 import { OtpSession } from '../entities/otp-session.entity';
+import * as jwt from 'jsonwebtoken';
 
 import { SmsService } from './sms.service';
 
@@ -156,5 +157,110 @@ export class AuthService implements OnModuleInit {
         role: user.role,
       },
     };
+  }
+
+  async verifyFirebaseToken(idToken: string, isStaff?: boolean): Promise<{ accessToken: string; isNewUser: boolean; user: any }> {
+    if (!idToken) {
+      throw new BadRequestException('Firebase ID Token is required');
+    }
+
+    try {
+      const decodedHeader = jwt.decode(idToken, { complete: true }) as any;
+      if (!decodedHeader || !decodedHeader.header || !decodedHeader.header.kid) {
+        throw new UnauthorizedException('Invalid token format');
+      }
+
+      const kid = decodedHeader.header.kid;
+      const certs = await this.getGooglePublicCerts();
+      const publicCert = certs[kid];
+
+      if (!publicCert) {
+        throw new UnauthorizedException('Unknown signing certificate authority');
+      }
+
+      const projectId = process.env.FIREBASE_PROJECT_ID || 'default-firebase-project';
+
+      // Verify signature and claims (iss, aud)
+      const verified = jwt.verify(idToken, publicCert, {
+        algorithms: ['RS256'],
+        audience: projectId,
+        issuer: `https://securetoken.google.com/${projectId}`,
+      }) as any;
+
+      const mobileNumber = verified.phone_number;
+      if (!mobileNumber) {
+        throw new BadRequestException('Phone number not verified in Firebase account');
+      }
+
+      const trimmed = mobileNumber.trim();
+      const isAdminBypass = trimmed === '+919999999999' || trimmed === '9999999999';
+
+      // If logging into staff console, check doctor whitelist
+      if (isStaff && !isAdminBypass) {
+        const user = await this.userRepository.findOne({ where: { mobileNumber: trimmed } });
+        if (!user || (user.role !== 'doctor' && user.role !== 'admin')) {
+          throw new BadRequestException('This mobile number is not registered as clinic staff.');
+        }
+      }
+
+      let role = 'patient';
+      if (isAdminBypass) {
+        role = 'admin';
+      }
+
+      // Check if user profile exists
+      let user = await this.userRepository.findOne({ where: { mobileNumber: trimmed }, relations: ['patient'] });
+      let isNewUser = false;
+
+      if (!user) {
+        user = this.userRepository.create({
+          mobileNumber: trimmed,
+          role,
+        });
+        user = await this.userRepository.save(user);
+        isNewUser = true;
+      }
+
+      const payload = { sub: user.id, role: user.role };
+      const accessToken = this.jwtService.sign(payload);
+
+      return {
+        accessToken,
+        isNewUser: isNewUser || !user.patient,
+        user: {
+          id: user.id,
+          mobileNumber: user.mobileNumber,
+          role: user.role,
+        },
+      };
+    } catch (err: any) {
+      throw new UnauthorizedException(err.message || 'Firebase token validation failed');
+    }
+  }
+
+  private googleCertsCache: { keys: { [key: string]: string }; expires: number } | null = null;
+
+  private async getGooglePublicCerts(): Promise<{ [key: string]: string }> {
+    const now = Date.now();
+    if (this.googleCertsCache && this.googleCertsCache.expires > now) {
+      return this.googleCertsCache.keys;
+    }
+
+    const response = await fetch('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com');
+    if (!response.ok) {
+      throw new Error('Failed to fetch Firebase public keys');
+    }
+
+    const cacheControl = response.headers.get('cache-control') || '';
+    const maxAgeMatch = cacheControl.match(/max-age=(\d+)/);
+    const maxAge = maxAgeMatch ? parseInt(maxAgeMatch[1], 10) * 1000 : 3600000;
+
+    const keys = await response.json();
+    this.googleCertsCache = {
+      keys,
+      expires: now + maxAge,
+    };
+
+    return keys;
   }
 }

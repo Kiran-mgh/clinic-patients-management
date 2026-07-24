@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { api } from '../api';
+import { auth } from '../firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { Activity, UserCheck, Stethoscope, BarChart3, Smartphone } from 'lucide-react';
 
 interface LoginProps {
@@ -13,13 +15,24 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
+  const setupRecaptcha = () => {
+    if (!(window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {},
+      });
+    }
+    return (window as any).recaptchaVerifier;
+  };
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!mobileNumber) return;
 
     const trimmed = mobileNumber.trim();
-    const isBypass = trimmed === '+919999999999';
+    const isBypass = trimmed === '+919999999999' || trimmed === '9999999999';
     const isTenDigits = /^\d{10}$/.test(trimmed);
 
     if (!isBypass && !isTenDigits) {
@@ -29,13 +42,24 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     setError('');
+
+    const formattedPhone = trimmed.startsWith('+') ? trimmed : `+91${trimmed}`;
+
     try {
-      const res = await api.post('/auth/otp/request', { mobileNumber: trimmed, isStaff: true });
-      setStep(2);
-      if (res.otpCode) {
-        setInfoMsg(`Test OTP Code generated: ${res.otpCode}`);
+      if (!isBypass && import.meta.env.VITE_USE_FIREBASE === 'true') {
+        const verifier = setupRecaptcha();
+        const confirmation = await signInWithPhoneNumber(auth, formattedPhone, verifier);
+        setConfirmationResult(confirmation);
+        setStep(2);
+        setInfoMsg('SMS OTP dispatched via Firebase Auth');
       } else {
-        setInfoMsg('OTP sent successfully');
+        const res = await api.post('/auth/otp/request', { mobileNumber: trimmed, isStaff: true });
+        setStep(2);
+        if (res.otpCode) {
+          setInfoMsg(`Test OTP Code generated: ${res.otpCode}`);
+        } else {
+          setInfoMsg('OTP sent successfully');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Failed to request OTP');
@@ -50,11 +74,21 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/auth/otp/verify', { mobileNumber, otpCode });
-      if (res.user.role !== 'admin' && res.user.role !== 'doctor') {
-        throw new Error('Access denied: You must be an admin or doctor to access this portal.');
+      if (confirmationResult) {
+        const credential = await confirmationResult.confirm(otpCode);
+        const idToken = await credential.user.getIdToken();
+        const res = await api.post('/auth/firebase/login', { idToken, isStaff: true });
+        if (res.user.role !== 'admin' && res.user.role !== 'doctor') {
+          throw new Error('Access denied: You must be an admin or doctor to access this portal.');
+        }
+        onLoginSuccess(res.accessToken, res.user);
+      } else {
+        const res = await api.post('/auth/otp/verify', { mobileNumber, otpCode });
+        if (res.user.role !== 'admin' && res.user.role !== 'doctor') {
+          throw new Error('Access denied: You must be an admin or doctor to access this portal.');
+        }
+        onLoginSuccess(res.accessToken, res.user);
       }
-      onLoginSuccess(res.accessToken, res.user);
     } catch (err: any) {
       setError(err.message || 'OTP verification failed');
     } finally {
@@ -258,6 +292,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               {infoMsg}
             </div>
           )}
+
+          <div id="recaptcha-container"></div>
 
           {step === 1 ? (
             <form onSubmit={handleRequestOtp}>

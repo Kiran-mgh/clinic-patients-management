@@ -178,7 +178,7 @@ export class AuthService implements OnModuleInit {
         throw new UnauthorizedException('Unknown signing certificate authority');
       }
 
-      const projectId = process.env.FIREBASE_PROJECT_ID || 'default-firebase-project';
+      const projectId = process.env.FIREBASE_PROJECT_ID || decodedHeader.payload?.aud || 'default-firebase-project';
 
       // Verify signature and claims (iss, aud)
       const verified = jwt.verify(idToken, publicCert, {

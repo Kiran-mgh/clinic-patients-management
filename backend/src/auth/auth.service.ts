@@ -5,6 +5,8 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from '../entities/user.entity';
 import { OtpSession } from '../entities/otp-session.entity';
 
+import { SmsService } from './sms.service';
+
 @Injectable()
 export class AuthService implements OnModuleInit {
   constructor(
@@ -13,6 +15,7 @@ export class AuthService implements OnModuleInit {
     @InjectRepository(OtpSession)
     private otpSessionRepository: Repository<OtpSession>,
     private jwtService: JwtService,
+    private smsService: SmsService,
   ) {}
 
   async onModuleInit() {
@@ -75,8 +78,8 @@ export class AuthService implements OnModuleInit {
 
     await this.otpSessionRepository.save(otpSession);
 
-    // Mock SMS OTP: log to console
-    console.log(`[SMS OTP MOCK] Sent to ${mobileNumber}: ${otpCode}`);
+    // Send via SMS service (MSG91 / Twilio / Mock)
+    await this.smsService.sendOtp(trimmed, otpCode);
 
     return otpCode;
   }

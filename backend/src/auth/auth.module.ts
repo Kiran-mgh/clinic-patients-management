@@ -8,6 +8,7 @@ import { AuthController } from './auth.controller';
 import { User } from '../entities/user.entity';
 import { OtpSession } from '../entities/otp-session.entity';
 import { JwtStrategy } from './jwt.strategy';
+import { SmsService } from './sms.service';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { JwtStrategy } from './jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, JwtModule, PassportModule],
+  providers: [AuthService, JwtStrategy, SmsService],
+  exports: [AuthService, JwtModule, PassportModule, SmsService],
 })
 export class AuthModule {}

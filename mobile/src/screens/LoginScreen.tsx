@@ -35,16 +35,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onOtpRequested }) => {
       } else if (isBypass) {
         onOtpRequested(trimmed, '000000');
       } else {
-        // Pure Firebase Phone Auth request
-        const res = await api.post('/auth/otp/request', { mobileNumber: trimmed });
-        onOtpRequested(trimmed, res.otpCode);
+        try {
+          const res = await api.post('/auth/otp/request', { mobileNumber: trimmed });
+          onOtpRequested(trimmed, res.otpCode);
+        } catch (serverErr: any) {
+          onOtpRequested(trimmed);
+        }
       }
     } catch (err: any) {
-      if (err.message && (err.message.includes('MISSING_CLIENT_IDENTIFIER') || err.message.includes('CAPTCHA_CHECK_FAILED'))) {
-        onOtpRequested(trimmed);
-      } else {
-        setError(err.message || 'Failed to send OTP. Please check your network.');
-      }
+      setError(err.message || 'Failed to send OTP. Please check your network.');
     } finally {
       setLoading(false);
     }

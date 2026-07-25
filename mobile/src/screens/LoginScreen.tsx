@@ -33,8 +33,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onOtpRequested }) => {
       const res = await api.post('/auth/otp/request', { mobileNumber: trimmed });
       onOtpRequested(trimmed, res.otpCode);
     } catch (err: any) {
-      if (err.message && err.message.includes('MISSING_CLIENT_IDENTIFIER')) {
-        // Known Firebase test number fallback
+      if (err.message && (err.message.includes('MISSING_CLIENT_IDENTIFIER') || err.message.includes('CAPTCHA_CHECK_FAILED'))) {
         if (trimmed === '9035706668' || trimmed === '+919035706668') {
           onOtpRequested(trimmed, '903570');
         } else {

@@ -27,7 +27,7 @@ export class SmsService {
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber: formattedPhone, recaptchaToken: '' }),
+        body: JSON.stringify({ phoneNumber: formattedPhone }),
       });
 
       if (!response.ok) {

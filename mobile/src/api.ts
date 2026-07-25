@@ -10,64 +10,39 @@ let mockServingMedicineSeq = 4;
 let mockServingTreatmentSeq = 1;
 
 export const api = {
-  // Config getter
   isMockMode() {
-    return !isBackendConnected;
+    return false;
   },
 
   async post(endpoint: string, body: any, token: string | null = null) {
-    if (isBackendConnected) {
-      try {
-        const response = await fetch(`${API_BASE}${endpoint}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(body),
-        });
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.message || 'Request failed');
-        }
-        return await response.json();
-      } catch (e: any) {
-        if (e.message === 'Failed to fetch' || e.name === 'TypeError') {
-          console.warn('[Mobile API] Backend offline. Falling back to local mock simulator.');
-          isBackendConnected = false;
-        } else {
-          throw e;
-        }
-      }
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Request failed');
     }
-    return mockMobileApi.post(endpoint, body);
+    return await response.json();
   },
 
   async get(endpoint: string, token: string | null = null) {
-    if (isBackendConnected) {
-      try {
-        const response = await fetch(`${API_BASE}${endpoint}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.message || 'Request failed');
-        }
-        return await response.json();
-      } catch (e: any) {
-        if (e.message === 'Failed to fetch' || e.name === 'TypeError') {
-          console.warn('[Mobile API] Backend offline. Falling back to local mock simulator.');
-          isBackendConnected = false;
-        } else {
-          throw e;
-        }
-      }
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Request failed');
     }
-    return mockMobileApi.get(endpoint);
+    return await response.json();
   },
 };
 

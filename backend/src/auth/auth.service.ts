@@ -198,11 +198,16 @@ export class AuthService implements OnModuleInit {
       const trimmed = mobileNumber.trim();
       const isAdminBypass = trimmed === '+919999999999' || trimmed === '9999999999';
 
-      // Parse doctor whitelist dynamically with format tolerance (+91 vs plain digits)
+      // Parse doctor whitelist dynamically with 10-digit format tolerance
       const doctorsEnv = process.env.AUTHORIZED_DOCTORS || '';
-      const doctorList = doctorsEnv.split(',').map((n) => n.trim().replace('+', ''));
-      const cleanMobile = trimmed.replace('+', '');
-      const isAuthorizedDoctor = doctorList.some((d) => d && (d === cleanMobile || cleanMobile.endsWith(d)));
+      const cleanMobile = trimmed.replace(/[^0-9]/g, '');
+      const tenDigitMobile = cleanMobile.slice(-10);
+      const doctorList = doctorsEnv.split(',').map((n) => n.trim().replace(/[^0-9]/g, ''));
+      const isAuthorizedDoctor = doctorList.some((d) => {
+        if (!d) return false;
+        const tenDigitD = d.slice(-10);
+        return d === cleanMobile || tenDigitD === tenDigitMobile;
+      });
 
       if (isStaff && !isAdminBypass && !isAuthorizedDoctor) {
         const user = await this.userRepository.findOne({

@@ -27,32 +27,55 @@ export class SmsService {
 
       try {
         const url = 'https://www.fast2sms.com/dev/bulkV2';
-        const response = await fetch(url, {
+        
+        // Try Quick SMS route 'q' which doesn't require website verification
+        let response = await fetch(url, {
           method: 'POST',
           headers: {
             authorization: apiKey,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            variables_values: otpCode,
-            route: 'otp',
+            route: 'q',
+            message: `Your Amar Hospital verification code is: ${otpCode}`,
+            language: 'english',
+            flash: 0,
             numbers: tenDigits,
           }),
         });
 
-        if (!response.ok) {
-          const bodyText = await response.text();
-          this.logger.error(`Fast2SMS API returned error ${response.status}: ${bodyText}`);
-          throw new BadRequestException('Failed to dispatch Fast2SMS OTP');
+        let bodyText = await response.text();
+        let resData: any = {};
+        try {
+          resData = JSON.parse(bodyText);
+        } catch (e) {}
+
+        if (!response.ok || resData.return !== true) {
+          // Fall back to route 'otp'
+          response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              authorization: apiKey,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              variables_values: otpCode,
+              route: 'otp',
+              numbers: tenDigits,
+            }),
+          });
+          bodyText = await response.text();
+          try {
+            resData = JSON.parse(bodyText);
+          } catch (e) {}
         }
 
-        const resData = await response.json();
-        if (resData.return === true) {
+        if (response.ok && resData.return === true) {
           this.logger.log(`Fast2SMS OTP ${otpCode} sent successfully to ${tenDigits}`);
           return otpCode;
         } else {
-          this.logger.error(`Fast2SMS send error: ${JSON.stringify(resData)}`);
-          throw new BadRequestException(`Fast2SMS error: ${resData.message || 'Failed to dispatch SMS'}`);
+          this.logger.error(`Fast2SMS send error: ${bodyText}`);
+          throw new BadRequestException(`Fast2SMS error: ${resData.message || bodyText}`);
         }
       } catch (err: any) {
         this.logger.error(`Fast2SMS dispatch error: ${err.message}`);

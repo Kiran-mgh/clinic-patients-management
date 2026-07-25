@@ -26,24 +26,10 @@ export class SmsService {
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
       try {
-        const url = 'https://www.fast2sms.com/dev/bulkV2';
+        const msgText = encodeURIComponent(`Your Amar Hospital verification code is ${otpCode}`);
+        const getUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${apiKey}&route=q&message=${msgText}&flash=0&numbers=${tenDigits}`;
         
-        // Try Quick SMS route 'q' which doesn't require website verification
-        let response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            authorization: apiKey,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            route: 'q',
-            message: `Your Amar Hospital verification code is: ${otpCode}`,
-            language: 'english',
-            flash: 0,
-            numbers: tenDigits,
-          }),
-        });
-
+        let response = await fetch(getUrl, { method: 'GET' });
         let bodyText = await response.text();
         let resData: any = {};
         try {
@@ -51,19 +37,8 @@ export class SmsService {
         } catch (e) {}
 
         if (!response.ok || resData.return !== true) {
-          // Fall back to route 'otp'
-          response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              authorization: apiKey,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              variables_values: otpCode,
-              route: 'otp',
-              numbers: tenDigits,
-            }),
-          });
+          const otpUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${apiKey}&route=otp&variables_values=${otpCode}&numbers=${tenDigits}`;
+          response = await fetch(otpUrl, { method: 'GET' });
           bodyText = await response.text();
           try {
             resData = JSON.parse(bodyText);

@@ -87,6 +87,15 @@ const mockMobileApi = {
       };
     }
 
+    // 2b. Firebase Token Login
+    if (endpoint === '/auth/firebase/login') {
+      return {
+        accessToken: 'mock_mobile_jwt_token',
+        isNewUser: mockPatientProfile === null,
+        user: { id: 'patient_user_1', mobileNumber: '+919876543210', role: 'patient' },
+      };
+    }
+
     // 3. Register Patient Profile
     if (endpoint === '/patients/register') {
       let status = 'pending_approval';

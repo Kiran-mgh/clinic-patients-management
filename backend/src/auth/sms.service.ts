@@ -3,6 +3,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 @Injectable()
 export class SmsService {
   private readonly logger = new Logger(SmsService.name);
+  private readonly sessionMap = new Map<string, string>();
 
   async sendOtp(mobileNumber: string): Promise<string> {
     const provider = process.env.SMS_PROVIDER || 'mock';
@@ -63,6 +64,9 @@ export class SmsService {
         }
 
         const resData = await response.json();
+        if (resData.sessionInfo) {
+          this.sessionMap.set(cleanMobile, resData.sessionInfo);
+        }
         this.logger.log(`Firebase SMS OTP dispatched successfully to ${formattedPhone}`);
         return resData.sessionInfo || 'sent_via_firebase';
       } catch (err: any) {
@@ -83,7 +87,42 @@ export class SmsService {
     }
 
     if (provider === 'firebase') {
-      return true;
+      const apiKey = process.env.FIREBASE_WEB_API_KEY || process.env.FIREBASE_API_KEY;
+      if (!apiKey) {
+        return false;
+      }
+
+      const sessionInfo = this.sessionMap.get(cleanMobile);
+      if (!sessionInfo) {
+        this.logger.warn(`No active Firebase OTP session found for ${mobileNumber}`);
+        return false;
+      }
+
+      try {
+        const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPhoneNumber?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionInfo, code: otpCode }),
+        });
+
+        if (!response.ok) {
+          const bodyText = await response.text();
+          this.logger.warn(`Firebase OTP verification rejected for ${mobileNumber}: ${bodyText}`);
+          return false;
+        }
+
+        const resData = await response.json();
+        if (resData.idToken) {
+          this.logger.log(`Firebase OTP verified successfully with Google for ${mobileNumber}`);
+          this.sessionMap.delete(cleanMobile);
+          return true;
+        }
+        return false;
+      } catch (err: any) {
+        this.logger.error(`Firebase OTP verification error: ${err.message}`);
+        return false;
+      }
     }
 
     if (provider === 'msg91') {

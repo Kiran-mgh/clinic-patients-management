@@ -98,10 +98,10 @@ export class AuthService implements OnModuleInit {
       role = 'admin';
     } else if ((process.env.SMS_PROVIDER || 'mock') === 'mock' && otpCode && otpCode.length === 6) {
       isValid = true;
-    } else if ((process.env.SMS_PROVIDER || 'mock') === 'msg91') {
-      // Validate OTP using MSG91 OTP Verify API
-      const isMsg91Valid = await this.smsService.verifyOtp(mobileNumber, otpCode);
-      if (!isMsg91Valid) {
+    } else if ((process.env.SMS_PROVIDER || 'mock') === 'firebase' || (process.env.SMS_PROVIDER || 'mock') === 'msg91') {
+      // Validate OTP using Firebase or MSG91 verification API
+      const isProviderValid = await this.smsService.verifyOtp(mobileNumber, otpCode);
+      if (!isProviderValid) {
         throw new UnauthorizedException('Invalid or expired OTP code');
       }
       isValid = true;

@@ -3,6 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 
+// Controllers
+import { AppController } from './app.controller';
+
 // Entities
 import { User } from './entities/user.entity';
 import { Patient } from './entities/patient.entity';
@@ -60,5 +63,6 @@ import { QueueModule } from './queue/queue.module';
     TokensModule,
     QueueModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

@@ -64,7 +64,14 @@ export class SmsService {
         if (!response.ok) {
           const bodyText = await response.text();
           this.logger.error(`Firebase Identity Toolkit returned error ${response.status}: ${bodyText}`);
-          throw new BadRequestException('Failed to send verification SMS via Firebase');
+          let parsedMsg = 'Failed to send verification SMS via Firebase';
+          try {
+            const parsed = JSON.parse(bodyText);
+            if (parsed?.error?.message) {
+              parsedMsg += ` (${parsed.error.message})`;
+            }
+          } catch (e) {}
+          throw new BadRequestException(parsedMsg);
         }
 
         const resData = await response.json();

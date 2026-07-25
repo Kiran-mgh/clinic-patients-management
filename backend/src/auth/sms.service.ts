@@ -1,9 +1,12 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { WhatsappService } from './whatsapp.service';
 
 @Injectable()
 export class SmsService {
   private readonly logger = new Logger(SmsService.name);
   private readonly sessionMap = new Map<string, string>();
+
+  constructor(private readonly whatsappService: WhatsappService) {}
 
   async sendOtp(mobileNumber: string): Promise<string> {
     const provider = (process.env.SMS_PROVIDER || 'firebase').trim().toLowerCase();
@@ -12,6 +15,12 @@ export class SmsService {
     if (provider === 'mock') {
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
       this.logger.log(`[SMS OTP MOCK] Sent to ${mobileNumber}: ${otpCode}`);
+      return otpCode;
+    }
+
+    if (provider === 'whatsapp') {
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      await this.whatsappService.sendOtp(cleanMobile, otpCode);
       return otpCode;
     }
 
@@ -57,7 +66,7 @@ export class SmsService {
     const provider = (process.env.SMS_PROVIDER || 'firebase').trim().toLowerCase();
     const cleanMobile = mobileNumber.replace('+', '').trim();
 
-    if (provider === 'mock') {
+    if (provider === 'mock' || provider === 'whatsapp') {
       return true;
     }
 

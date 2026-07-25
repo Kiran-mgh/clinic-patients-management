@@ -43,6 +43,9 @@ subprojects {
     afterEvaluate { project ->
         if (project.hasProperty("android")) {
             project.android {
+                if (namespace == null) {
+                    namespace "com.amarhospital.mobile.${project.name.replaceAll(/[^a-zA-Z0-9]/, '')}"
+                }
                 compileSdkVersion 33
                 buildToolsVersion "33.0.0"
             }

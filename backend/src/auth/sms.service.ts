@@ -15,6 +15,51 @@ export class SmsService {
       return otpCode;
     }
 
+    if (provider === 'fast2sms') {
+      const apiKey = process.env.FAST2SMS_API_KEY;
+      if (!apiKey) {
+        this.logger.error('FAST2SMS_API_KEY is missing in .env');
+        throw new BadRequestException('FAST2SMS_API_KEY is not configured on server');
+      }
+
+      const tenDigits = cleanMobile.slice(-10);
+      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+      try {
+        const url = 'https://www.fast2sms.com/dev/bulkV2';
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            authorization: apiKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            variables_values: otpCode,
+            route: 'otp',
+            numbers: tenDigits,
+          }),
+        });
+
+        if (!response.ok) {
+          const bodyText = await response.text();
+          this.logger.error(`Fast2SMS API returned error ${response.status}: ${bodyText}`);
+          throw new BadRequestException('Failed to dispatch Fast2SMS OTP');
+        }
+
+        const resData = await response.json();
+        if (resData.return === true) {
+          this.logger.log(`Fast2SMS OTP ${otpCode} sent successfully to ${tenDigits}`);
+          return otpCode;
+        } else {
+          this.logger.error(`Fast2SMS send error: ${JSON.stringify(resData)}`);
+          throw new BadRequestException(`Fast2SMS error: ${resData.message || 'Failed to dispatch SMS'}`);
+        }
+      } catch (err: any) {
+        this.logger.error(`Fast2SMS dispatch error: ${err.message}`);
+        throw new BadRequestException(err.message || 'Failed to dispatch Fast2SMS OTP');
+      }
+    }
+
     if (provider === 'msg91') {
       const authKey = process.env.MSG91_AUTH_KEY;
       const templateId = process.env.MSG91_TEMPLATE_ID;
@@ -93,7 +138,7 @@ export class SmsService {
     const provider = process.env.SMS_PROVIDER || 'mock';
     const cleanMobile = mobileNumber.replace('+', '').trim();
 
-    if (provider === 'mock') {
+    if (provider === 'mock' || provider === 'fast2sms') {
       return true;
     }
 

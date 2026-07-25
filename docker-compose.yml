@@ -31,7 +31,6 @@ services:
       - DB_DATABASE=amar_hospital
       - JWT_SECRET=super_secret_jwt_sign_key_change_in_production
       - JWT_EXPIRATION=90d
-      - AUTHORIZED_DOCTORS=9876543210
     depends_on:
       - postgres
     restart: always

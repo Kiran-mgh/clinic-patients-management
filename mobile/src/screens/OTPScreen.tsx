@@ -63,13 +63,7 @@ export const OTPScreen: React.FC<OTPScreenProps> = ({ mobileNumber, testOtp, idT
             <Text style={styles.cardTitle}>Enter 6-digit code</Text>
             <Text style={styles.cardSub}>Code sent to {mobileNumber}.</Text>
 
-            {testOtp ? (
-              <View style={styles.testOtpBanner}>
-                <Text style={styles.testOtpText}>
-                  Test OTP Code: <Text style={styles.testOtpCode}>{testOtp}</Text>
-                </Text>
-              </View>
-            ) : null}
+
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 

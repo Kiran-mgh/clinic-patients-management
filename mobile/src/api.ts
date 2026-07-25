@@ -75,7 +75,7 @@ const mockMobileApi = {
   async post(endpoint: string, body: any) {
     // 1. OTP Request
     if (endpoint === '/auth/otp/request') {
-      return { message: 'OTP sent successfully', otpCode: '123456' };
+      return { message: 'OTP sent successfully' };
     }
 
     // 2. OTP Verify

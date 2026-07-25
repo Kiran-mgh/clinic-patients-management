@@ -47,22 +47,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     try {
       if (!isBypass && import.meta.env.VITE_USE_FIREBASE === 'true') {
-        try {
-          const verifier = setupRecaptcha();
-          const confirmation = await signInWithPhoneNumber(auth, formattedPhone, verifier);
-          setConfirmationResult(confirmation);
-          setStep(2);
-          setInfoMsg('SMS OTP dispatched via Firebase Auth');
-        } catch (fbErr: any) {
-          console.warn('[Portal Auth] Firebase rate limit or error, falling back to backend OTP:', fbErr);
-          const res = await api.post('/auth/otp/request', { mobileNumber: trimmed, isStaff: true });
-          setStep(2);
-          if (res.otpCode) {
-            setInfoMsg(`Test OTP Code generated: ${res.otpCode}`);
-          } else {
-            setInfoMsg('OTP sent successfully');
-          }
-        }
+        const verifier = setupRecaptcha();
+        const confirmation = await signInWithPhoneNumber(auth, formattedPhone, verifier);
+        setConfirmationResult(confirmation);
+        setStep(2);
+        setInfoMsg('SMS OTP dispatched via Firebase Auth');
       } else {
         const res = await api.post('/auth/otp/request', { mobileNumber: trimmed, isStaff: true });
         setStep(2);

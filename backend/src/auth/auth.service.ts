@@ -93,11 +93,11 @@ export class AuthService implements OnModuleInit {
 
     let isValid = false;
     let role = 'patient';
+
+    // Special admin bypass check
     if ((mobileNumber === '+919999999999' || mobileNumber === '9999999999') && otpCode === '000000') {
       isValid = true;
       role = 'admin';
-    } else if ((process.env.SMS_PROVIDER || 'mock') === 'mock' && otpCode && otpCode.length === 6) {
-      isValid = true;
     } else if ((process.env.SMS_PROVIDER || 'mock') === 'firebase' || (process.env.SMS_PROVIDER || 'mock') === 'msg91') {
       // Validate OTP using Firebase or MSG91 verification API
       const isProviderValid = await this.smsService.verifyOtp(mobileNumber, otpCode);
@@ -106,6 +106,7 @@ export class AuthService implements OnModuleInit {
       }
       isValid = true;
     } else {
+      // Standard/Mock mode: verify against stored database OTP session
       const session = await this.otpSessionRepository.findOne({
         where: { mobileNumber, otpCode, verified: false },
         order: { createdAt: 'DESC' },

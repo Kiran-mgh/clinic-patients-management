@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ImageBackground } from 'react-native';
 import { api } from '../api';
+import { auth } from '../firebase';
+import { signInWithPhoneNumber } from 'firebase/auth';
 
 interface LoginScreenProps {
-  onOtpRequested: (mobile: string, testOtp?: string) => void;
+  onOtpRequested: (mobile: string, testOtp?: string, confirmationResult?: any) => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onOtpRequested }) => {
@@ -18,7 +20,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onOtpRequested }) => {
     }
 
     const trimmed = mobileNumber.trim();
-    const isBypass = trimmed === '+919999999999';
+    const isBypass = trimmed === '+919999999999' || trimmed === '9999999999';
     const isTenDigits = /^\d{10}$/.test(trimmed);
 
     if (!isBypass && !isTenDigits) {
@@ -28,6 +30,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onOtpRequested }) => {
 
     setLoading(true);
     setError('');
+
+    const formattedPhone = trimmed.startsWith('+') ? trimmed : `+91${trimmed}`;
+
     try {
       const res = await api.post('/auth/otp/request', { mobileNumber: trimmed });
       onOtpRequested(trimmed, res.otpCode);

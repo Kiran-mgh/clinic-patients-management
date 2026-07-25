@@ -6,27 +6,35 @@ interface OTPScreenProps {
   mobileNumber: string;
   testOtp?: string;
   idToken?: string;
+  confirmationResult?: any;
   onOtpVerified: (token: string, user: any, isNewUser: boolean) => void;
   onGoBack: () => void;
 }
 
-export const OTPScreen: React.FC<OTPScreenProps> = ({ mobileNumber, testOtp, idToken, onOtpVerified, onGoBack }) => {
+export const OTPScreen: React.FC<OTPScreenProps> = ({ mobileNumber, testOtp, idToken, confirmationResult, onOtpVerified, onGoBack }) => {
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleVerifyOtp = async () => {
-    if (!idToken && (!otpCode || otpCode.length !== 6)) {
+    if (!otpCode || otpCode.length !== 6) {
       setError('Please enter a valid 6-digit code.');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const endpoint = idToken ? '/auth/firebase/login' : '/auth/otp/verify';
-      const payload = idToken ? { idToken, isStaff: false } : { mobileNumber, otpCode };
-      const res = await api.post(endpoint, payload);
-      onOtpVerified(res.accessToken, res.user, res.isNewUser);
+      if (confirmationResult && typeof confirmationResult.confirm === 'function') {
+        const credential = await confirmationResult.confirm(otpCode);
+        const firebaseIdToken = await credential.user.getIdToken();
+        const res = await api.post('/auth/firebase/login', { idToken: firebaseIdToken, isStaff: false });
+        onOtpVerified(res.accessToken, res.user, res.isNewUser);
+      } else {
+        const endpoint = idToken ? '/auth/firebase/login' : '/auth/otp/verify';
+        const payload = idToken ? { idToken, isStaff: false } : { mobileNumber, otpCode };
+        const res = await api.post(endpoint, payload);
+        onOtpVerified(res.accessToken, res.user, res.isNewUser);
+      }
     } catch (err: any) {
       setError(err.message || 'OTP verification failed. Try again.');
     } finally {

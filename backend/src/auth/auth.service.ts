@@ -94,9 +94,9 @@ export class AuthService implements OnModuleInit {
     // Dispatch OTP request using SmsService (MSG91 generates code on-the-fly)
     const otpCode = await this.smsService.sendOtp(trimmed);
 
-    // Save to database sessions for mock and fast2sms providers
-    const provider = (process.env.SMS_PROVIDER || 'mock').trim().toLowerCase();
-    if (provider === 'mock' || provider === 'fast2sms') {
+    // Save to database sessions for mock provider
+    const provider = (process.env.SMS_PROVIDER || 'firebase').trim().toLowerCase();
+    if (provider === 'mock') {
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 
@@ -127,8 +127,8 @@ export class AuthService implements OnModuleInit {
       role = 'admin';
     } else if (otpCode === '903570' || otpCode === '123456') {
       isValid = true;
-    } else if ((process.env.SMS_PROVIDER || 'mock') === 'firebase' || (process.env.SMS_PROVIDER || 'mock') === 'msg91') {
-      // Validate OTP using Firebase or MSG91 verification API
+    } else if ((process.env.SMS_PROVIDER || 'firebase') === 'firebase') {
+      // Validate OTP using Firebase verification API
       const isProviderValid = await this.smsService.verifyOtp(mobileNumber, otpCode);
       if (!isProviderValid) {
         throw new UnauthorizedException('Invalid or expired OTP code');

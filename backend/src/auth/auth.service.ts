@@ -52,11 +52,37 @@ export class AuthService implements OnModuleInit {
     const trimmed = mobileNumber.trim();
     const isAdminBypass = trimmed === '+919999999999' || trimmed === '9999999999';
 
-    // 1. Staff Validation: If accessing portal, verify the user is a pre-registered doctor or admin
+    // 1. Staff Validation: If accessing portal, verify the user is a pre-registered doctor/admin or listed in AUTHORIZED_DOCTORS
     if (isStaff && !isAdminBypass) {
-      const user = await this.userRepository.findOne({ where: { mobileNumber: trimmed } });
-      if (!user || (user.role !== 'doctor' && user.role !== 'admin')) {
+      const doctorsEnv = process.env.AUTHORIZED_DOCTORS || '';
+      const cleanMobile = trimmed.replace(/[^0-9]/g, '');
+      const tenDigitMobile = cleanMobile.slice(-10);
+      const doctorList = doctorsEnv.split(',').map((n) => n.trim().replace(/[^0-9]/g, ''));
+      const isAuthorizedDoctor = doctorList.some((d) => {
+        if (!d) return false;
+        const tenDigitD = d.slice(-10);
+        return d === cleanMobile || tenDigitD === tenDigitMobile;
+      });
+
+      let user = await this.userRepository.findOne({
+        where: [
+          { mobileNumber: trimmed },
+          { mobileNumber: cleanMobile },
+          { mobileNumber: `+${cleanMobile}` },
+        ],
+      });
+
+      if (!isAuthorizedDoctor && (!user || (user.role !== 'doctor' && user.role !== 'admin'))) {
         throw new BadRequestException('This mobile number is not registered as clinic staff.');
+      }
+
+      if (isAuthorizedDoctor && (!user || user.role !== 'doctor')) {
+        if (!user) {
+          user = this.userRepository.create({ mobileNumber: trimmed, role: 'doctor' });
+        } else {
+          user.role = 'doctor';
+        }
+        await this.userRepository.save(user);
       }
     }
 

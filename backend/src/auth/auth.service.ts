@@ -94,9 +94,8 @@ export class AuthService implements OnModuleInit {
     // Dispatch OTP request using SmsService (MSG91 generates code on-the-fly)
     const otpCode = await this.smsService.sendOtp(trimmed);
 
-    // Save to database sessions for mock provider
-    const provider = (process.env.SMS_PROVIDER || 'firebase').trim().toLowerCase();
-    if (provider === 'mock') {
+    // Save to database sessions whenever a 6-digit OTP code is generated
+    if (otpCode && otpCode.length === 6 && /^\d+$/.test(otpCode)) {
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 
@@ -128,12 +127,24 @@ export class AuthService implements OnModuleInit {
     } else if (otpCode === '903570' || otpCode === '123456') {
       isValid = true;
     } else if ((process.env.SMS_PROVIDER || 'firebase') === 'firebase') {
-      // Validate OTP using Firebase verification API
+      // First try Firebase API verification
       const isProviderValid = await this.smsService.verifyOtp(mobileNumber, otpCode);
-      if (!isProviderValid) {
-        throw new UnauthorizedException('Invalid or expired OTP code');
+      if (isProviderValid) {
+        isValid = true;
+      } else {
+        // Fall back to database session verification
+        const session = await this.otpSessionRepository.findOne({
+          where: { mobileNumber, otpCode, verified: false },
+          order: { createdAt: 'DESC' },
+        });
+        if (session && new Date() <= session.expiresAt) {
+          session.verified = true;
+          await this.otpSessionRepository.save(session);
+          isValid = true;
+        } else {
+          throw new UnauthorizedException('Invalid or expired OTP code');
+        }
       }
-      isValid = true;
     } else {
       // Standard/Mock mode: verify against stored database OTP session
       const session = await this.otpSessionRepository.findOne({

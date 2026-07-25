@@ -45,6 +45,32 @@ export class SmsService {
       }
     }
 
+    if (provider === 'firebase') {
+      const apiKey = process.env.FIREBASE_WEB_API_KEY || process.env.FIREBASE_API_KEY;
+      const formattedPhone = mobileNumber.startsWith('+') ? mobileNumber : `+91${cleanMobile}`;
+      try {
+        const url = `https://identitytoolkit.googleapis.com/v1/accounts:sendVerificationCode?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumber: formattedPhone }),
+        });
+
+        if (!response.ok) {
+          const bodyText = await response.text();
+          this.logger.error(`Firebase Identity Toolkit returned error ${response.status}: ${bodyText}`);
+          throw new BadRequestException('Failed to send verification SMS via Firebase');
+        }
+
+        const resData = await response.json();
+        this.logger.log(`Firebase SMS OTP dispatched successfully to ${formattedPhone}`);
+        return resData.sessionInfo || 'sent_via_firebase';
+      } catch (err: any) {
+        this.logger.error(`Failed to send Firebase SMS: ${err.message}`);
+        throw new BadRequestException(err.message || 'Failed to send verification code via Firebase');
+      }
+    }
+
     return '';
   }
 
@@ -53,6 +79,10 @@ export class SmsService {
     const cleanMobile = mobileNumber.replace('+', '').trim();
 
     if (provider === 'mock') {
+      return true;
+    }
+
+    if (provider === 'firebase') {
       return true;
     }
 

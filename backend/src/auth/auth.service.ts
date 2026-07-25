@@ -94,8 +94,9 @@ export class AuthService implements OnModuleInit {
     // Dispatch OTP request using SmsService (MSG91 generates code on-the-fly)
     const otpCode = await this.smsService.sendOtp(trimmed);
 
-    // Save to local database sessions only if using the local mock provider
-    if ((process.env.SMS_PROVIDER || 'mock') === 'mock') {
+    // Save to database sessions for mock and fast2sms providers
+    const provider = (process.env.SMS_PROVIDER || 'mock').trim().toLowerCase();
+    if (provider === 'mock' || provider === 'fast2sms') {
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 

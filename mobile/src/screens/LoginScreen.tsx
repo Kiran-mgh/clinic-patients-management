@@ -1,19 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ImageBackground } from 'react-native';
 import { api } from '../api';
-import { auth } from '../firebase';
-import { PhoneAuthProvider } from 'firebase/auth';
-import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 
 interface LoginScreenProps {
-  onOtpRequested: (mobile: string, testOtp?: string, verificationId?: string) => void;
+  onOtpRequested: (mobile: string, testOtp?: string) => void;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onOtpRequested }) => {
   const [mobileNumber, setMobileNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const recaptchaVerifier = useRef<any>(null);
 
   const handleRequestOtp = async () => {
     if (!mobileNumber) {
@@ -33,22 +29,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onOtpRequested }) => {
     setLoading(true);
     setError('');
 
-    const formattedPhone = trimmed.startsWith('+') ? trimmed : `+91${trimmed}`;
-
     try {
-      if (!isBypass && auth && recaptchaVerifier.current) {
-        const phoneProvider = new PhoneAuthProvider(auth);
-        const verificationId = await phoneProvider.verifyPhoneNumber(
-          formattedPhone,
-          recaptchaVerifier.current
-        );
-        onOtpRequested(trimmed, undefined, verificationId);
-      } else {
-        const res = await api.post('/auth/otp/request', { mobileNumber: trimmed });
-        onOtpRequested(trimmed, res.otpCode);
-      }
+      const res = await api.post('/auth/otp/request', { mobileNumber: trimmed });
+      onOtpRequested(trimmed, res.otpCode);
     } catch (err: any) {
-      setError(err.message || 'Failed to send OTP via Firebase. Please check your network.');
+      setError(err.message || 'Failed to send OTP. Please check your network.');
     } finally {
       setLoading(false);
     }
@@ -113,11 +98,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onOtpRequested }) => {
           </View>
         </KeyboardAvoidingView>
       </View>
-      <FirebaseRecaptchaVerifierModal
-        ref={recaptchaVerifier}
-        firebaseConfig={auth.app.options}
-        attemptInvisible={true}
-      />
     </ImageBackground>
   );
 };

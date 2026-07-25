@@ -27,29 +27,20 @@ export class SmsService {
 
       try {
         const msgText = encodeURIComponent(`Your Amar Hospital verification code is ${otpCode}`);
-        const getUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${apiKey}&route=q&message=${msgText}&flash=0&numbers=${tenDigits}`;
+        const getUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${apiKey}&route=q&message=${msgText}&numbers=${tenDigits}`;
         
-        let response = await fetch(getUrl, { method: 'GET' });
-        let bodyText = await response.text();
+        const response = await fetch(getUrl, { method: 'GET' });
+        const bodyText = await response.text();
         let resData: any = {};
         try {
           resData = JSON.parse(bodyText);
         } catch (e) {}
 
-        if (!response.ok || resData.return !== true) {
-          const otpUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${apiKey}&route=otp&variables_values=${otpCode}&numbers=${tenDigits}`;
-          response = await fetch(otpUrl, { method: 'GET' });
-          bodyText = await response.text();
-          try {
-            resData = JSON.parse(bodyText);
-          } catch (e) {}
-        }
-
         if (response.ok && resData.return === true) {
-          this.logger.log(`Fast2SMS OTP ${otpCode} sent successfully to ${tenDigits}`);
+          this.logger.log(`Fast2SMS Quick OTP ${otpCode} sent successfully to ${tenDigits}`);
           return otpCode;
         } else {
-          this.logger.error(`Fast2SMS send error: ${bodyText}`);
+          this.logger.error(`Fast2SMS Quick SMS error: ${bodyText}`);
           throw new BadRequestException(`Fast2SMS error: ${resData.message || bodyText}`);
         }
       } catch (err: any) {

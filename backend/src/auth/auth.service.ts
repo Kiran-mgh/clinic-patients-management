@@ -96,7 +96,7 @@ export class AuthService implements OnModuleInit {
     if ((mobileNumber === '+919999999999' || mobileNumber === '9999999999') && otpCode === '000000') {
       isValid = true;
       role = 'admin';
-    } else if (otpCode && otpCode.length === 6) {
+    } else if ((process.env.SMS_PROVIDER || 'mock') === 'mock' && otpCode && otpCode.length === 6) {
       isValid = true;
     } else if ((process.env.SMS_PROVIDER || 'mock') === 'msg91') {
       // Validate OTP using MSG91 OTP Verify API

@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ImageBackground } from 'react-native';
 import { api } from '../api';
+import { auth } from '../firebase';
+import { PhoneAuthProvider, signInWithCredential } from 'firebase/auth';
 
 interface OTPScreenProps {
   mobileNumber: string;
   testOtp?: string;
-  idToken?: string;
-  confirmationResult?: any;
+  verificationId?: string;
   onOtpVerified: (token: string, user: any, isNewUser: boolean) => void;
   onGoBack: () => void;
 }
 
-export const OTPScreen: React.FC<OTPScreenProps> = ({ mobileNumber, testOtp, idToken, confirmationResult, onOtpVerified, onGoBack }) => {
+export const OTPScreen: React.FC<OTPScreenProps> = ({ mobileNumber, testOtp, verificationId, onOtpVerified, onGoBack }) => {
   const [otpCode, setOtpCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -24,15 +25,14 @@ export const OTPScreen: React.FC<OTPScreenProps> = ({ mobileNumber, testOtp, idT
     setLoading(true);
     setError('');
     try {
-      if (confirmationResult && typeof confirmationResult.confirm === 'function') {
-        const credential = await confirmationResult.confirm(otpCode);
-        const firebaseIdToken = await credential.user.getIdToken();
+      if (verificationId && auth) {
+        const credential = PhoneAuthProvider.credential(verificationId, otpCode);
+        const userCredential = await signInWithCredential(auth, credential);
+        const firebaseIdToken = await userCredential.user.getIdToken();
         const res = await api.post('/auth/firebase/login', { idToken: firebaseIdToken, isStaff: false });
         onOtpVerified(res.accessToken, res.user, res.isNewUser);
       } else {
-        const endpoint = idToken ? '/auth/firebase/login' : '/auth/otp/verify';
-        const payload = idToken ? { idToken, isStaff: false } : { mobileNumber, otpCode };
-        const res = await api.post(endpoint, payload);
+        const res = await api.post('/auth/otp/verify', { mobileNumber, otpCode });
         onOtpVerified(res.accessToken, res.user, res.isNewUser);
       }
     } catch (err: any) {

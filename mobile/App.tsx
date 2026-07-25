@@ -13,13 +13,15 @@ export default function App() {
   const [otpSent, setOtpSent] = useState(false);
   const [mobileNumber, setMobileNumber] = useState('');
   const [testOtp, setTestOtp] = useState<string | undefined>(undefined);
+  const [verificationId, setVerificationId] = useState<string | undefined>(undefined);
   
   // Navigation State
   const [screen, setScreen] = useState<'register' | 'home' | 'contact' | 'profile'>('home');
 
-  const handleOtpRequested = (mobile: string, otp?: string) => {
+  const handleOtpRequested = (mobile: string, otp?: string, vId?: string) => {
     setMobileNumber(mobile);
     setTestOtp(otp);
+    setVerificationId(vId);
     setOtpSent(true);
   };
 
@@ -37,6 +39,7 @@ export default function App() {
     setOtpSent(false);
     setMobileNumber('');
     setTestOtp(undefined);
+    setVerificationId(undefined);
   };
 
   return (
@@ -49,6 +52,7 @@ export default function App() {
           <OTPScreen
             mobileNumber={mobileNumber}
             testOtp={testOtp}
+            verificationId={verificationId}
             onOtpVerified={handleOtpVerified}
             onGoBack={() => setOtpSent(false)}
           />

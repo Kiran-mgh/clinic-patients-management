@@ -48,6 +48,10 @@ export class SmsService {
 
     if (provider === 'firebase') {
       const apiKey = process.env.FIREBASE_WEB_API_KEY || process.env.FIREBASE_API_KEY;
+      if (!apiKey) {
+        this.logger.error('FIREBASE_WEB_API_KEY is not configured in .env');
+        throw new BadRequestException('FIREBASE_WEB_API_KEY is missing on server');
+      }
       const formattedPhone = mobileNumber.startsWith('+') ? mobileNumber : `+91${cleanMobile}`;
       try {
         const url = `https://identitytoolkit.googleapis.com/v1/accounts:sendVerificationCode?key=${apiKey}`;

@@ -31,9 +31,9 @@ import { QueueModule } from './queue/queue.module';
       useFactory: (configService: ConfigService) => {
         const dbHost = configService.get<string>('DB_HOST');
         const dbPort = configService.get<number>('DB_PORT', 5432);
-        const dbUsername = configService.get<string>('DB_USERNAME');
+        const dbUsername = configService.get<string>('DB_USERNAME') || configService.get<string>('DB_USER');
         const dbPassword = configService.get<string>('DB_PASSWORD');
-        const dbName = configService.get<string>('DB_DATABASE');
+        const dbName = configService.get<string>('DB_DATABASE') || configService.get<string>('DB_NAME');
 
         if (dbHost) {
           // PostgreSQL production config

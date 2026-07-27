@@ -74,7 +74,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       fontFamily: 'var(--font-main, sans-serif)',
       overflow: 'hidden'
     }}>
-      {/* Background Image with Reduced Opacity */}
+      {/* Background Image (Main Branch Styling) */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -84,8 +84,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         backgroundImage: `url('/waiting_room.png')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        opacity: 0.25,
-        filter: 'brightness(0.5) contrast(1.1)',
+        filter: 'brightness(0.65) contrast(1.05)',
         zIndex: 0
       }} />
 

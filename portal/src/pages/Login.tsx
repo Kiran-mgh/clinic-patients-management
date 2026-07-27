@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../api';
-import { Activity, UserCheck, Stethoscope, BarChart3, Smartphone, Lock } from 'lucide-react';
+import { Activity, Smartphone, Lock, Mail } from 'lucide-react';
 
 interface LoginProps {
   onLoginSuccess: (token: string, user: any) => void;
@@ -67,182 +67,87 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       minHeight: '100vh',
       width: '100vw',
       display: 'flex',
-      backgroundColor: '#f8f6f0',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      backgroundColor: '#0a1f18',
       fontFamily: 'var(--font-main, sans-serif)',
       overflow: 'hidden'
     }}>
-      {/* Left Split-Screen Hero Section */}
+      {/* Background Image with Reduced Opacity */}
       <div style={{
-        flex: 1,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: `url('/waiting_room.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        opacity: 0.25,
+        filter: 'brightness(0.5) contrast(1.1)',
+        zIndex: 0
+      }} />
+
+      {/* Centered Login Card */}
+      <div style={{
         position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: '48px',
-        color: '#ffffff',
-        overflow: 'hidden'
-      }}>
-        {/* Waiting Room Background Image */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: `url('/waiting_room.png')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          filter: 'brightness(0.65) contrast(1.05)',
-          zIndex: 0
-        }} />
-
-        {/* Top Logo */}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(8px)',
-            padding: '8px',
-            borderRadius: '8px',
-            display: 'flex'
-          }}>
-            <Activity size={20} color="#ffffff" />
-          </div>
-          <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.3px' }}>
-            Amar Hospital Console
-          </span>
-        </div>
-
-        {/* Center Headline */}
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: '540px', marginTop: 'auto', marginBottom: 'auto' }}>
-          <h1 style={{
-            fontSize: '3.25rem',
-            fontWeight: 800,
-            lineHeight: 1.1,
-            letterSpacing: '-1.5px',
-            marginBottom: '20px',
-            color: '#ffffff'
-          }}>
-            Streamline care.<br />
-            Optimize the queue.
-          </h1>
-          <p style={{
-            fontSize: '1.05rem',
-            lineHeight: 1.5,
-            color: 'rgba(255, 255, 255, 0.85)',
-            fontWeight: 400
-          }}>
-            Secure access to the Amar Hospital clinical operations console. Monitor patient arrivals, manage live queue flows, and access analytics reports.
-          </p>
-        </div>
-
-        {/* Bottom 3 Glassmorphism Cards */}
-        <div style={{
-          position: 'relative',
-          zIndex: 1,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '16px',
-          marginTop: '40px'
-        }}>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-            borderRadius: '12px',
-            padding: '16px'
-          }}>
-            <UserCheck size={18} color="rgba(255, 255, 255, 0.9)" style={{ marginBottom: '8px' }} />
-            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255, 255, 255, 0.6)' }}>
-              REGISTRY
-            </div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: '2px' }}>
-              Patient verification
-            </div>
-          </div>
-
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-            borderRadius: '12px',
-            padding: '16px'
-          }}>
-            <Stethoscope size={18} color="rgba(255, 255, 255, 0.9)" style={{ marginBottom: '8px' }} />
-            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255, 255, 255, 0.6)' }}>
-              QUEUE DESK
-            </div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: '2px' }}>
-              Real-time flow control
-            </div>
-          </div>
-
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.12)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-            borderRadius: '12px',
-            padding: '16px'
-          }}>
-            <BarChart3 size={18} color="rgba(255, 255, 255, 0.9)" style={{ marginBottom: '8px' }} />
-            <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: 'rgba(255, 255, 255, 0.6)' }}>
-              ANALYTICS
-            </div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: '2px' }}>
-              Operational reporting
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Split-Screen Sign-In Panel */}
-      <div style={{
-        width: '500px',
-        backgroundColor: '#f8f6f0',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '40px'
+        zIndex: 1,
+        width: '100%',
+        maxWidth: '420px',
+        padding: '20px'
       }}>
         <div style={{
-          width: '100%',
-          maxWidth: '380px',
           backgroundColor: '#ffffff',
           borderRadius: '24px',
-          padding: '36px',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.04)',
-          border: '1px solid rgba(0, 0, 0, 0.05)'
+          padding: '40px 36px',
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+          border: '1px solid rgba(255, 255, 255, 0.2)'
         }}>
-          {/* Subtitle & Title */}
-          <div style={{
-            fontSize: '0.7rem',
-            fontWeight: 700,
-            letterSpacing: '1.5px',
-            textTransform: 'uppercase',
-            color: '#718096',
-            marginBottom: '8px'
-          }}>
-            CLINIC PORTAL ACCESS
+          {/* Header */}
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+            <div style={{
+              background: '#234735',
+              color: '#ffffff',
+              width: '48px',
+              height: '48px',
+              borderRadius: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 14px auto',
+              boxShadow: '0 8px 16px rgba(35, 71, 53, 0.25)'
+            }}>
+              <Activity size={24} />
+            </div>
+            <div style={{
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              letterSpacing: '1.5px',
+              textTransform: 'uppercase',
+              color: '#718096',
+              marginBottom: '6px'
+            }}>
+              CLINIC PORTAL ACCESS
+            </div>
+            <h2 style={{
+              fontSize: '1.75rem',
+              fontWeight: 800,
+              color: '#1a3626',
+              margin: '0 0 6px 0',
+              letterSpacing: '-0.5px'
+            }}>
+              Staff Sign-In
+            </h2>
+            <p style={{
+              fontSize: '0.85rem',
+              color: '#718096',
+              lineHeight: 1.4,
+              margin: 0
+            }}>
+              Verify your credentials to manage daily patient queues.
+            </p>
           </div>
-          <h2 style={{
-            fontSize: '1.85rem',
-            fontWeight: 800,
-            color: '#1a3626',
-            margin: '0 0 10px 0',
-            letterSpacing: '-0.5px'
-          }}>
-            Staff Sign-In
-          </h2>
-          <p style={{
-            fontSize: '0.85rem',
-            color: '#718096',
-            lineHeight: 1.4,
-            margin: '0 0 24px 0'
-          }}>
-            Verify your credentials to manage daily patient queues.
-          </p>
 
           {error && (
             <div style={{
@@ -271,23 +176,26 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               }}>
                 MOBILE / EMAIL / USERNAME
               </label>
-              <input
-                type="text"
-                placeholder="e.g. 9035706668 or doctor@amarhospital.com"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '12px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid #e2e8f0',
-                  fontSize: '0.92rem',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  backgroundColor: '#ffffff'
-                }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  placeholder="e.g. 9035706668 or doctor@amarhospital.com"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px 12px 40px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e0',
+                    fontSize: '0.92rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    backgroundColor: '#ffffff'
+                  }}
+                />
+                <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#a0aec0' }} />
+              </div>
             </div>
 
             <div>
@@ -316,23 +224,26 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   Forgot Password?
                 </button>
               </div>
-              <input
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '12px 14px',
-                  borderRadius: '10px',
-                  border: '1px solid #e2e8f0',
-                  fontSize: '0.92rem',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  backgroundColor: '#ffffff'
-                }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px 12px 40px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e0',
+                    fontSize: '0.92rem',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                    backgroundColor: '#ffffff'
+                  }}
+                />
+                <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#a0aec0' }} />
+              </div>
             </div>
 
             <button
@@ -349,6 +260,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 fontSize: '0.95rem',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 marginTop: '8px',
+                boxShadow: '0 4px 12px rgba(35, 71, 53, 0.3)',
                 transition: 'background-color 0.2s ease'
               }}
             >
@@ -383,7 +295,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
+          background: 'rgba(0, 0, 0, 0.6)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -395,7 +307,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             padding: '32px',
             width: '100%',
             maxWidth: '400px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+            boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
           }}>
             <h3 style={{ margin: '0 0 8px 0', color: '#1a3626' }}>Reset Password</h3>
             <p style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '20px' }}>

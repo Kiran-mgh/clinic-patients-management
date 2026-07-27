@@ -318,12 +318,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tokenCard: {
-    borderColor: '#213932',
-    backgroundColor: 'rgba(33, 57, 50, 0.02)',
+    borderColor: 'rgba(245, 158, 11, 0.35)',
+    backgroundColor: '#fffdf0',
     alignItems: 'center',
   },
   tokenTitle: {
-    color: '#213932',
+    color: '#b45309',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.5,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   tokenNumber: {
     fontSize: 48,
     fontWeight: '900',
-    color: '#213932',
+    color: '#92400e',
     marginVertical: 12,
     letterSpacing: 2,
   },

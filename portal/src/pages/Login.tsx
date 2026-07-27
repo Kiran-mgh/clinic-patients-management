@@ -14,9 +14,13 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
   // Forgot password modal state
   const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetStep, setResetStep] = useState<'request' | 'submit'>('request');
   const [resetEmail, setResetEmail] = useState('');
+  const [resetTokenInput, setResetTokenInput] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMsg, setResetMsg] = useState('');
+  const [resetError, setResetError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,12 +55,51 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     setResetLoading(true);
     setResetMsg('');
+    setResetError('');
 
     try {
       const res = await api.post('/auth/password/reset-request', { email: resetEmail.trim() });
-      setResetMsg(res.message || 'Password reset request processed.');
+      setResetMsg(res.message || 'Reset code sent to your email.');
+      if (res.resetToken) {
+        setResetTokenInput(res.resetToken);
+      }
+      setResetStep('submit');
     } catch (err: any) {
-      setResetMsg(err.message || 'Failed to request password reset.');
+      setResetError(err.message || 'Failed to request password reset.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleSubmitPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetTokenInput.trim()) {
+      setResetError('Please enter the reset code sent to your email.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setResetError('New password must be at least 6 characters.');
+      return;
+    }
+
+    setResetLoading(true);
+    setResetMsg('');
+    setResetError('');
+
+    try {
+      const res = await api.post('/auth/password/reset', {
+        token: resetTokenInput.trim(),
+        newPassword,
+      });
+      setResetMsg(res.message || 'Password reset successfully! You can now log in.');
+      setTimeout(() => {
+        setShowForgotModal(false);
+        setResetStep('request');
+        setResetMsg('');
+        setResetError('');
+      }, 2500);
+    } catch (err: any) {
+      setResetError(err.message || 'Failed to reset password. Check your code.');
     } finally {
       setResetLoading(false);
     }
@@ -352,49 +395,127 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
           }}>
             <h3 style={{ margin: '0 0 8px 0', color: '#1a3626' }}>Reset Password</h3>
-            <p style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '20px' }}>
-              Enter your mandatory registered Email address to receive a password reset token.
-            </p>
 
             {resetMsg && (
               <div style={{ background: '#edf2f7', padding: '10px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '16px', color: '#2d3748' }}>
                 {resetMsg}
               </div>
             )}
-
-            <form onSubmit={handleRequestPasswordReset}>
-              <input
-                type="email"
-                placeholder="Enter registered email address"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-                required
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e0',
-                  marginBottom: '16px',
-                  boxSizing: 'border-box'
-                }}
-              />
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  onClick={() => { setShowForgotModal(false); setResetMsg(''); }}
-                  style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e0', background: '#ffffff', cursor: 'pointer' }}
-                >
-                  Close
-                </button>
-                <button
-                  type="submit"
-                  disabled={resetLoading}
-                  style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#234735', color: '#ffffff', fontWeight: 600, cursor: 'pointer' }}
-                >
-                  {resetLoading ? 'Sending...' : 'Request Reset'}
-                </button>
+            {resetError && (
+              <div style={{ background: '#fff5f5', padding: '10px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '16px', color: '#e53e3e' }}>
+                {resetError}
               </div>
-            </form>
+            )}
+
+            {resetStep === 'request' ? (
+              <form onSubmit={handleRequestPasswordReset}>
+                <p style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '16px' }}>
+                  Enter your registered email address to receive a password reset code in your inbox.
+                </p>
+                <input
+                  type="email"
+                  placeholder="Enter registered email address"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e0',
+                    marginBottom: '12px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <div style={{ marginBottom: '16px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setResetStep('submit')}
+                    style={{ background: 'none', border: 'none', color: '#234735', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  >
+                    Already have a reset code? Click here
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setShowForgotModal(false); setResetStep('request'); setResetMsg(''); setResetError(''); }}
+                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e0', background: '#ffffff', cursor: 'pointer' }}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#234735', color: '#ffffff', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    {resetLoading ? 'Sending...' : 'Send Code'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmitPasswordReset}>
+                <p style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '16px' }}>
+                  Enter the reset code sent to your email and your new password.
+                </p>
+                <input
+                  type="text"
+                  placeholder="Reset Code (e.g. 950niieiz...)"
+                  value={resetTokenInput}
+                  onChange={(e) => setResetTokenInput(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e0',
+                    marginBottom: '12px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <input
+                  type="password"
+                  placeholder="New Password (min 6 characters)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e0',
+                    marginBottom: '12px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <div style={{ marginBottom: '16px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setResetStep('request')}
+                    style={{ background: 'none', border: 'none', color: '#718096', fontSize: '0.8rem', cursor: 'pointer', padding: 0 }}
+                  >
+                    ← Need to resend email code?
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setShowForgotModal(false); setResetStep('request'); setResetMsg(''); setResetError(''); }}
+                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e0', background: '#ffffff', cursor: 'pointer' }}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#234735', color: '#ffffff', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    {resetLoading ? 'Resetting...' : 'Set New Password'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

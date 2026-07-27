@@ -13,11 +13,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Forgot Password modal
+  // Forgot Password modal state
   const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetStep, setResetStep] = useState<'request' | 'submit'>('request');
   const [resetEmail, setResetEmail] = useState('');
+  const [resetTokenInput, setResetTokenInput] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMsg, setResetMsg] = useState('');
+  const [resetError, setResetError] = useState('');
 
   const handleLogin = async () => {
     if (!identifier || !password) {
@@ -44,21 +48,66 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
 
   const handleRequestPasswordReset = async () => {
     if (!resetEmail) {
-      setResetMsg('Please enter your mandatory registered Email address.');
+      setResetError('Please enter your registered Email address.');
       return;
     }
 
     setResetLoading(true);
     setResetMsg('');
+    setResetError('');
 
     try {
       const res = await api.post('/auth/password/reset-request', { email: resetEmail.trim() });
-      setResetMsg(res.message || 'Reset link requested successfully.');
+      setResetMsg(res.message || 'Reset code sent to your email.');
+      if (res.resetToken) {
+        setResetTokenInput(res.resetToken);
+      }
+      setResetStep('submit');
     } catch (err: any) {
-      setResetMsg(err.message || 'Failed to request password reset.');
+      setResetError(err.message || 'Failed to request password reset.');
     } finally {
       setResetLoading(false);
     }
+  };
+
+  const handleSubmitPasswordReset = async () => {
+    if (!resetTokenInput.trim()) {
+      setResetError('Please enter the reset code sent to your email.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setResetError('New password must be at least 6 characters.');
+      return;
+    }
+
+    setResetLoading(true);
+    setResetMsg('');
+    setResetError('');
+
+    try {
+      const res = await api.post('/auth/password/reset', {
+        token: resetTokenInput.trim(),
+        newPassword,
+      });
+      setResetMsg(res.message || 'Password reset successfully! You can now log in.');
+      setTimeout(() => {
+        setShowForgotModal(false);
+        setResetStep('request');
+        setResetMsg('');
+        setResetError('');
+      }, 2500);
+    } catch (err: any) {
+      setResetError(err.message || 'Failed to reset password. Check your code.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const closeResetModal = () => {
+    setShowForgotModal(false);
+    setResetStep('request');
+    setResetMsg('');
+    setResetError('');
   };
 
   return (
@@ -142,46 +191,101 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
           visible={showForgotModal}
           transparent
           animationType="fade"
-          onRequestClose={() => setShowForgotModal(false)}
+          onRequestClose={closeResetModal}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Reset Password</Text>
-              <Text style={styles.modalSubtitle}>
-                Enter your registered Email address to receive a password reset token.
-              </Text>
 
               {resetMsg ? <Text style={styles.resetMsgText}>{resetMsg}</Text> : null}
+              {resetError ? <Text style={styles.errorText}>{resetError}</Text> : null}
 
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Enter mandatory registered email"
-                placeholderTextColor="#999"
-                value={resetEmail}
-                onChangeText={setResetEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-
-              <View style={styles.modalButtonRow}>
-                <TouchableOpacity
-                  style={styles.modalCancelButton}
-                  onPress={() => { setShowForgotModal(false); setResetMsg(''); }}
-                >
-                  <Text style={styles.modalCancelText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.modalSubmitButton}
-                  onPress={handleRequestPasswordReset}
-                  disabled={resetLoading}
-                >
-                  {resetLoading ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.modalSubmitText}>Request Reset</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
+              {resetStep === 'request' ? (
+                <>
+                  <Text style={styles.modalSubtitle}>
+                    Enter your registered email address. We will send a reset code to your inbox.
+                  </Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Enter registered email"
+                    placeholderTextColor="#999"
+                    value={resetEmail}
+                    onChangeText={setResetEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity
+                    style={{ marginBottom: 12 }}
+                    onPress={() => setResetStep('submit')}
+                  >
+                    <Text style={{ fontSize: 12, color: '#1a4d36', fontWeight: '600' }}>
+                      Already have a reset code? Tap here
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={styles.modalButtonRow}>
+                    <TouchableOpacity style={styles.modalCancelButton} onPress={closeResetModal}>
+                      <Text style={styles.modalCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.modalSubmitButton}
+                      onPress={handleRequestPasswordReset}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.modalSubmitText}>Send Code</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.modalSubtitle}>
+                    Enter the reset code sent to your email along with your new password.
+                  </Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Reset Code (e.g. 950niieiz...)"
+                    placeholderTextColor="#999"
+                    value={resetTokenInput}
+                    onChangeText={setResetTokenInput}
+                    autoCapitalize="none"
+                  />
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="New Password (min 6 chars)"
+                    placeholderTextColor="#999"
+                    secureTextEntry
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                  />
+                  <TouchableOpacity
+                    style={{ marginBottom: 12 }}
+                    onPress={() => setResetStep('request')}
+                  >
+                    <Text style={{ fontSize: 12, color: '#718096' }}>
+                      ← Need to resend email code?
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={styles.modalButtonRow}>
+                    <TouchableOpacity style={styles.modalCancelButton} onPress={closeResetModal}>
+                      <Text style={styles.modalCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.modalSubmitButton}
+                      onPress={handleSubmitPasswordReset}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.modalSubmitText}>Set New Password</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
             </View>
           </View>
         </Modal>
@@ -355,7 +459,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
-    marginBottom: 16,
+    marginBottom: 12,
+    color: '#2d3748',
   },
   modalButtonRow: {
     flexDirection: 'row',

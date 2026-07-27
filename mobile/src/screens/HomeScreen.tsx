@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { api, mockMobileSimulator } from '../api';
+import { api } from '../api';
 import { io } from 'socket.io-client';
 
 interface HomeScreenProps {
@@ -74,16 +74,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
     }
   };
 
-  const runSimulateAction = async (action: string) => {
-    if (action === 'approve') {
-      mockMobileSimulator.helperSimulateApproval('AH000077');
-    } else if (action === 'serve') {
-      mockMobileSimulator.helperSimulateServe();
-    } else if (action === 'cancel') {
-      mockMobileSimulator.helperSimulateCancel();
-    }
-    fetchProfileAndToken();
-  };
 
   if (loading && !profile) {
     return (
@@ -208,24 +198,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         </TouchableOpacity>
       </View>
 
-      {/* Simulator helper */}
-      {api.isMockMode() ? (
-        <View style={styles.simulatorBox}>
-          <Text style={styles.simTitle}>Local Mock Simulation tools</Text>
-          <Text style={styles.simText}>Since backend is offline, click below to mock admin approvals/actions:</Text>
-          <View style={styles.simGrid}>
-            <TouchableOpacity style={styles.simBtn} onPress={() => runSimulateAction('approve')}>
-              <Text style={styles.simBtnText}>Mock Approve Profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.simBtn} onPress={() => runSimulateAction('serve')}>
-              <Text style={styles.simBtnText}>Mock Served Token</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.simBtn} onPress={() => runSimulateAction('cancel')}>
-              <Text style={styles.simBtnText}>Mock Cancel Token</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : null}
+
     </ScrollView>
   );
 };

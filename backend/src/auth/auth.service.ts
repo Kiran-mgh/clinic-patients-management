@@ -245,8 +245,7 @@ export class AuthService implements OnModuleInit {
     }
 
     return {
-      message: `Password reset token generated and sent to ${user.email}.`,
-      resetToken,
+      message: `Password reset code sent to ${user.email}. Please check your inbox.`,
     };
   }
 

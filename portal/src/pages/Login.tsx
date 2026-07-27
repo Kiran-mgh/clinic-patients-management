@@ -60,9 +60,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     try {
       const res = await api.post('/auth/password/reset-request', { email: resetEmail.trim() });
       setResetMsg(res.message || 'Reset code sent to your email.');
-      if (res.resetToken) {
-        setResetTokenInput(res.resetToken);
-      }
+      setResetTokenInput('');
       setResetStep('submit');
     } catch (err: any) {
       setResetError(err.message || 'Failed to request password reset.');

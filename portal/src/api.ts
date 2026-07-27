@@ -12,45 +12,57 @@ const getHeaders = (token: string | null) => {
   };
 };
 
+const handleResponse = async (response: Response): Promise<any> => {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || `Request failed with status ${response.status}`);
+  }
+  return data;
+};
+
+const handleNetworkError = (err: any): never => {
+  if (err.name === 'TypeError' || err.message === 'Failed to fetch') {
+    throw new Error('Unable to reach the server. Please check your internet connection or try again later.');
+  }
+  throw err;
+};
+
 export const api = {
   async post(endpoint: string, body: any, token: string | null = null) {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      method: 'POST',
-      headers: getHeaders(token),
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.message || `Request failed with status ${response.status}`);
+    try {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: getHeaders(token),
+        body: JSON.stringify(body),
+      });
+      return await handleResponse(response);
+    } catch (err: any) {
+      handleNetworkError(err);
     }
-    return data;
   },
 
   async get(endpoint: string, token: string | null = null) {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      method: 'GET',
-      headers: getHeaders(token),
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.message || `Request failed with status ${response.status}`);
+    try {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'GET',
+        headers: getHeaders(token),
+      });
+      return await handleResponse(response);
+    } catch (err: any) {
+      handleNetworkError(err);
     }
-    return data;
   },
 
   async patch(endpoint: string, body: any, token: string | null = null) {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      method: 'PATCH',
-      headers: getHeaders(token),
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.message || `Request failed with status ${response.status}`);
+    try {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'PATCH',
+        headers: getHeaders(token),
+        body: JSON.stringify(body),
+      });
+      return await handleResponse(response);
+    } catch (err: any) {
+      handleNetworkError(err);
     }
-    return data;
   },
 };

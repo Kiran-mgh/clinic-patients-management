@@ -6,6 +6,7 @@ import { User } from '../entities/user.entity';
 import { OtpSession } from '../entities/otp-session.entity';
 import * as jwt from 'jsonwebtoken';
 import * as crypto from 'crypto';
+import * as nodemailer from 'nodemailer';
 
 import { SmsService } from './sms.service';
 import { RegisterDto } from './dto/register.dto';
@@ -193,6 +194,53 @@ export class AuthService implements OnModuleInit {
     await this.userRepository.save(user);
 
     console.log(`[PASSWORD RESET] Email: ${user.email} | Reset Token: ${resetToken}`);
+
+    // Dispatch real email via SMTP if configured
+    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const smtpPort = Number(process.env.SMTP_PORT) || 587;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const fromEmail = process.env.FROM_EMAIL || smtpUser || 'noreply@amarhospital.com';
+
+    if (smtpUser && smtpPass && smtpUser !== 'yourclinic@gmail.com') {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpPort === 465,
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+        });
+
+        const mailOptions = {
+          from: `"Amar Hospital" <${fromEmail}>`,
+          to: user.email,
+          subject: 'Amar Hospital - Password Reset Token',
+          text: `Hello,\n\nYou requested a password reset for your Amar Hospital account (${user.email}).\n\nYour reset token is: ${resetToken}\n\nThis token will expire in 1 hour.`,
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+              <h2 style="color: #213932;">Amar Hospital - Password Reset</h2>
+              <p>Hello,</p>
+              <p>You requested a password reset for your account (<strong>${user.email}</strong>).</p>
+              <p>Your password reset token is:</p>
+              <div style="background: #f4f4f5; padding: 12px 20px; font-size: 18px; font-weight: bold; letter-spacing: 1px; border-radius: 8px; display: inline-block; color: #213932; margin: 10px 0;">
+                ${resetToken}
+              </div>
+              <p style="margin-top: 15px; color: #666;">This token will expire in 1 hour.</p>
+            </div>
+          `,
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`[SMTP EMAIL SENT] Successfully sent password reset email to ${user.email}`);
+      } catch (mailError: any) {
+        console.error(`[SMTP EMAIL ERROR] Failed to send email to ${user.email}: ${mailError.message}`);
+      }
+    } else {
+      console.warn(`[SMTP WARN] Real SMTP credentials (SMTP_USER / SMTP_PASS) are not set in .env. Email not sent.`);
+    }
 
     return {
       message: `Password reset token generated and sent to ${user.email}.`,

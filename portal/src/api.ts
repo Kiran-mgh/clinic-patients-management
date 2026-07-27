@@ -127,22 +127,35 @@ const mockApi = {
   },
 
   async post(endpoint: string, body: any) {
-    // 1. Auth OTP request
+    // 1. Password Login Mock
+    if (endpoint === '/auth/login') {
+      return {
+        accessToken: 'mock_jwt_token_123',
+        isNewUser: false,
+        user: { id: 'admin_1', mobileNumber: body.identifier || '9999999999', email: 'doctor@amarhospital.com', role: 'admin', name: 'Dr. Amar' },
+      };
+    }
+    // 2. Password Reset Request Mock
+    if (endpoint === '/auth/password/reset-request') {
+      return { message: `Password reset link generated and sent to ${body.email || 'your email'}.` };
+    }
+    // 3. Password Reset Mock
+    if (endpoint === '/auth/password/reset') {
+      return { message: 'Password reset successfully. You can now log in.' };
+    }
+    // 4. Legacy OTP request
     if (endpoint === '/auth/otp/request') {
       return { message: 'OTP sent successfully', otpCode: '000000' };
     }
-    // 2. Auth OTP verify
+    // 5. Legacy OTP verify
     if (endpoint === '/auth/otp/verify') {
-      if ((body.mobileNumber === '+919999999999' || body.mobileNumber === '9999999999') && body.otpCode === '000000') {
-        return {
-          accessToken: 'mock_jwt_admin_token',
-          isNewUser: false,
-          user: { id: 'admin_1', mobileNumber: body.mobileNumber, role: 'admin' },
-        };
-      }
-      throw new Error('Invalid code. Use 9999999999 and OTP 000000 for Admin');
+      return {
+        accessToken: 'mock_jwt_admin_token',
+        isNewUser: false,
+        user: { id: 'admin_1', mobileNumber: body.mobileNumber, role: 'admin' },
+      };
     }
-    // 3. Approve patient
+    // 6. Approve patient
     if (endpoint.startsWith('/patients/') && endpoint.endsWith('/approve')) {
       const parts = endpoint.split('/');
       const id = parts[2];
@@ -155,14 +168,13 @@ const mockApi = {
       this.savePatients(patients);
       return { message: 'Patient approved successfully', patientId: patient.patientId, status: 'active' };
     }
-    // 3.5. Create patient by staff
+    // 7. Create patient by staff
     if (endpoint === '/patients/create') {
       const patients = this.getPatients();
       const duplicate = patients.find((p: any) => p.user?.mobileNumber === body.mobileNumber);
       if (duplicate) {
         throw new Error('Patient profile already exists for this mobile number');
       }
-      // Generate unique sequential looking ID or use custom
       let patientId = body.existingPatientId;
       if (!patientId) {
         const lastPatient = [...patients]
@@ -194,16 +206,14 @@ const mockApi = {
       this.savePatients(patients);
       return newPatient;
     }
-    // 4. Call next token
+    // 8. Call next token
     if (endpoint === '/queue/call-next') {
       const tokens = this.getTokens();
-      // Mark current in progress as served
       tokens.forEach((t: any) => {
         if (t.serviceType === body.serviceType && t.status === 'in_progress') {
           t.status = 'served';
         }
       });
-      // Call next waiting
       const waiting = tokens.find((t: any) => t.serviceType === body.serviceType && t.status === 'waiting');
       if (!waiting) throw new Error(`No waiting patients in the ${body.serviceType} queue today.`);
       waiting.status = 'in_progress';
@@ -214,7 +224,6 @@ const mockApi = {
   },
 
   async get(endpoint: string) {
-    // Reports & Analytics
     if (endpoint.startsWith('/queue/reports')) {
       const params = new URLSearchParams(endpoint.split('?')[1]);
       const startDateStr = params.get('startDate') || '';
@@ -226,8 +235,6 @@ const mockApi = {
       end.setHours(23, 59, 59, 999);
       
       const tokens = this.getTokens();
-      
-      // Filter tokens by date range and served status
       const filtered = tokens.filter((t: any) => {
         const date = new Date(t.generatedAt);
         return t.status === 'served' && date >= start && date <= end;
@@ -236,7 +243,6 @@ const mockApi = {
       const medicine = filtered.filter((t: any) => t.serviceType === 'medicine').length;
       const treatment = filtered.filter((t: any) => t.serviceType === 'treatment').length;
       
-      // Monthly breakdown
       const monthlyMap = new Map<string, { month: string; medicine: number; treatment: number; total: number }>();
       filtered.forEach((t: any) => {
         const date = new Date(t.generatedAt);
@@ -270,7 +276,6 @@ const mockApi = {
       };
     }
 
-    // Patient Detail
     if (endpoint.startsWith('/patients/') && endpoint.endsWith('/detail')) {
       const parts = endpoint.split('/');
       const id = parts[2];
@@ -287,11 +292,9 @@ const mockApi = {
         tokens: patientTokens
       };
     }
-    // 1. Pending Approvals
     if (endpoint === '/patients/pending') {
       return this.getPatients().filter((p: any) => p.status === 'pending_approval' || p.status === 'pending_verification');
     }
-    // 2. Search Patients
     if (endpoint.startsWith('/patients/search')) {
       const params = new URLSearchParams(endpoint.split('?')[1]);
       const query = params.get('query')?.toLowerCase() || '';
@@ -301,11 +304,9 @@ const mockApi = {
         p.user.mobileNumber.includes(query)
       );
     }
-    // 3. Today Queue
     if (endpoint === '/queue/today') {
       return this.getTokens();
     }
-    // 4. Dashboard Metrics
     if (endpoint === '/queue/dashboard') {
       const tokens = this.getTokens();
       const patients = this.getPatients();
@@ -332,7 +333,6 @@ const mockApi = {
   },
 
   async patch(endpoint: string, body: any) {
-    // Update token status
     if (endpoint.startsWith('/queue/tokens/') && endpoint.endsWith('/status')) {
       const parts = endpoint.split('/');
       const id = parts[3];

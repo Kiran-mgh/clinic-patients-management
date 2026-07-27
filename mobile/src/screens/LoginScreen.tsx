@@ -246,11 +246,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
                   </Text>
                   <TextInput
                     style={styles.modalInput}
-                    placeholder="Reset Code (e.g. 950niieiz...)"
+                    placeholder="6-digit Reset Code (e.g. 482910)"
                     placeholderTextColor="#999"
+                    keyboardType="number-pad"
+                    maxLength={6}
                     value={resetTokenInput}
                     onChangeText={setResetTokenInput}
-                    autoCapitalize="none"
                   />
                   <TextInput
                     style={styles.modalInput}

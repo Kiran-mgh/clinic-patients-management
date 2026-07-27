@@ -460,9 +460,10 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 </p>
                 <input
                   type="text"
-                  placeholder="Reset Code (e.g. 950niieiz...)"
+                  placeholder="6-digit Reset Code (e.g. 482910)"
+                  maxLength={6}
                   value={resetTokenInput}
-                  onChange={(e) => setResetTokenInput(e.target.value)}
+                  onChange={(e) => setResetTokenInput(e.target.value.replace(/\D/g, ''))}
                   required
                   style={{
                     width: '100%',

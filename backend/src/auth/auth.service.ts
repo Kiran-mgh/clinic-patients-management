@@ -185,7 +185,7 @@ export class AuthService implements OnModuleInit {
       throw new NotFoundException('User is not registered. Please create an account first.');
     }
 
-    const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1);
 
@@ -193,7 +193,7 @@ export class AuthService implements OnModuleInit {
     user.resetTokenExpires = expiresAt;
     await this.userRepository.save(user);
 
-    console.log(`[PASSWORD RESET] Email: ${user.email} | Reset Token: ${resetToken}`);
+    console.log(`[PASSWORD RESET] Email: ${user.email} | Reset Code: ${resetToken}`);
 
     // Dispatch real email via SMTP if configured
     const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
@@ -217,29 +217,31 @@ export class AuthService implements OnModuleInit {
         const mailOptions = {
           from: `"Amar Hospital" <${fromEmail}>`,
           to: user.email,
-          subject: 'Amar Hospital - Password Reset Token',
-          text: `Hello,\n\nYou requested a password reset for your Amar Hospital account (${user.email}).\n\nYour reset token is: ${resetToken}\n\nThis token will expire in 1 hour.`,
+          subject: 'Amar Hospital - Password Reset Code',
+          text: `Hello,\n\nYou requested a password reset for your Amar Hospital account (${user.email}).\n\nYour 6-digit reset code is: ${resetToken}\n\nThis code will expire in 1 hour.`,
           html: `
-            <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-              <h2 style="color: #213932;">Amar Hospital - Password Reset</h2>
-              <p>Hello,</p>
-              <p>You requested a password reset for your account (<strong>${user.email}</strong>).</p>
-              <p>Your password reset token is:</p>
-              <div style="background: #f4f4f5; padding: 12px 20px; font-size: 18px; font-weight: bold; letter-spacing: 1px; border-radius: 8px; display: inline-block; color: #213932; margin: 10px 0;">
+            <div style="font-family: Arial, sans-serif; padding: 24px; color: #333; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px;">
+              <h2 style="color: #213932; margin-top: 0;">🏥 Amar Hospital</h2>
+              <h3 style="color: #1a365d; margin-bottom: 8px;">Password Reset Request</h3>
+              <p style="font-size: 14px; color: #4a5568;">Hello,</p>
+              <p style="font-size: 14px; color: #4a5568;">You requested to reset your password for account <strong>${user.email}</strong>. Use the 6-digit verification code below in the app or portal:</p>
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 16px 24px; font-size: 28px; font-weight: 800; letter-spacing: 6px; text-align: center; border-radius: 12px; color: #166534; margin: 20px 0;">
                 ${resetToken}
               </div>
-              <p style="margin-top: 15px; color: #666;">This token will expire in 1 hour.</p>
+              <p style="font-size: 13px; color: #718096;">Enter this 6-digit code in your app to create a new password. This code will expire in 1 hour.</p>
+              <hr style="border: 0; border-top: 1px solid #edf2f7; margin: 20px 0;" />
+              <p style="font-size: 11px; color: #a0aec0; text-align: center;">If you did not request a password reset, please ignore this email.</p>
             </div>
           `,
         };
 
         await transporter.sendMail(mailOptions);
-        console.log(`[SMTP EMAIL SENT] Successfully sent password reset email to ${user.email}`);
+        console.log(`[SMTP EMAIL SENT] Successfully sent 6-digit reset code to ${user.email}`);
       } catch (mailError: any) {
         console.error(`[SMTP EMAIL ERROR] Failed to send email to ${user.email}: ${mailError.message}`);
       }
     } else {
-      console.warn(`[SMTP WARN] Real SMTP credentials (SMTP_USER / SMTP_PASS) are not set in .env. Email not sent.`);
+      console.warn(`[SMTP WARN] Real SMTP credentials (SMTP_USER / SMTP_PASS) are not set in .env. Reset code logged: ${resetToken}`);
     }
 
     return {

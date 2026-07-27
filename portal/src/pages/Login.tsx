@@ -89,13 +89,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         token: resetTokenInput.trim(),
         newPassword,
       });
-      setResetMsg(res.message || 'Password reset successfully! You can now log in.');
-      setTimeout(() => {
-        setShowForgotModal(false);
-        setResetStep('request');
-        setResetMsg('');
-        setResetError('');
-      }, 2500);
+      alert('Password reset successfully! You can now log in.');
+      setShowForgotModal(false);
+      setResetStep('request');
+      setResetMsg('');
+      setResetError('');
     } catch (err: any) {
       setResetError(err.message || 'Failed to reset password. Check your code.');
     } finally {

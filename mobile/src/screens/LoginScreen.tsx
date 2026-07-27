@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ImageBackground, Modal } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ImageBackground, Modal, Alert } from 'react-native';
 import { api } from '../api';
 
 interface LoginScreenProps {
@@ -87,13 +87,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
         token: resetTokenInput.trim(),
         newPassword,
       });
-      setResetMsg(res.message || 'Password reset successfully! You can now log in.');
-      setTimeout(() => {
-        setShowForgotModal(false);
-        setResetStep('request');
-        setResetMsg('');
-        setResetError('');
-      }, 2500);
+      Alert.alert('Success', 'Password reset successfully! You can now log in.');
+      closeResetModal();
     } catch (err: any) {
       setResetError(err.message || 'Failed to reset password. Check your code.');
     } finally {

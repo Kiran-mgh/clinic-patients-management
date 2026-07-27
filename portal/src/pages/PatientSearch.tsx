@@ -594,6 +594,10 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
                   <span style={{ fontWeight: 600 }}>{selectedPatient.user?.mobileNumber}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
+                  <span style={{ color: 'hsl(var(--text-muted))' }}>Email:</span>
+                  <span style={{ fontWeight: 600 }}>{selectedPatient.user?.email || selectedPatient.email || '—'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
                   <span style={{ color: 'hsl(var(--text-muted))' }}>Gender:</span>
                   <span style={{ fontWeight: 600 }}>{selectedPatient.gender}</span>
                 </div>

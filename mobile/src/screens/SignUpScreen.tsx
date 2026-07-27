@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, TextInput, TouchableOpacity,
-  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  ActivityIndicator, ScrollView, Platform,
 } from 'react-native';
 import { api } from '../api';
 
@@ -65,11 +65,12 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onG
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#0a2318' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scroll}>
+    <View style={styles.root}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.logo}>🏥 Amar Hospital</Text>
           <Text style={styles.subtitle}>Create your patient account</Text>
@@ -148,15 +149,20 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onSignUpSuccess, onG
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#0a2318',
+  },
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
+    paddingBottom: 40,
   },
   header: {
     alignItems: 'center',

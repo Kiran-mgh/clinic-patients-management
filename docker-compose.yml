@@ -5,9 +5,9 @@ services:
     image: postgres:15-alpine
     container_name: amar-db
     environment:
-      POSTGRES_USER: ${DB_USERNAME:-amar_admin}
+      POSTGRES_USER: ${DB_USER:-${DB_USERNAME:-amar_admin}}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePasswordChangeMe!}
-      POSTGRES_DB: ${DB_DATABASE:-amar_hospital}
+      POSTGRES_DB: ${DB_NAME:-${DB_DATABASE:-amar_hospital}}
     ports:
       - "5432:5432"
     volumes:

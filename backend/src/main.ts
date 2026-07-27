@@ -13,7 +13,9 @@ async function bootstrap() {
   });
 
   // Set global endpoint prefix
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: ['privacy-policy'],
+  });
 
   // Enable global DTO validation
   app.useGlobalPipes(

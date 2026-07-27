@@ -1,41 +1,35 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RequestOtpDto } from './dto/request-otp.dto';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { LoginFirebaseDto } from './dto/login-firebase.dto';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
+import { ResetPasswordRequestDto } from './dto/reset-password-request.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('otp/request')
-  @HttpCode(HttpStatus.OK)
-  async requestOtp(@Body() requestOtpDto: RequestOtpDto) {
-    const otpCode = await this.authService.requestOtp(requestOtpDto.mobileNumber, requestOtpDto.isStaff);
-    
-    const response: any = {
-      message: 'OTP sent successfully',
-    };
-
-    const trimmed = requestOtpDto.mobileNumber?.trim();
-    const isBypass = trimmed === '9999999999' || trimmed === '+919999999999';
-
-    if (process.env.NODE_ENV !== 'production' || isBypass) {
-      response.otpCode = otpCode;
-    }
-
-    return response;
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
 
-  @Post('otp/verify')
+  @Post('login')
   @HttpCode(HttpStatus.OK)
-  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
-    return this.authService.verifyOtp(verifyOtpDto.mobileNumber, verifyOtpDto.otpCode);
+  async login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
   }
 
-  @Post('firebase/login')
+  @Post('password/reset-request')
   @HttpCode(HttpStatus.OK)
-  async loginFirebase(@Body() loginFirebaseDto: LoginFirebaseDto) {
-    return this.authService.verifyFirebaseToken(loginFirebaseDto.idToken, loginFirebaseDto.isStaff);
+  async requestPasswordReset(@Body() dto: ResetPasswordRequestDto) {
+    return this.authService.requestPasswordReset(dto.email);
+  }
+
+  @Post('password/reset')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 }

@@ -1,28 +1,31 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ImageBackground } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ImageBackground, Modal, Alert } from 'react-native';
 import { api } from '../api';
 
 interface LoginScreenProps {
-  onOtpRequested: (mobile: string, testOtp?: string) => void;
+  onLoginSuccess: (token: string, user: any, isNewUser: boolean) => void;
+  onNavigateRegister: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onOtpRequested }) => {
-  const [mobileNumber, setMobileNumber] = useState('');
+export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavigateRegister }) => {
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleRequestOtp = async () => {
-    if (!mobileNumber) {
-      setError('Please enter your mobile number.');
-      return;
-    }
+  // Forgot Password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetStep, setResetStep] = useState<'request' | 'submit'>('request');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetTokenInput, setResetTokenInput] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMsg, setResetMsg] = useState('');
+  const [resetError, setResetError] = useState('');
 
-    const trimmed = mobileNumber.trim();
-    const isBypass = trimmed === '+919999999999' || trimmed === '9999999999';
-    const isTenDigits = /^\d{10}$/.test(trimmed);
-
-    if (!isBypass && !isTenDigits) {
-      setError('Mobile number must be exactly 10 digits.');
+  const handleLogin = async () => {
+    if (!identifier || !password) {
+      setError('Please enter your Identifier (Mobile / Email / Name) and Password.');
       return;
     }
 
@@ -30,23 +33,74 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onOtpRequested }) => {
     setError('');
 
     try {
-      if (trimmed === '9035706668' || trimmed === '+919035706668') {
-        onOtpRequested(trimmed, '903570');
-      } else if (isBypass) {
-        onOtpRequested(trimmed, '000000');
-      } else {
-        try {
-          const res = await api.post('/auth/otp/request', { mobileNumber: trimmed });
-          onOtpRequested(trimmed, res.otpCode);
-        } catch (serverErr: any) {
-          onOtpRequested(trimmed);
-        }
-      }
+      const res = await api.post('/auth/login', {
+        identifier: identifier.trim(),
+        password: password.trim(),
+      });
+
+      onLoginSuccess(res.accessToken, res.user, res.isNewUser);
     } catch (err: any) {
-      setError(err.message || 'Failed to send OTP. Please check your network.');
+      setError(err.message || 'Login failed. Check your identifier and password.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRequestPasswordReset = async () => {
+    if (!resetEmail) {
+      setResetError('Please enter your registered Email address.');
+      return;
+    }
+
+    setResetLoading(true);
+    setResetMsg('');
+    setResetError('');
+
+    try {
+      const res = await api.post('/auth/password/reset-request', { email: resetEmail.trim() });
+      setResetMsg(res.message || 'Reset code sent to your email.');
+      setResetTokenInput('');
+      setResetStep('submit');
+    } catch (err: any) {
+      setResetError(err.message || 'Failed to request password reset.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleSubmitPasswordReset = async () => {
+    if (!resetTokenInput.trim()) {
+      setResetError('Please enter the reset code sent to your email.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setResetError('New password must be at least 6 characters.');
+      return;
+    }
+
+    setResetLoading(true);
+    setResetMsg('');
+    setResetError('');
+
+    try {
+      const res = await api.post('/auth/password/reset', {
+        token: resetTokenInput.trim(),
+        newPassword,
+      });
+      Alert.alert('Success', 'Password reset successfully! You can now log in.');
+      closeResetModal();
+    } catch (err: any) {
+      setResetError(err.message || 'Failed to reset password. Check your code.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const closeResetModal = () => {
+    setShowForgotModal(false);
+    setResetStep('request');
+    setResetMsg('');
+    setResetError('');
   };
 
   return (
@@ -55,58 +109,180 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onOtpRequested }) => {
       style={styles.backgroundImage}
       resizeMode="cover"
     >
-      {/* Gradient overlay simulation */}
       <View style={styles.overlay}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.container}
         >
-          {/* Header section with brand and typography matching portal */}
+          {/* Header section */}
           <View style={styles.heroSection}>
             <View style={styles.logoRow}>
               <Text style={styles.logoIcon}>🏥</Text>
               <Text style={styles.logoText}>Amar Hospital</Text>
             </View>
-            <Text style={styles.heroTitle}>Skip the wait.{"\n"}Save the chair.</Text>
-            <Text style={styles.heroDesc}>
-              Generate your queue token in seconds. No paperwork, no crowds — just walk in when it's your turn.
-            </Text>
+            <Text style={styles.subTitle}>Ayurvedic Healthcare Patient Console</Text>
           </View>
 
-          {/* White login card floating at bottom */}
+          {/* Form card */}
           <View style={styles.card}>
-            <Text style={styles.cardHeader}>PATIENT LOGIN</Text>
-            <Text style={styles.cardTitle}>Get today's token</Text>
-            <Text style={styles.cardSub}>Use your mobile number to receive access OTP.</Text>
+            <Text style={styles.cardHeader}>Sign In</Text>
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>MOBILE NUMBER (PASSWORD)</Text>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Identifier (Mobile / Email / Username)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="+91 98765 43210"
-                placeholderTextColor="#a0aec0"
-                keyboardType="phone-pad"
-                value={mobileNumber}
-                onChangeText={(text) => { setMobileNumber(text.replace(/[^0-9+]/g, '')); setError(''); }}
-                maxLength={mobileNumber.startsWith('+') ? 13 : 10}
+                placeholder="e.g. 9035706668 or patient@gmail.com"
+                placeholderTextColor="#999"
+                value={identifier}
+                onChangeText={setIdentifier}
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <View style={styles.passwordRow}>
+                <Text style={styles.inputLabel}>Password</Text>
+                <TouchableOpacity onPress={() => setShowForgotModal(true)}>
+                  <Text style={styles.forgotLink}>Forgot Password?</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your password"
+                placeholderTextColor="#999"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
               />
             </View>
 
             <TouchableOpacity
-              style={styles.button}
-              onPress={handleRequestOtp}
+              style={styles.primaryButton}
+              onPress={handleLogin}
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color="#ffffff" />
+                <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonText}>Login & Generate Token</Text>
+                <Text style={styles.primaryButtonText}>Log In</Text>
               )}
             </TouchableOpacity>
+
+            <View style={styles.registerRow}>
+              <Text style={styles.registerText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={onNavigateRegister}>
+                <Text style={styles.registerLink}>Register Account</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAvoidingView>
+
+        {/* Forgot Password Modal */}
+        <Modal
+          visible={showForgotModal}
+          transparent
+          animationType="fade"
+          onRequestClose={closeResetModal}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Reset Password</Text>
+
+              {resetMsg ? <Text style={styles.resetMsgText}>{resetMsg}</Text> : null}
+              {resetError ? <Text style={styles.errorText}>{resetError}</Text> : null}
+
+              {resetStep === 'request' ? (
+                <>
+                  <Text style={styles.modalSubtitle}>
+                    Enter your registered email address. We will send a reset code to your inbox.
+                  </Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="Enter registered email"
+                    placeholderTextColor="#999"
+                    value={resetEmail}
+                    onChangeText={setResetEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity
+                    style={{ marginBottom: 12 }}
+                    onPress={() => setResetStep('submit')}
+                  >
+                    <Text style={{ fontSize: 12, color: '#1a4d36', fontWeight: '600' }}>
+                      Already have a reset code? Tap here
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={styles.modalButtonRow}>
+                    <TouchableOpacity style={styles.modalCancelButton} onPress={closeResetModal}>
+                      <Text style={styles.modalCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.modalSubmitButton}
+                      onPress={handleRequestPasswordReset}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.modalSubmitText}>Send Code</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.modalSubtitle}>
+                    Enter the reset code sent to your email along with your new password.
+                  </Text>
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="6-digit Reset Code (e.g. 482910)"
+                    placeholderTextColor="#999"
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    value={resetTokenInput}
+                    onChangeText={setResetTokenInput}
+                  />
+                  <TextInput
+                    style={styles.modalInput}
+                    placeholder="New Password (min 6 chars)"
+                    placeholderTextColor="#999"
+                    secureTextEntry
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                  />
+                  <TouchableOpacity
+                    style={{ marginBottom: 12 }}
+                    onPress={() => setResetStep('request')}
+                  >
+                    <Text style={{ fontSize: 12, color: '#718096' }}>
+                      ← Need to resend email code?
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={styles.modalButtonRow}>
+                    <TouchableOpacity style={styles.modalCancelButton} onPress={closeResetModal}>
+                      <Text style={styles.modalCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.modalSubmitButton}
+                      onPress={handleSubmitPasswordReset}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.modalSubmitText}>Set New Password</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </View>
+          </View>
+        </Modal>
       </View>
     </ImageBackground>
   );
@@ -120,118 +296,191 @@ const styles = StyleSheet.create({
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(33, 57, 50, 0.65)', // Forest green shading matching web portal
+    backgroundColor: 'rgba(0, 30, 15, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   container: {
-    flex: 1,
-    justifyContent: 'space-between',
-    padding: 24,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    width: '100%',
+    maxWidth: 400,
   },
   heroSection: {
-    width: '100%',
-    marginTop: 20,
+    alignItems: 'center',
+    marginBottom: 30,
   },
   logoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 24,
+    marginBottom: 8,
   },
   logoIcon: {
-    fontSize: 20,
+    fontSize: 28,
+    marginRight: 8,
   },
   logoText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  heroTitle: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '800',
     color: '#ffffff',
-    lineHeight: 38,
-    marginBottom: 12,
+    letterSpacing: 0.5,
   },
-  heroDesc: {
+  subTitle: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: 20,
-    fontWeight: '400',
-    maxWidth: '90%',
+    color: '#e2e8f0',
+    textAlign: 'center',
   },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
     padding: 24,
-    width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 20,
-    elevation: 5,
+    elevation: 8,
   },
   cardHeader: {
-    fontSize: 10,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#718096',
-    letterSpacing: 1.5,
-    marginBottom: 4,
-  },
-  cardTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#213932',
-    marginBottom: 4,
-  },
-  cardSub: {
-    fontSize: 12,
-    color: '#718096',
-    lineHeight: 16,
+    color: '#1a365d',
     marginBottom: 20,
-  },
-  formGroup: {
-    width: '100%',
-    marginBottom: 16,
-  },
-  label: {
-    color: '#718096',
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginBottom: 6,
-  },
-  input: {
-    backgroundColor: '#fcfbfa',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    color: '#1a202c',
-    fontSize: 15,
-  },
-  button: {
-    backgroundColor: '#213932',
-    borderRadius: 12,
-    paddingVertical: 14,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '700',
+    textAlign: 'center',
   },
   errorText: {
-    color: '#f43f5e',
+    backgroundColor: '#fff5f5',
+    color: '#e53e3e',
+    padding: 10,
+    borderRadius: 8,
     fontSize: 13,
-    fontWeight: '500',
+    marginBottom: 16,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4a5568',
+    marginBottom: 6,
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  forgotLink: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#2b6cb0',
+  },
+  input: {
+    backgroundColor: '#f7fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#2d3748',
+  },
+  primaryButton: {
+    backgroundColor: '#1a4d36',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  registerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  registerText: {
+    fontSize: 14,
+    color: '#718096',
+  },
+  registerLink: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1a4d36',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a4d36',
+    marginBottom: 6,
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: '#718096',
+    marginBottom: 14,
+  },
+  resetMsgText: {
+    backgroundColor: '#edf2f7',
+    color: '#2d3748',
+    padding: 10,
+    borderRadius: 8,
+    fontSize: 12,
     marginBottom: 12,
-    textAlign: 'center',
+  },
+  modalInput: {
+    backgroundColor: '#f7fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    marginBottom: 12,
+    color: '#2d3748',
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  modalCancelButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#cbd5e0',
+  },
+  modalCancelText: {
+    color: '#4a5568',
+    fontSize: 14,
+  },
+  modalSubmitButton: {
+    backgroundColor: '#1a4d36',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  modalSubmitText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "amar-hospital-mobile",
+    "slug": "kiran",
+    "version": "1.0.0",
+    "sdkVersion": "49.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "android": {
+      "package": "com.anonymous.amarhospitalmobile"
+    },
+    "ios": {
+      "bundleIdentifier": "com.anonymous.amarhospitalmobile"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0489f480-11eb-4305-86b4-6207dbc695a0"
+      }
+    },
+    "owner": "kiranbhimanna-team"
+  }
+}

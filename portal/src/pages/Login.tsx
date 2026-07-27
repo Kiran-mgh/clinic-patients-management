@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { api } from '../api';
-import { auth } from '../firebase';
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { Activity, UserCheck, Stethoscope, BarChart3, Smartphone } from 'lucide-react';
 
 interface LoginProps {
@@ -9,90 +7,97 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [step, setStep] = useState(1); // 1: enter phone, 2: enter otp
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [infoMsg, setInfoMsg] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
-  const setupRecaptcha = () => {
-    if (!(window as any).recaptchaVerifier) {
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        size: 'invisible',
-        callback: () => {},
-      });
-    }
-    return (window as any).recaptchaVerifier;
-  };
+  // Forgot password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetStep, setResetStep] = useState<'request' | 'submit'>('request');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetTokenInput, setResetTokenInput] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMsg, setResetMsg] = useState('');
+  const [resetError, setResetError] = useState('');
 
-  const handleRequestOtp = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mobileNumber) return;
-
-    const trimmed = mobileNumber.trim();
-    const isBypass = trimmed === '+919999999999' || trimmed === '9999999999';
-    const isTenDigits = /^\d{10}$/.test(trimmed);
-
-    if (!isBypass && !isTenDigits) {
-      setError('Mobile number must be exactly 10 digits (e.g. 9876543210).');
+    if (!identifier || !password) {
+      setError('Please enter your Identifier (Mobile / Email / Username) and Password.');
       return;
     }
 
     setLoading(true);
     setError('');
 
-    const formattedPhone = trimmed.startsWith('+') ? trimmed : `+91${trimmed}`;
-
     try {
-      if (!isBypass && import.meta.env.VITE_USE_FIREBASE === 'true') {
-        const verifier = setupRecaptcha();
-        const confirmation = await signInWithPhoneNumber(auth, formattedPhone, verifier);
-        setConfirmationResult(confirmation);
-        setStep(2);
-        setInfoMsg('SMS OTP dispatched via Firebase Auth');
-      } else {
-        const res = await api.post('/auth/otp/request', { mobileNumber: trimmed, isStaff: true });
-        setStep(2);
-        if (res.otpCode) {
-          setInfoMsg(`Test OTP Code generated: ${res.otpCode}`);
-        } else {
-          setInfoMsg('OTP sent successfully');
-        }
+      const res = await api.post('/auth/login', {
+        identifier: identifier.trim(),
+        password: password.trim(),
+      });
+
+      if (res.user.role !== 'admin' && res.user.role !== 'doctor') {
+        throw new Error('Access denied: You must be an admin or doctor to access this portal.');
       }
+      onLoginSuccess(res.accessToken, res.user);
     } catch (err: any) {
-      setError(err.message || 'Failed to request OTP');
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
+  const handleRequestPasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otpCode) return;
-    setLoading(true);
-    setError('');
+    if (!resetEmail) return;
+
+    setResetLoading(true);
+    setResetMsg('');
+    setResetError('');
+
     try {
-      if (confirmationResult) {
-        const credential = await confirmationResult.confirm(otpCode);
-        const idToken = await credential.user.getIdToken();
-        const res = await api.post('/auth/firebase/login', { idToken, isStaff: true });
-        if (res.user.role !== 'admin' && res.user.role !== 'doctor') {
-          throw new Error('Access denied: You must be an admin or doctor to access this portal.');
-        }
-        onLoginSuccess(res.accessToken, res.user);
-      } else {
-        const res = await api.post('/auth/otp/verify', { mobileNumber, otpCode });
-        if (res.user.role !== 'admin' && res.user.role !== 'doctor') {
-          throw new Error('Access denied: You must be an admin or doctor to access this portal.');
-        }
-        onLoginSuccess(res.accessToken, res.user);
-      }
+      const res = await api.post('/auth/password/reset-request', { email: resetEmail.trim() });
+      setResetMsg(res.message || 'Reset code sent to your email.');
+      setResetTokenInput('');
+      setResetStep('submit');
     } catch (err: any) {
-      setError(err.message || 'OTP verification failed');
+      setResetError(err.message || 'Failed to request password reset.');
     } finally {
-      setLoading(false);
+      setResetLoading(false);
+    }
+  };
+
+  const handleSubmitPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetTokenInput.trim()) {
+      setResetError('Please enter the reset code sent to your email.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setResetError('New password must be at least 6 characters.');
+      return;
+    }
+
+    setResetLoading(true);
+    setResetMsg('');
+    setResetError('');
+
+    try {
+      const res = await api.post('/auth/password/reset', {
+        token: resetTokenInput.trim(),
+        newPassword,
+      });
+      alert('Password reset successfully! You can now log in.');
+      setShowForgotModal(false);
+      setResetStep('request');
+      setResetMsg('');
+      setResetError('');
+    } catch (err: any) {
+      setResetError(err.message || 'Failed to reset password. Check your code.');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -103,8 +108,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       backgroundColor: '#f7f6f2',
       fontFamily: "'Inter', sans-serif"
     }}>
-      
-      {/* LEFT PANEL: Hero Image with Overlay */}
+      {/* LEFT PANEL: Hero Image with Overlay (Identical to main branch) */}
       <div style={{
         flex: 1.1,
         backgroundImage: 'linear-gradient(to bottom, rgba(33, 57, 50, 0.4), rgba(21, 35, 30, 0.85)), url("/waiting_room.png")',
@@ -215,7 +219,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         </div>
       </div>
 
-      {/* RIGHT PANEL: Form card */}
+      {/* RIGHT PANEL: Form card (Identical layout to main branch) */}
       <div style={{
         flex: 1,
         display: 'flex',
@@ -260,7 +264,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             lineHeight: 1.5,
             marginBottom: '32px'
           }}>
-            Verify your mobile credentials to manage daily patient queues. OTP credentials will be dispatched.
+            Verify your credentials to manage daily patient queues.
           </p>
 
           {error && (
@@ -278,105 +282,240 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             </div>
           )}
 
-          {infoMsg && (
-            <div style={{
-              backgroundColor: 'hsla(150, 55%, 32%, 0.06)',
-              border: '1px solid hsla(150, 55%, 32%, 0.15)',
-              color: 'hsl(var(--success))',
-              padding: '12px 16px',
-              borderRadius: '8px',
-              fontSize: '0.85rem',
-              marginBottom: '24px',
-              fontWeight: 500
-            }}>
-              {infoMsg}
-            </div>
-          )}
-
-          <div id="recaptcha-container"></div>
-
-          {step === 1 ? (
-            <form onSubmit={handleRequestOtp}>
-              <div className="form-group">
-                <label style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Mobile Number
-                </label>
-                <input
-                  type="tel"
-                  placeholder="+919999999999"
-                  value={mobileNumber}
-                  onChange={(e) => setMobileNumber(e.target.value.replace(/[^0-9+]/g, ''))}
-                  maxLength={mobileNumber.startsWith('+') ? 13 : 10}
-                  className="form-input"
-                  required
-                  style={{ borderRadius: '12px', border: '1px solid #d1d5db', padding: '14px 16px' }}
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', borderRadius: '12px', marginTop: '16px', fontSize: '0.95rem' }} disabled={loading}>
-                {loading ? 'Sending Request...' : 'Get Today OTP'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyOtp}>
-              <div className="form-group">
-                <label style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Verification OTP
-                </label>
-                <input
-                  type="text"
-                  placeholder="000000"
-                  maxLength={6}
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
-                  className="form-input"
-                  required
-                  style={{
-                    borderRadius: '12px',
-                    border: '1px solid #d1d5db',
-                    padding: '14px 16px',
-                    textAlign: 'center',
-                    letterSpacing: '10px',
-                    fontSize: '1.25rem',
-                    fontWeight: 700
-                  }}
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', borderRadius: '12px', marginTop: '16px', fontSize: '0.95rem' }} disabled={loading}>
-                {loading ? 'Verifying OTP...' : 'Login & Open Dashboard'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ width: '100%', padding: '12px', borderRadius: '12px', marginTop: '12px', fontSize: '0.9rem' }}
-                onClick={() => { setStep(1); setInfoMsg(''); setError(''); }}
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="form-group">
+              <label style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>
+                Mobile / Email / Username
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. 9035706668 or doctor@amarhospital.com"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                className="form-input"
+                required
                 disabled={loading}
-              >
-                Go Back
-              </button>
-            </form>
-          )}
+                style={{ width: '100%', borderRadius: '12px', border: '1px solid #d1d5db', padding: '14px 16px', fontSize: '0.95rem', boxSizing: 'border-box' }}
+              />
+            </div>
 
-          {/* Test bypass details */}
+            <div className="form-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'hsl(var(--primary))',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Forgot Password?
+                </button>
+              </div>
+              <input
+                type="password"
+                placeholder="Enter password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="form-input"
+                required
+                disabled={loading}
+                style={{ width: '100%', borderRadius: '12px', border: '1px solid #d1d5db', padding: '14px 16px', fontSize: '0.95rem', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', borderRadius: '12px', marginTop: '8px', fontSize: '0.95rem', fontWeight: 700 }} disabled={loading}>
+              {loading ? 'Authenticating...' : 'Sign In to Console'}
+            </button>
+          </form>
+
+          {/* Development Bypass Box (Identical to main branch) */}
           <div style={{
-            marginTop: '36px',
+            marginTop: '32px',
+            paddingTop: '24px',
             borderTop: '1px solid hsl(var(--border-color))',
-            paddingTop: '20px',
             display: 'flex',
-            gap: '12px',
-            color: 'hsl(var(--text-muted))',
-            fontSize: '0.8rem',
-            lineHeight: '1.45'
+            alignItems: 'flex-start',
+            gap: '12px'
           }}>
-            <Smartphone size={28} style={{ flexShrink: 0, color: 'hsl(var(--primary))' }} />
+            <div style={{
+              padding: '8px',
+              backgroundColor: 'hsl(var(--bg-muted))',
+              borderRadius: '8px',
+              color: 'hsl(var(--text-muted))'
+            }}>
+              <Smartphone size={16} />
+            </div>
             <div>
-              <strong>Local Development Bypass:</strong><br />
-              Staff Login: <strong>+919999999999</strong><br />
-              Access OTP: <strong>000000</strong>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'hsl(var(--text-main))', display: 'block' }}>
+                Local Development Bypass:
+              </span>
+              <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', display: 'block', marginTop: '2px' }}>
+                Staff Login: <strong style={{ color: 'hsl(var(--text-main))' }}>+919999999999</strong>
+              </span>
+              <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', display: 'block', marginTop: '2px' }}>
+                Access Password: <strong style={{ color: 'hsl(var(--text-main))' }}>000000</strong>
+              </span>
             </div>
           </div>
         </div>
       </div>
-      
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10
+        }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            padding: '32px',
+            width: '100%',
+            maxWidth: '400px',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+          }}>
+            <h3 style={{ margin: '0 0 8px 0', color: '#1a3626' }}>Reset Password</h3>
+
+            {resetMsg && (
+              <div style={{ background: '#edf2f7', padding: '10px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '16px', color: '#2d3748' }}>
+                {resetMsg}
+              </div>
+            )}
+            {resetError && (
+              <div style={{ background: '#fff5f5', padding: '10px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '16px', color: '#e53e3e' }}>
+                {resetError}
+              </div>
+            )}
+
+            {resetStep === 'request' ? (
+              <form onSubmit={handleRequestPasswordReset}>
+                <p style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '16px' }}>
+                  Enter your registered email address to receive a password reset code in your inbox.
+                </p>
+                <input
+                  type="email"
+                  placeholder="Enter registered email address"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e0',
+                    marginBottom: '12px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <div style={{ marginBottom: '16px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setResetStep('submit')}
+                    style={{ background: 'none', border: 'none', color: '#234735', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                  >
+                    Already have a reset code? Click here
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setShowForgotModal(false); setResetStep('request'); setResetMsg(''); setResetError(''); }}
+                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e0', background: '#ffffff', cursor: 'pointer' }}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#234735', color: '#ffffff', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    {resetLoading ? 'Sending...' : 'Send Code'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmitPasswordReset}>
+                <p style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '16px' }}>
+                  Enter the reset code sent to your email and your new password.
+                </p>
+                <input
+                  type="text"
+                  placeholder="6-digit Reset Code (e.g. 482910)"
+                  maxLength={6}
+                  value={resetTokenInput}
+                  onChange={(e) => setResetTokenInput(e.target.value.replace(/\D/g, ''))}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e0',
+                    marginBottom: '12px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <input
+                  type="password"
+                  placeholder="New Password (min 6 characters)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e0',
+                    marginBottom: '12px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+                <div style={{ marginBottom: '16px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setResetStep('request')}
+                    style={{ background: 'none', border: 'none', color: '#718096', fontSize: '0.8rem', cursor: 'pointer', padding: 0 }}
+                  >
+                    ← Need to resend email code?
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setShowForgotModal(false); setResetStep('request'); setResetMsg(''); setResetError(''); }}
+                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e0', background: '#ffffff', cursor: 'pointer' }}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: '#234735', color: '#ffffff', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    {resetLoading ? 'Resetting...' : 'Set New Password'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

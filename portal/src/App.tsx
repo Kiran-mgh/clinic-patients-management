@@ -5,9 +5,14 @@ import { PatientVerification } from './pages/PatientVerification';
 import { QueueManagement } from './pages/QueueManagement';
 import { PatientSearch } from './pages/PatientSearch';
 import { Reports } from './pages/Reports';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { LayoutDashboard, UserCheck, Stethoscope, Search, LogOut, Activity, BarChart3 } from 'lucide-react';
 
 function App() {
+  if (typeof window !== 'undefined' && window.location.pathname === '/privacy-policy') {
+    return <PrivacyPolicy />;
+  }
+
   const [token, setToken] = useState<string | null>(localStorage.getItem('amar_staff_token'));
   const [user, setUser] = useState<any>(null);
   const [screen, setScreen] = useState<'dashboard' | 'verification' | 'queue' | 'search' | 'reports'>('dashboard');

@@ -203,8 +203,8 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
       return;
     }
 
-    if (newEmail.trim() && !/\S+@\S+\.\S+/.test(newEmail)) {
-      setFormError('Invalid email address format.');
+    if (!newEmail.trim() || !/\S+@\S+\.\S+/.test(newEmail)) {
+      setFormError('Email address is required and must be valid.');
       return;
     }
 
@@ -373,9 +373,10 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
               </div>
 
               <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(var(--text-muted))' }}>Email Address</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(var(--text-muted))' }}>Email Address *</label>
                 <input
                   type="email"
+                  required
                   placeholder="e.g. user@example.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
@@ -591,6 +592,10 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
                   <span style={{ color: 'hsl(var(--text-muted))' }}>Mobile:</span>
                   <span style={{ fontWeight: 600 }}>{selectedPatient.user?.mobileNumber}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
+                  <span style={{ color: 'hsl(var(--text-muted))' }}>Email:</span>
+                  <span style={{ fontWeight: 600 }}>{selectedPatient.user?.email || selectedPatient.email || '—'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
                   <span style={{ color: 'hsl(var(--text-muted))' }}>Gender:</span>

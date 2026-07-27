@@ -9,6 +9,7 @@ import { User } from '../entities/user.entity';
 import { OtpSession } from '../entities/otp-session.entity';
 import { JwtStrategy } from './jwt.strategy';
 import { SmsService } from './sms.service';
+import { WhatsappService } from './whatsapp.service';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { SmsService } from './sms.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, SmsService],
-  exports: [AuthService, JwtModule, PassportModule, SmsService],
+  providers: [AuthService, JwtStrategy, SmsService, WhatsappService],
+  exports: [AuthService, JwtModule, PassportModule, SmsService, WhatsappService],
 })
 export class AuthModule {}

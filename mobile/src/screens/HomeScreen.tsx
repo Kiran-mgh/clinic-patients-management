@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { api, mockMobileSimulator } from '../api';
+import { api } from '../api';
 import { io } from 'socket.io-client';
 
 interface HomeScreenProps {
@@ -74,16 +74,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
     }
   };
 
-  const runSimulateAction = async (action: string) => {
-    if (action === 'approve') {
-      mockMobileSimulator.helperSimulateApproval('AH000077');
-    } else if (action === 'serve') {
-      mockMobileSimulator.helperSimulateServe();
-    } else if (action === 'cancel') {
-      mockMobileSimulator.helperSimulateCancel();
-    }
-    fetchProfileAndToken();
-  };
 
   if (loading && !profile) {
     return (
@@ -208,24 +198,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         </TouchableOpacity>
       </View>
 
-      {/* Simulator helper */}
-      {api.isMockMode() ? (
-        <View style={styles.simulatorBox}>
-          <Text style={styles.simTitle}>Local Mock Simulation tools</Text>
-          <Text style={styles.simText}>Since backend is offline, click below to mock admin approvals/actions:</Text>
-          <View style={styles.simGrid}>
-            <TouchableOpacity style={styles.simBtn} onPress={() => runSimulateAction('approve')}>
-              <Text style={styles.simBtnText}>Mock Approve Profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.simBtn} onPress={() => runSimulateAction('serve')}>
-              <Text style={styles.simBtnText}>Mock Served Token</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.simBtn} onPress={() => runSimulateAction('cancel')}>
-              <Text style={styles.simBtnText}>Mock Cancel Token</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : null}
+
     </ScrollView>
   );
 };
@@ -345,12 +318,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tokenCard: {
-    borderColor: '#213932',
-    backgroundColor: 'rgba(33, 57, 50, 0.02)',
+    borderColor: 'rgba(245, 158, 11, 0.35)',
+    backgroundColor: '#fffdf0',
     alignItems: 'center',
   },
   tokenTitle: {
-    color: '#213932',
+    color: '#b45309',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.5,
@@ -358,7 +331,7 @@ const styles = StyleSheet.create({
   tokenNumber: {
     fontSize: 48,
     fontWeight: '900',
-    color: '#213932',
+    color: '#92400e',
     marginVertical: 12,
     letterSpacing: 2,
   },

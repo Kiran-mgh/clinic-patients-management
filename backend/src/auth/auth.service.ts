@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException, OnModuleInit } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -175,9 +175,13 @@ export class AuthService implements OnModuleInit {
 
   async requestPasswordReset(email: string): Promise<{ message: string; resetToken?: string }> {
     const trimmedEmail = email.trim().toLowerCase();
-    const user = await this.userRepository.findOne({ where: { email: trimmedEmail } });
+    const user = await this.userRepository.findOne({
+      where: { email: trimmedEmail },
+      relations: ['patient'],
+    });
+
     if (!user) {
-      return { message: 'If an account exists with this email, a password reset token has been generated.' };
+      throw new NotFoundException('User is not registered. Please create an account first.');
     }
 
     const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -191,7 +195,7 @@ export class AuthService implements OnModuleInit {
     console.log(`[PASSWORD RESET] Email: ${user.email} | Reset Token: ${resetToken}`);
 
     return {
-      message: 'Password reset token generated successfully.',
+      message: `Password reset token generated and sent to ${user.email}.`,
       resetToken,
     };
   }

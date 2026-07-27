@@ -30,25 +30,26 @@ export class AuthService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    // Seed authorized doctors from environment whitelist on startup
+    // Seed authorized doctors from environment whitelist on startup (supports Email or Mobile Number)
     const doctorsEnv = process.env.AUTHORIZED_DOCTORS || '';
     if (doctorsEnv) {
-      const doctorNumbers = doctorsEnv.split(',').map((num) => num.trim());
-      for (const mobileNumber of doctorNumbers) {
-        if (!mobileNumber) continue;
-        const existing = await this.userRepository.findOne({ where: { mobileNumber } });
+      const doctorEntries = doctorsEnv.split(',').map((item) => item.trim()).filter(Boolean);
+      for (const entry of doctorEntries) {
+        const isEmail = entry.includes('@');
+        const whereClause = isEmail ? { email: entry.toLowerCase() } : { mobileNumber: entry };
+
+        const existing = await this.userRepository.findOne({ where: whereClause });
         if (!existing) {
           const newDoc = this.userRepository.create({
-            mobileNumber,
+            ...(isEmail ? { email: entry.toLowerCase() } : { mobileNumber: entry }),
             role: 'doctor',
           });
           await this.userRepository.save(newDoc);
-          console.log(`[SEED] Pre-registered doctor mobile number: ${mobileNumber}`);
+          console.log(`[SEED] Pre-registered doctor entry: ${entry}`);
         } else if (existing.role === 'patient') {
-          // Promote existing user to doctor if they are added to the whitelist
           existing.role = 'doctor';
           await this.userRepository.save(existing);
-          console.log(`[SEED] Promoted existing user to doctor: ${mobileNumber}`);
+          console.log(`[SEED] Promoted existing user to doctor: ${entry}`);
         }
       }
     }
@@ -72,7 +73,12 @@ export class AuthService implements OnModuleInit {
     }
 
     const hashedPassword = this.hashPassword(password);
-    const userRole = role || 'patient';
+    
+    // Auto-promote if email or mobile is listed in AUTHORIZED_DOCTORS
+    const doctorsEnv = process.env.AUTHORIZED_DOCTORS || '';
+    const whitelist = doctorsEnv.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const isWhitelisted = whitelist.includes(trimmedEmail) || whitelist.includes(trimmedMobile);
+    const userRole = isWhitelisted ? 'doctor' : (role || 'patient');
 
     const newUser = this.userRepository.create({
       email: trimmedEmail,

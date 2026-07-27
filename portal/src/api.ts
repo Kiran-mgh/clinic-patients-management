@@ -137,7 +137,13 @@ const mockApi = {
     }
     // 2. Password Reset Request Mock
     if (endpoint === '/auth/password/reset-request') {
-      return { message: `Password reset link generated and sent to ${body.email || 'your email'}.` };
+      const email = body.email ? body.email.trim().toLowerCase() : '';
+      const patients = this.getPatients();
+      const isRegistered = email === 'doctor@amarhospital.com' || email === 'admin@amarhospital.com' || patients.some((p: any) => p.email && p.email.toLowerCase() === email);
+      if (!isRegistered) {
+        throw new Error('User is not registered. Please create an account first.');
+      }
+      return { message: `Password reset link generated and sent to ${email}.` };
     }
     // 3. Password Reset Mock
     if (endpoint === '/auth/password/reset') {

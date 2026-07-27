@@ -26,14 +26,3 @@ services:
     depends_on:
       - postgres
     restart: always
-
-  portal:
-    build:
-      context: ./portal
-      dockerfile: Dockerfile
-    container_name: amar-portal
-    ports:
-      - "8080:8080"
-    depends_on:
-      - backend
-    restart: always

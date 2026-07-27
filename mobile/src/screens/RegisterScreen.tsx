@@ -121,7 +121,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ token, onRegistr
   const handleRegister = async () => {
     setError('');
 
-    if (!fullName.trim() || !dateOfBirth.trim() || !town.trim()) {
+    if (!fullName.trim() || !dateOfBirth.trim() || !town.trim() || !email.trim()) {
       setError('Please fill in all mandatory fields (*)');
       return;
     }
@@ -133,13 +133,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ token, onRegistr
       return;
     }
 
-    // Optional Email Validation
-    if (email.trim()) {
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(email.trim())) {
-        setError('Please enter a valid email address.');
-        return;
-      }
+    // Mandatory Email Validation
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email.trim())) {
+      setError('Please enter a valid email address.');
+      return;
     }
 
     if (isExisting && hasPatientId && !existingPatientId.trim()) {
@@ -155,7 +153,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ token, onRegistr
         fullName: fullName.trim(),
         gender,
         dateOfBirth: dateOfBirth.trim(),
-        email: email.trim() || undefined,
+        email: email.trim(),
         bloodGroup: bloodGroup.trim() || undefined,
         profession: profession.trim(),
         town: town.trim(),
@@ -252,7 +250,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ token, onRegistr
 
         {/* Email */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>EMAIL (OPTIONAL)</Text>
+          <Text style={styles.label}>EMAIL ADDRESS *</Text>
           <TextInput
             style={styles.input}
             placeholder="john@example.com"

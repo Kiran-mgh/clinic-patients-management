@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SafeAreaView, StyleSheet, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LoginScreen } from './src/screens/LoginScreen';
+import { SignUpScreen } from './src/screens/SignUpScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ContactScreen } from './src/screens/ContactScreen';
@@ -10,10 +11,18 @@ import { ProfileScreen } from './src/screens/ProfileScreen';
 export default function App() {
   const [token, setToken] = useState<string | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'signUp'>('login');
-  
+
   // Navigation State
   const [screen, setScreen] = useState<'register' | 'home' | 'contact' | 'profile'>('home');
 
+  // Step 1: User creates account via /auth/register → gets JWT
+  const handleSignUpSuccess = (newToken: string, user: any) => {
+    setToken(newToken);
+    // After account creation, always show the patient profile registration form
+    setScreen('register');
+  };
+
+  // Step 2: User logs in → if isNewUser (no patient profile yet) → go to register profile
   const handleLoginSuccess = (newToken: string, user: any, isNewUser: boolean) => {
     setToken(newToken);
     if (isNewUser) {
@@ -38,9 +47,8 @@ export default function App() {
             onNavigateRegister={() => setAuthMode('signUp')}
           />
         ) : (
-          <RegisterScreen
-            token={null}
-            onRegistrationSuccess={() => setAuthMode('login')}
+          <SignUpScreen
+            onSignUpSuccess={handleSignUpSuccess}
             onGoBack={() => setAuthMode('login')}
           />
         )

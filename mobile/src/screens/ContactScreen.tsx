@@ -74,12 +74,12 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>📞 Contact Details</Text>
         <View style={styles.contactItem}>
-          <Text style={styles.contactLabel}>Hospital Name:</Text>
-          <Text style={styles.contactValue}>Amar Hospital</Text>
+          <Text style={styles.contactLabel}>Clinic Name:</Text>
+          <Text style={styles.contactValue}>Amar Ayurveda</Text>
         </View>
         <View style={styles.contactItem}>
           <Text style={styles.contactLabel}>Address:</Text>
-          <Text style={styles.contactValue}>Amar Hospital Road, Near Town Junction, Palakkad, Kerala</Text>
+          <Text style={styles.contactValue}>Amar Ayurveda Road, Near Town Junction, Palakkad, Kerala</Text>
         </View>
         <View style={styles.contactItem}>
           <Text style={styles.contactLabel}>Phone:</Text>

@@ -124,7 +124,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
                 source={require('../../assets/logo.png')}
                 style={{ width: 44, height: 44, resizeMode: 'contain', marginRight: 10, borderRadius: 8, backgroundColor: '#ffffff', padding: 4 }}
               />
-              <Text style={styles.logoText}>Amar Hospital</Text>
+              <Text style={styles.logoText}>Amar Ayurveda</Text>
             </View>
             <Text style={styles.subTitle}>Ayurvedic Healthcare Patient Console</Text>
           </View>

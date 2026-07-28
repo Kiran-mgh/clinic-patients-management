@@ -8,38 +8,30 @@ export const PrivacyPolicy: React.FC = () => {
       
       <section style={{ marginTop: '24px' }}>
         <h2>1. Introduction</h2>
-        <p>Welcome to <strong>Amar Hospital (Amar Ayurveda)</strong>. We respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our mobile application and web portal.</p>
-      </section>
+        <p>Welcome to <strong>Amar Ayurveda</strong>. We respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our mobile application and web portal.</p>
 
-      <section style={{ marginTop: '20px' }}>
-        <h2>2. Information We Collect</h2>
-        <p>We collect essential information to provide healthcare management services, including:</p>
+        <h3>1. Information We Collect</h3>
+        <p>We collect information you provide directly to us when registering an account, generating clinic tokens, or communicating with us. This includes:</p>
         <ul>
-          <li>Mobile phone numbers (for OTP authentication and token notifications)</li>
-          <li>Patient names and basic registration details</li>
-          <li>Clinic queue tokens and appointment schedules</li>
+          <li><strong>Personal Details:</strong> Full Name, Date of Birth, Gender, Town/Residence Area, Profession, and Blood Group.</li>
+          <li><strong>Contact Details:</strong> Mobile Number and Email Address.</li>
+          <li><strong>Account Data:</strong> Encrypted authentication credentials.</li>
         </ul>
-      </section>
 
-      <section style={{ marginTop: '20px' }}>
-        <h2>3. How We Use Your Information</h2>
-        <p>Your information is strictly used for:</p>
+        <h3>2. How We Use Your Information</h3>
+        <p>We use the collected data solely for healthcare operational purposes:</p>
         <ul>
-          <li>Authenticating your identity via OTP (SMS and WhatsApp)</li>
-          <li>Issuing and managing clinic queue tokens</li>
-          <li>Sending real-time consultation notifications</li>
+          <li>To generate daily consultation tokens and manage real-time clinic queue status.</li>
+          <li>To verify patient identity and link digital registrations with clinic medical records.</li>
+          <li>To send password reset security codes and essential notification updates.</li>
         </ul>
-      </section>
 
-      <section style={{ marginTop: '20px' }}>
-        <h2>4. Data Protection & Security</h2>
-        <p>We implement industry-standard encryption protocols (SSL/TLS, JWT authentication, and secure database storage) to ensure your data remains confidential and protected.</p>
-      </section>
+        <h3>3. Data Sharing & Security</h3>
+        <p>We implement strict administrative, technical, and physical security measures to protect your personal information against unauthorized access, disclosure, or alteration. We do <strong>NOT</strong> sell, trade, or share your personal information with third-party marketers.</p>
 
-      <section style={{ marginTop: '20px' }}>
-        <h2>5. Contact Us</h2>
-        <p>If you have any questions regarding this Privacy Policy, please contact us at:</p>
-        <p><strong>Amar Hospital (Amar Ayurveda)</strong><br />Email: privacy@amarhospital.com<br />Website: https://amar.vistarafabtech.com</p>
+        <h3>4. Contact Us</h3>
+        <p>If you have any questions or concerns regarding this Privacy Policy, please contact us at:</p>
+        <p><strong>Amar Ayurveda</strong><br />Email: privacy@amarhospital.com<br />Website: https://amar.vistarafabtech.com</p>
       </section>
     </div>
   );

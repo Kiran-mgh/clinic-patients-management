@@ -49,8 +49,8 @@ function App() {
       <aside className="sidebar" style={{ backgroundColor: '#ffffff' }}>
         {/* Brand */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '40px' }}>
-          <img src="/logo.png" alt="Amar Hospital Logo" style={{ height: '36px', width: '36px', objectFit: 'contain' }} />
-          <span className="brand-font" style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.5px', color: 'hsl(155, 30%, 20%)' }}>Amar Hospital</span>
+          <img src="/logo.png" alt="Amar Ayurveda Logo" style={{ height: '36px', width: '36px', objectFit: 'contain' }} />
+          <span className="brand-font" style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.5px', color: 'hsl(155, 30%, 20%)' }}>Amar Ayurveda</span>
         </div>
 
         {/* Links */}

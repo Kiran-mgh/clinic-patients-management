@@ -216,13 +216,13 @@ export class AuthService implements OnModuleInit {
         });
 
         const mailOptions = {
-          from: `"Amar Hospital" <${fromEmail}>`,
+          from: `"Amar Ayurveda" <${fromEmail}>`,
           to: user.email,
-          subject: 'Amar Hospital - Password Reset Code',
-          text: `Hello,\n\nYou requested a password reset for your Amar Hospital account (${user.email}).\n\nYour 6-digit reset code is: ${resetToken}\n\nThis code will expire in 1 hour.`,
+          subject: 'Amar Ayurveda - Password Reset Code',
+          text: `Hello,\n\nYou requested a password reset for your Amar Ayurveda account (${user.email}).\n\nYour 6-digit reset code is: ${resetToken}\n\nThis code will expire in 1 hour.`,
           html: `
             <div style="font-family: Arial, sans-serif; padding: 24px; color: #333; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px;">
-              <h2 style="color: #213932; margin-top: 0;">🏥 Amar Hospital</h2>
+              <h2 style="color: #213932; margin-top: 0;">🌿 Amar Ayurveda</h2>
               <h3 style="color: #1a365d; margin-bottom: 8px;">Password Reset Request</h3>
               <p style="font-size: 14px; color: #4a5568;">Hello,</p>
               <p style="font-size: 14px; color: #4a5568;">You requested to reset your password for account <strong>${user.email}</strong>. Use the 6-digit verification code below in the app or portal:</p>

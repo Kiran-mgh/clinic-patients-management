@@ -172,7 +172,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
               <Text style={styles.backText}>Sign In</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.subtitle}>AMAR HOSPITAL PATIENT REGISTRY</Text>
+          <Text style={styles.subtitle}>AMAR AYURVEDA PATIENT REGISTRY</Text>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -264,7 +264,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
 
           <View style={styles.divider} />
 
-          <Text style={styles.label}>Are you an existing patient of Amar Hospital?</Text>
+          <Text style={styles.label}>Are you an existing patient of Amar Ayurveda?</Text>
           <View style={styles.toggleRow}>
             <TouchableOpacity style={[styles.toggleBtn, isExisting && styles.toggleBtnActive]}
               onPress={() => setIsExisting(true)}>

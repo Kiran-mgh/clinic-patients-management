@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as basicAuth from 'express-basic-auth';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -23,6 +24,19 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
+    }),
+  );
+
+  // Basic HTTP Auth Protection for Swagger API Docs
+  const swaggerUser = process.env.SWAGGER_USER || 'admin';
+  const swaggerPass = process.env.SWAGGER_PASS || 'AmarAyurveda2026!';
+  app.use(
+    ['/api/docs', '/api/docs-json', '/api/docs-yaml'],
+    basicAuth({
+      challenge: true,
+      users: {
+        [swaggerUser]: swaggerPass,
+      },
     }),
   );
 

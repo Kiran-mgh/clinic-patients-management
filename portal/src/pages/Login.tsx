@@ -124,9 +124,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         position: 'relative'
       }}>
         {/* Header logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src="/logo.png" alt="Amar Ayurveda Logo" style={{ height: '40px', width: '40px', objectFit: 'contain', borderRadius: '8px', backgroundColor: '#ffffff', padding: '4px' }} />
-          <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.3px', color: '#fff', fontFamily: 'Outfit' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <img src="/logo.png" alt="Amar Ayurveda Logo" style={{ height: '56px', width: '56px', objectFit: 'contain', borderRadius: '10px', backgroundColor: '#ffffff', padding: '6px' }} />
+          <span style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.3px', color: '#fff', fontFamily: 'Outfit' }}>
             Amar Ayurveda Console
           </span>
         </div>
@@ -231,8 +231,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           borderRadius: '24px',
           textAlign: 'left'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <img src="/logo.png" alt="Amar Ayurveda Logo" style={{ height: '48px', width: '48px', objectFit: 'contain' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <img src="/logo.png" alt="Amar Ayurveda Logo" style={{ height: '64px', width: '64px', objectFit: 'contain' }} />
           </div>
           <span style={{
             fontSize: '0.75rem',

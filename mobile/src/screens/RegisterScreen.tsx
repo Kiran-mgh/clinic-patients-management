@@ -164,7 +164,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Image
                 source={require('../../assets/logo.png')}
-                style={{ width: 32, height: 32, resizeMode: 'contain' }}
+                style={{ width: 44, height: 44, resizeMode: 'contain' }}
               />
               <Text style={styles.title}>Create Account</Text>
             </View>

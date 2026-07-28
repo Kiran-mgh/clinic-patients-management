@@ -122,7 +122,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
             <View style={styles.logoRow}>
               <Image
                 source={require('../../assets/logo.png')}
-                style={{ width: 44, height: 44, resizeMode: 'contain', marginRight: 10, borderRadius: 8, backgroundColor: '#ffffff', padding: 4 }}
+                style={{ width: 56, height: 56, resizeMode: 'contain', marginRight: 12, borderRadius: 10, backgroundColor: '#ffffff', padding: 4 }}
               />
               <Text style={styles.logoText}>Amar Ayurveda</Text>
             </View>

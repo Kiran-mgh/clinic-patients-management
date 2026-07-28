@@ -91,7 +91,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Image
             source={require('../../assets/logo.png')}
-            style={{ width: 40, height: 40, resizeMode: 'contain', borderRadius: 8 }}
+            style={{ width: 48, height: 48, resizeMode: 'contain', borderRadius: 8 }}
           />
           <View>
             <Text style={styles.welcomeText}>Welcome,</Text>

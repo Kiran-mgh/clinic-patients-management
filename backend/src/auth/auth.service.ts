@@ -39,17 +39,14 @@ export class AuthService implements OnModuleInit {
         const whereClause = isEmail ? { email: entry.toLowerCase() } : { mobileNumber: entry };
 
         const existing = await this.userRepository.findOne({ where: whereClause });
-        if (!existing) {
-          const newDoc = this.userRepository.create({
-            ...(isEmail ? { email: entry.toLowerCase() } : { mobileNumber: entry }),
-            role: 'doctor',
-          });
-          await this.userRepository.save(newDoc);
-          console.log(`[SEED] Pre-registered doctor entry: ${entry}`);
-        } else if (existing.role === 'patient') {
-          existing.role = 'doctor';
-          await this.userRepository.save(existing);
-          console.log(`[SEED] Promoted existing user to doctor: ${entry}`);
+        if (existing) {
+          if (existing.role !== 'doctor') {
+            existing.role = 'doctor';
+            await this.userRepository.save(existing);
+            console.log(`[SEED] Promoted existing user to doctor: ${entry}`);
+          }
+        } else {
+          console.log(`[SEED] Doctor entry whitelisted for auto-promotion upon registration: ${entry}`);
         }
       }
     }

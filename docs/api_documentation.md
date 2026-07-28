@@ -1,302 +1,68 @@
-# REST API Documentation - Amar Hospital
+# 🔌 REST API Reference & Specification
 
-This document details the REST API endpoints, payload formats, and schemas for the **Amar Hospital Healthcare Management Platform**.
+## 🔓 Authentication Endpoints (`/api/auth`)
 
----
-
-## Authentication & Headers
-
-All authenticated requests must include the JWT token in the HTTP Authorization header:
-```http
-Authorization: Bearer <JWT_TOKEN>
-```
-
----
-
-## 1. Authentication Endpoints
-
-### Request OTP
-* **URL:** `/api/auth/otp/request`
-* **Method:** `POST`
-* **Payload:**
+### 1. `POST /api/auth/register`
+- **Description**: Registers a new patient account.
+- **Request Body**:
   ```json
   {
-    "mobileNumber": "+919876543210"
+    "fullName": "Rahul Kumar",
+    "phone": "9035706668",
+    "email": "rahul@gmail.com",
+    "password": "Password123!",
+    "isExistingPatient": true,
+    "patientId": "AH000007"
   }
   ```
-* **Response (200 OK):**
-  ```json
-  {
-    "message": "OTP sent successfully",
-    "otpCode": "123456" 
-  }
-  ```
-  *(Note: OTP code is returned directly in Development environment for easier testing).*
+- **Response**: `{ "success": true, "token": "jwt_bearer_token", "user": { ... } }`
 
-### Verify OTP & Login
-* **URL:** `/api/auth/otp/verify`
-* **Method:** `POST`
-* **Payload:**
+### 2. `POST /api/auth/login`
+- **Description**: User authentication for patients, doctors, and receptionists.
+- **Request Body**:
   ```json
   {
-    "mobileNumber": "+919876543210",
-    "otpCode": "123456"
+    "identifier": "9035706668",
+    "password": "Password123!"
   }
   ```
-* **Response (200 OK):**
+- **Response**: `{ "token": "jwt_bearer_token", "user": { ... } }`
+
+### 3. `POST /api/auth/forgot-password`
+- **Description**: Sends a 6-digit verification code to user email.
+- **Request Body**: `{ "email": "rahul@gmail.com" }`
+
+### 4. `POST /api/auth/reset-password`
+- **Description**: Resets password using valid 6-digit code.
+- **Request Body**:
   ```json
   {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsIn...",
-    "isNewUser": true,
-    "user": {
-      "id": "e422fbcd-b14e-4f7f-bd30-6dbca432650a",
-      "mobileNumber": "+919876543210",
-      "role": "patient"
-    }
+    "email": "rahul@gmail.com",
+    "code": "699504",
+    "newPassword": "NewSecurePassword123!"
   }
   ```
 
 ---
 
-## 2. Patient Profile & Verification Endpoints
+## 👥 Patient Management Endpoints (`/api/patients`)
 
-### Register Patient Profile
-* **URL:** `/api/patients/register`
-* **Method:** `POST`
-* **Headers:** `Authorization: Bearer <token>`
-* **Payload:**
-  ```json
-  {
-    "fullName": "Kiran Mayan",
-    "gender": "Male",
-    "dateOfBirth": "1990-05-15",
-    "email": "kiran@example.com",
-    "bloodGroup": "O+",
-    "profession": "Software Engineer",
-    "town": "Kochi",
-    "isExisting": false,
-    "existingPatientId": null
-  }
-  ```
-* **Response (201 Created):**
-  ```json
-  {
-    "id": "e422fbcd-b14e-4f7f-bd30-6dbca432650a",
-    "fullName": "Kiran Mayan",
-    "status": "pending_approval"
-  }
-  ```
+### 1. `GET /api/patients/pending`
+- **Auth**: Required (`Bearer <JWT>`)
+- **Description**: Fetches all pending patient registrations requiring staff approval.
 
-### Get Current Profile
-* **URL:** `/api/patients/profile`
-* **Method:** `GET`
-* **Headers:** `Authorization: Bearer <token>`
-* **Response (200 OK):**
-  ```json
-  {
-    "id": "e422fbcd-b14e-4f7f-bd30-6dbca432650a",
-    "patientId": "AH000001",
-    "fullName": "Kiran Mayan",
-    "gender": "Male",
-    "dateOfBirth": "1990-05-15",
-    "status": "active",
-    "user": {
-      "mobileNumber": "+919876543210"
-    }
-  }
-  ```
-
-### List Pending Approvals (Admin/Doctor)
-* **URL:** `/api/patients/pending`
-* **Method:** `GET`
-* **Headers:** `Authorization: Bearer <admin-token>`
-* **Response (200 OK):**
-  ```json
-  [
-    {
-      "id": "e422fbcd-b14e-4f7f-bd30-6dbca432650a",
-      "fullName": "Kiran Mayan",
-      "gender": "Male",
-      "dateOfBirth": "1990-05-15",
-      "status": "pending_approval",
-      "isExisting": false,
-      "user": {
-        "mobileNumber": "+919876543210"
-      }
-    }
-  ]
-  ```
-
-### Verify/Approve Patient Profile (Admin/Doctor)
-* **URL:** `/api/patients/:id/approve`
-* **Method:** `POST`
-* **Headers:** `Authorization: Bearer <admin-token>`
-* **Payload:**
-  ```json
-  {
-    "patientId": "AH000001"
-  }
-  ```
-* **Response (200 OK):**
-  ```json
-  {
-    "message": "Patient approved successfully",
-    "patientId": "AH000001",
-    "status": "active"
-  }
-  ```
-
-### Search Patients (Admin/Doctor)
-* **URL:** `/api/patients/search`
-* **Method:** `GET`
-* **Headers:** `Authorization: Bearer <admin-token>`
-* **Query Params:** `query=Kiran` (Searches by patient ID, name, or phone number)
-* **Response (200 OK):**
-  ```json
-  [
-    {
-      "id": "e422fbcd-b14e-4f7f-bd30-6dbca432650a",
-      "patientId": "AH000001",
-      "fullName": "Kiran Mayan",
-      "status": "active"
-    }
-  ]
-  ```
+### 2. `POST /api/patients/:id/approve`
+- **Auth**: Required (`Bearer <JWT>`)
+- **Description**: Approves a pending patient and assigns an official Patient ID (`AH000007`). Emits `queue_updated` WebSocket event.
 
 ---
 
-## 3. Token & Queue Management Endpoints
+## 🎟️ Queue & Token Endpoints (`/api/queue`)
 
-### Generate Token (Patient)
-* **URL:** `/api/tokens/generate`
-* **Method:** `POST`
-* **Headers:** `Authorization: Bearer <token>`
-* **Payload:**
-  ```json
-  {
-    "serviceType": "medicine" // or "treatment"
-  }
-  ```
-* **Response (201 Created):**
-  ```json
-  {
-    "id": "83cf923d-0129-450f-a42e-839ab136e098",
-    "tokenNumber": "M023",
-    "serviceType": "medicine",
-    "status": "waiting",
-    "sequenceNumber": 23,
-    "generatedAt": "2026-06-25T08:14:00Z"
-  }
-  ```
+### 1. `POST /api/queue/generate`
+- **Description**: Generates a daily sequential token (`M001` or `T001`). Token expires automatically at end of day (5:00 PM).
+- **Request Body**: `{ "patientId": "AH000007", "category": "MEDICINE" }`
+- **Response**: `{ "tokenNumber": "M001", "servingToken": "M001", "aheadCount": 0 }`
 
-### Get Patient's Token for Today
-* **URL:** `/api/tokens/today`
-* **Method:** `GET`
-* **Headers:** `Authorization: Bearer <token>`
-* **Response (200 OK):**
-  ```json
-  {
-    "token": {
-      "tokenNumber": "M023",
-      "status": "waiting",
-      "patientsAhead": 8,
-      "estimatedWaitingTimeMinutes": 40
-    }
-  }
-  ```
-
-### Public Queue Status
-* **URL:** `/api/tokens/queue-status`
-* **Method:** `GET`
-* **Response (200 OK):**
-  ```json
-  {
-    "medicine": {
-      "currentServing": "M015",
-      "totalWaiting": 12
-    },
-    "treatment": {
-      "currentServing": "T002",
-      "totalWaiting": 3
-    }
-  }
-  ```
-
----
-
-## 4. Admin Queue Controls
-
-### Call Next Patient
-* **URL:** `/api/queue/call-next`
-* **Method:** `POST`
-* **Headers:** `Authorization: Bearer <admin-token>`
-* **Payload:**
-  ```json
-  {
-    "serviceType": "medicine"
-  }
-  ```
-* **Response (200 OK):**
-  ```json
-  {
-    "calledToken": {
-      "id": "83cf923d-0129-450f-a42e-839ab136e098",
-      "tokenNumber": "M016",
-      "status": "in_progress"
-    }
-  }
-  ```
-
-### Update Token Status
-* **URL:** `/api/queue/tokens/:id/status`
-* **Method:** `PATCH`
-* **Headers:** `Authorization: Bearer <admin-token>`
-* **Payload:**
-  ```json
-  {
-    "status": "served" // or "cancelled"
-  }
-  ```
-* **Response (200 OK):**
-  ```json
-  {
-    "id": "83cf923d-0129-450f-a42e-839ab136e098",
-    "status": "served"
-  }
-  ```
-
-### Get Admin Dashboard Metrics
-* **URL:** `/api/queue/dashboard`
-* **Method:** `GET`
-* **Headers:** `Authorization: Bearer <admin-token>`
-* **Response (200 OK):**
-  ```json
-  {
-    "totalPatients": 35,
-    "activeTokens": 10,
-    "servedTokens": 22,
-    "cancelledTokens": 3,
-    "pendingApprovalsCount": 4,
-    "currentServingMedicine": "M016",
-    "currentServingTreatment": "T002"
-  }
-  ```
-
-### Get Today's Queue List
-* **URL:** `/api/queue/today`
-* **Method:** `GET`
-* **Headers:** `Authorization: Bearer <admin-token>`
-* **Response (200 OK):**
-  ```json
-  [
-    {
-      "id": "83cf923d-0129-450f-a42e-839ab136e098",
-      "tokenNumber": "M016",
-      "status": "in_progress",
-      "patient": {
-        "fullName": "Kiran Mayan",
-        "patientId": "AH000001"
-      }
-    }
-  ]
-  ```
+### 2. `GET /api/queue/today`
+- **Description**: Returns all tokens generated for today (`generatedAt >= startOfToday`).

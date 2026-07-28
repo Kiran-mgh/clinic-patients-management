@@ -228,8 +228,8 @@ export class AuthService implements OnModuleInit {
           html: `
             <div style="font-family: Arial, sans-serif; padding: 28px; color: #333; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
               <div style="display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #f0fdf4;">
-                ${hasLogoFile ? '<img src="cid:amar_logo" alt="Amar Ayurveda Logo" style="height: 52px; width: 52px; object-fit: contain; vertical-align: middle;" />' : '<span style="font-size: 24px;">🌿</span>'}
-                <span style="font-size: 22px; font-weight: 800; color: #213932; letter-spacing: -0.5px; vertical-align: middle; margin-left: 12px; font-family: sans-serif;">Amar Ayurveda</span>
+                ${hasLogoFile ? '<img src="cid:amar_logo" alt="Amar Ayurveda Logo" style="height: 36px; width: 36px; object-fit: contain; vertical-align: middle;" />' : '<span style="font-size: 20px;">🌿</span>'}
+                <span style="font-size: 20px; font-weight: 800; color: #213932; letter-spacing: -0.5px; vertical-align: middle; margin-left: 10px; font-family: sans-serif;">Amar Ayurveda</span>
               </div>
               <h3 style="color: #1a365d; margin-top: 0; margin-bottom: 8px;">Password Reset Request</h3>
               <p style="font-size: 14px; color: #4a5568;">Hello,</p>

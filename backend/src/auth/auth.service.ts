@@ -8,6 +8,7 @@ import * as jwt from 'jsonwebtoken';
 import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer';
 import * as path from 'path';
+import * as fs from 'fs';
 
 import { SmsService } from './sms.service';
 import { RegisterDto } from './dto/register.dto';
@@ -217,8 +218,9 @@ export class AuthService implements OnModuleInit {
         });
 
         const logoPath = path.join(process.cwd(), 'assets/logo.png');
+        const hasLogoFile = fs.existsSync(logoPath);
 
-        const mailOptions = {
+        const mailOptions: any = {
           from: `"Amar Ayurveda" <${fromEmail}>`,
           to: user.email,
           subject: 'Amar Ayurveda - Password Reset Code',
@@ -226,7 +228,7 @@ export class AuthService implements OnModuleInit {
           html: `
             <div style="font-family: Arial, sans-serif; padding: 28px; color: #333; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
               <div style="display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #f0fdf4;">
-                <img src="cid:amar_logo" alt="Amar Ayurveda Logo" style="height: 52px; width: 52px; object-fit: contain; vertical-align: middle;" />
+                ${hasLogoFile ? '<img src="cid:amar_logo" alt="Amar Ayurveda Logo" style="height: 52px; width: 52px; object-fit: contain; vertical-align: middle;" />' : '<span style="font-size: 24px;">🌿</span>'}
                 <span style="font-size: 22px; font-weight: 800; color: #213932; letter-spacing: -0.5px; vertical-align: middle; margin-left: 12px; font-family: sans-serif;">Amar Ayurveda</span>
               </div>
               <h3 style="color: #1a365d; margin-top: 0; margin-bottom: 8px;">Password Reset Request</h3>
@@ -240,13 +242,13 @@ export class AuthService implements OnModuleInit {
               <p style="font-size: 11px; color: #a0aec0; text-align: center;">If you did not request a password reset, please ignore this email.</p>
             </div>
           `,
-          attachments: [
+          attachments: hasLogoFile ? [
             {
               filename: 'logo.png',
               path: logoPath,
               cid: 'amar_logo',
             },
-          ],
+          ] : [],
         };
 
         await transporter.sendMail(mailOptions);

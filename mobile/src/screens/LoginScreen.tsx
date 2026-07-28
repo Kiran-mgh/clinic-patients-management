@@ -139,7 +139,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
               <Text style={styles.inputLabel}>Identifier (Mobile / Email / Username)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="e.g. 9035706668 or patient@gmail.com"
+                placeholder="Mobile / Email / Username"
                 placeholderTextColor="#999"
                 value={identifier}
                 onChangeText={setIdentifier}

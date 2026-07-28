@@ -232,8 +232,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
             keyboardType="numeric" maxLength={10}
             value={dateOfBirth} onChangeText={(t) => setDateOfBirth(formatDob(t, dateOfBirth))} />
 
-          <Text style={styles.label}>TOWN / RESIDENCE *</Text>
-          <TextInput style={styles.input} placeholder="Kochi / Palakkad" placeholderTextColor="#a0aec0"
+          <Text style={styles.label}>CITY / ADDRESS (KARNATAKA) *</Text>
+          <TextInput style={styles.input} placeholder="e.g. Bengaluru, Karnataka / Mysore" placeholderTextColor="#a0aec0"
             value={town} onChangeText={setTown} />
 
           <Text style={styles.label}>PROFESSION (OPTIONAL)</Text>

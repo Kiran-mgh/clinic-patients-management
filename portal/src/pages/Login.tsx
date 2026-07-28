@@ -286,7 +286,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               </label>
               <input
                 type="text"
-                placeholder="e.g. 9035706668 or doctor@amarhospital.com"
+                placeholder="Mobile / Email / Username"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="form-input"

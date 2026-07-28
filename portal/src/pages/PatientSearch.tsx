@@ -415,11 +415,11 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
               </div>
 
               <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(var(--text-muted))' }}>Town / Residence *</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(var(--text-muted))' }}>City / Address (Karnataka) *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Palakkad"
+                  placeholder="e.g. Bengaluru, Karnataka / Mysore"
                   value={newTown}
                   onChange={(e) => setNewTown(e.target.value)}
                   style={{ borderRadius: '8px', border: '1px solid hsl(var(--border-color))', padding: '10px 12px', background: 'none', color: '#1a202c' }}

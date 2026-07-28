@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, TextInput, TouchableOpacity,
-  ActivityIndicator, ScrollView,
+  ActivityIndicator, ScrollView, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../api';
@@ -161,7 +161,13 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
       >
         <View style={styles.card}>
           <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Image
+                source={require('../../assets/logo.png')}
+                style={{ width: 32, height: 32, resizeMode: 'contain' }}
+              />
+              <Text style={styles.title}>Create Account</Text>
+            </View>
             <TouchableOpacity style={styles.backBtn} onPress={onGoBack}>
               <Text style={styles.backText}>Sign In</Text>
             </TouchableOpacity>

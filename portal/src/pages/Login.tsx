@@ -124,16 +124,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         position: 'relative'
       }}>
         {/* Header logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(8px)',
-            padding: '8px',
-            borderRadius: '8px',
-            display: 'flex'
-          }}>
-            <Activity size={18} color="#ffffff" />
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img src="/logo.png" alt="Amar Hospital Logo" style={{ height: '40px', width: '40px', objectFit: 'contain', borderRadius: '8px', backgroundColor: '#ffffff', padding: '4px' }} />
           <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.3px', color: '#fff', fontFamily: 'Outfit' }}>
             Amar Hospital Console
           </span>
@@ -239,6 +231,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           borderRadius: '24px',
           textAlign: 'left'
         }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <img src="/logo.png" alt="Amar Hospital Logo" style={{ height: '48px', width: '48px', objectFit: 'contain' }} />
+          </div>
           <span style={{
             fontSize: '0.75rem',
             color: 'hsl(var(--text-muted))',

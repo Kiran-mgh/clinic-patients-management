@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ImageBackground, Modal, Alert } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ImageBackground, Modal, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../api';
 
@@ -120,7 +120,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
           {/* Header section */}
           <View style={styles.heroSection}>
             <View style={styles.logoRow}>
-              <Text style={styles.logoIcon}>🏥</Text>
+              <Image
+                source={require('../../assets/logo.png')}
+                style={{ width: 44, height: 44, resizeMode: 'contain', marginRight: 10, borderRadius: 8, backgroundColor: '#ffffff', padding: 4 }}
+              />
               <Text style={styles.logoText}>Amar Hospital</Text>
             </View>
             <Text style={styles.subTitle}>Ayurvedic Healthcare Patient Console</Text>

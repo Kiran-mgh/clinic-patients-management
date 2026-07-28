@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image } from 'react-native';
 import { api } from '../api';
 import { io } from 'socket.io-client';
 
@@ -88,9 +88,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.welcomeText}>Welcome,</Text>
-          <Text style={styles.nameText}>{profile?.fullName || 'Patient'}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Image
+            source={require('../../assets/logo.png')}
+            style={{ width: 40, height: 40, resizeMode: 'contain', borderRadius: 8 }}
+          />
+          <View>
+            <Text style={styles.welcomeText}>Welcome,</Text>
+            <Text style={styles.nameText}>{profile?.fullName || 'Patient'}</Text>
+          </View>
         </View>
         <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
           <Text style={styles.logoutText}>Log Out</Text>

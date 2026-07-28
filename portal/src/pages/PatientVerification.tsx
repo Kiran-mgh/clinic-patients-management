@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { Check, Search, User, FileSpreadsheet } from 'lucide-react';
+import { io } from 'socket.io-client';
 
 interface PatientVerificationProps {
   token: string | null;
@@ -14,8 +15,8 @@ export const PatientVerification: React.FC<PatientVerificationProps> = ({ token 
   const [patientIdInput, setPatientIdInput] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const fetchPending = async () => {
-    setLoading(true);
+  const fetchPending = async (silent: boolean = false) => {
+    if (!silent) setLoading(true);
     setError('');
     try {
       const data = await api.get('/patients/pending', token);
@@ -23,13 +24,36 @@ export const PatientVerification: React.FC<PatientVerificationProps> = ({ token 
     } catch (err: any) {
       setError(err.message || 'Failed to fetch pending patients');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchPending();
-  }, []);
+
+    // Real-time WebSocket sync for instant updates upon mobile registration
+    const socketUrl = import.meta.env.VITE_API_URL 
+      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
+      : 'https://amar.vistarafabtech.com';
+    const socket = io(socketUrl);
+
+    socket.on('connect', () => {
+      console.log('[Socket] PatientVerification connected to WebSocket server');
+    });
+
+    socket.on('queue_updated', () => {
+      console.log('[Socket] Received real-time registration event, syncing pending list...');
+      fetchPending(true);
+    });
+
+    // 15-second fallback polling interval
+    const interval = setInterval(() => fetchPending(true), 15000);
+
+    return () => {
+      socket.disconnect();
+      clearInterval(interval);
+    };
+  }, [token]);
 
   const handleSelectPatient = (patient: any) => {
     setSelectedPatient(patient);

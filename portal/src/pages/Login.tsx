@@ -335,36 +335,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
               {loading ? 'Authenticating...' : 'Sign In to Console'}
             </button>
           </form>
-
-          {/* Development Bypass Box (Identical to main branch) */}
-          <div style={{
-            marginTop: '32px',
-            paddingTop: '24px',
-            borderTop: '1px solid hsl(var(--border-color))',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '12px'
-          }}>
-            <div style={{
-              padding: '8px',
-              backgroundColor: 'hsl(var(--bg-muted))',
-              borderRadius: '8px',
-              color: 'hsl(var(--text-muted))'
-            }}>
-              <Smartphone size={16} />
-            </div>
-            <div>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'hsl(var(--text-main))', display: 'block' }}>
-                Local Development Bypass:
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', display: 'block', marginTop: '2px' }}>
-                Staff Login: <strong style={{ color: 'hsl(var(--text-main))' }}>+919999999999</strong>
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', display: 'block', marginTop: '2px' }}>
-                Access Password: <strong style={{ color: 'hsl(var(--text-main))' }}>000000</strong>
-              </span>
-            </div>
-          </div>
         </div>
       </div>
 

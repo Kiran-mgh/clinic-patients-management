@@ -40,13 +40,14 @@ export class AuthService implements OnModuleInit {
 
         const existing = await this.userRepository.findOne({ where: whereClause });
         if (!existing) {
+          // Pre-create whitelisted doctor account without password so they must reset password to log in
           const newDoc = this.userRepository.create({
             ...(isEmail ? { email: entry.toLowerCase() } : { mobileNumber: entry }),
             role: 'doctor',
           });
           await this.userRepository.save(newDoc);
-          console.log(`[SEED] Pre-registered doctor entry: ${entry}`);
-        } else if (existing.role === 'patient') {
+          console.log(`[SEED] Pre-created whitelisted doctor account (password reset required): ${entry}`);
+        } else if (existing.role !== 'doctor') {
           existing.role = 'doctor';
           await this.userRepository.save(existing);
           console.log(`[SEED] Promoted existing user to doctor: ${entry}`);
@@ -155,13 +156,7 @@ export class AuthService implements OnModuleInit {
         throw new UnauthorizedException('Invalid credentials. Password incorrect.');
       }
     } else {
-      // Legacy user without password (allow test codes 903570 or 123456 or 000000 to set initial password)
-      if (password === '903570' || password === '123456' || password === '000000') {
-        user.password = this.hashPassword(password);
-        await this.userRepository.save(user);
-      } else {
-        throw new UnauthorizedException('Password required. Please request a password reset using your email.');
-      }
+      throw new UnauthorizedException('No password set yet. Please click "Forgot Password?" to set your password.');
     }
 
     const payload = { sub: user.id, role: user.role };

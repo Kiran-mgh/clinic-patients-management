@@ -5,6 +5,7 @@ import { Patient } from '../entities/patient.entity';
 import { User } from '../entities/user.entity';
 import { AuditLog } from '../entities/audit-log.entity';
 import { RegisterPatientByStaffDto } from './dto/register-patient-by-staff.dto';
+import { QueueGateway } from '../queue/queue.gateway';
 
 @Injectable()
 export class PatientsService {
@@ -15,6 +16,7 @@ export class PatientsService {
     private userRepository: Repository<User>,
     @InjectRepository(AuditLog)
     private auditLogRepository: Repository<AuditLog>,
+    private queueGateway: QueueGateway,
   ) {}
 
   async register(
@@ -68,6 +70,9 @@ export class PatientsService {
       `Registered profile for ${data.fullName}. Status: ${status}. IsExisting: ${data.isExisting}`,
     );
 
+    // Broadcast real-time update to web portal clients
+    this.queueGateway.emitQueueUpdate();
+
     return savedPatient;
   }
 
@@ -115,6 +120,9 @@ export class PatientsService {
       'PATIENT_CREATE_BY_STAFF',
       `Staff ${adminId} created patient profile for ${data.fullName} (${user.id}). Assigned ID: ${patientId}`,
     );
+
+    // Broadcast real-time update to web portal clients
+    this.queueGateway.emitQueueUpdate();
 
     return savedPatient;
   }
@@ -171,6 +179,9 @@ export class PatientsService {
       'PATIENT_APPROVE',
       `Approved patient ${patient.fullName} (${patient.id}). Assigned ID: ${finalPatientId}`,
     );
+
+    // Broadcast real-time update to web portal clients
+    this.queueGateway.emitQueueUpdate();
 
     return updatedPatient;
   }

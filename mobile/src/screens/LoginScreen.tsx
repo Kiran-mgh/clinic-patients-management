@@ -10,6 +10,7 @@ interface LoginScreenProps {
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavigateRegister }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,6 +20,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
   const [resetEmail, setResetEmail] = useState('');
   const [resetTokenInput, setResetTokenInput] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMsg, setResetMsg] = useState('');
   const [resetError, setResetError] = useState('');
@@ -148,14 +150,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
                   <Text style={styles.forgotLink}>Forgot Password?</Text>
                 </TouchableOpacity>
               </View>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                placeholderTextColor="#999"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Enter your password"
+                  placeholderTextColor="#999"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TouchableOpacity
+                  style={styles.eyeBtn}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <TouchableOpacity
@@ -246,14 +256,22 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
                     value={resetTokenInput}
                     onChangeText={setResetTokenInput}
                   />
-                  <TextInput
-                    style={styles.modalInput}
-                    placeholder="New Password (min 6 chars)"
-                    placeholderTextColor="#999"
-                    secureTextEntry
-                    value={newPassword}
-                    onChangeText={setNewPassword}
-                  />
+                  <View style={styles.passwordWrapper}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      placeholder="New Password (min 6 chars)"
+                      placeholderTextColor="#999"
+                      secureTextEntry={!showResetPassword}
+                      value={newPassword}
+                      onChangeText={setNewPassword}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeBtn}
+                      onPress={() => setShowResetPassword(!showResetPassword)}
+                    >
+                      <Text style={styles.eyeText}>{showResetPassword ? '🙈' : '👁️'}</Text>
+                    </TouchableOpacity>
+                  </View>
                   <TouchableOpacity
                     style={{ marginBottom: 12 }}
                     onPress={() => setResetStep('request')}
@@ -383,6 +401,31 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
     color: '#2d3748',
+  },
+  passwordWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f7fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    paddingRight: 12,
+    marginBottom: 12,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#2d3748',
+  },
+  eyeBtn: {
+    padding: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eyeText: {
+    fontSize: 16,
   },
   primaryButton: {
     backgroundColor: '#1a4d36',

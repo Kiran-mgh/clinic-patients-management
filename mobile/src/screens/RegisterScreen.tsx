@@ -60,6 +60,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
   const [mobileNumber, setMobileNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Patient profile fields
   const [gender, setGender] = useState('Male');
@@ -185,12 +187,22 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
             value={mobileNumber} onChangeText={(t) => setMobileNumber(t.replace(/\D/g, ''))} />
 
           <Text style={styles.label}>PASSWORD *</Text>
-          <TextInput style={styles.input} placeholder="At least 6 characters" placeholderTextColor="#a0aec0"
-            secureTextEntry value={password} onChangeText={setPassword} />
+          <View style={styles.passwordWrapper}>
+            <TextInput style={styles.passwordInput} placeholder="At least 6 characters" placeholderTextColor="#a0aec0"
+              secureTextEntry={!showPassword} value={password} onChangeText={setPassword} />
+            <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)}>
+              <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.label}>CONFIRM PASSWORD *</Text>
-          <TextInput style={styles.input} placeholder="Repeat your password" placeholderTextColor="#a0aec0"
-            secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword} />
+          <View style={styles.passwordWrapper}>
+            <TextInput style={styles.passwordInput} placeholder="Repeat your password" placeholderTextColor="#a0aec0"
+              secureTextEntry={!showConfirmPassword} value={confirmPassword} onChangeText={setConfirmPassword} />
+            <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+              <Text style={styles.eyeText}>{showConfirmPassword ? '🙈' : '👁️'}</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.divider} />
 
@@ -318,6 +330,17 @@ const styles = StyleSheet.create({
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10,
     color: '#1a202c', fontSize: 15, marginBottom: 14,
   },
+  passwordWrapper: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#fcfbfa', borderWidth: 1, borderColor: '#e5e7eb',
+    borderRadius: 12, paddingRight: 12, marginBottom: 14,
+  },
+  passwordInput: {
+    flex: 1, paddingHorizontal: 16, paddingVertical: 10,
+    color: '#1a202c', fontSize: 15,
+  },
+  eyeBtn: { padding: 4, justifyContent: 'center', alignItems: 'center' },
+  eyeText: { fontSize: 16 },
   toggleRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#fcfbfa', alignItems: 'center' },
   toggleBtnActive: { borderColor: '#213932', backgroundColor: 'rgba(33, 57, 50, 0.05)' },

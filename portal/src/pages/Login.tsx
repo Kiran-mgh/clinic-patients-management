@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../api';
-import { Activity, UserCheck, Stethoscope, BarChart3, Smartphone } from 'lucide-react';
+import { Activity, UserCheck, Stethoscope, BarChart3, Smartphone, Eye, EyeOff } from 'lucide-react';
 
 interface LoginProps {
   onLoginSuccess: (token: string, user: any) => void;
@@ -9,6 +9,7 @@ interface LoginProps {
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -18,6 +19,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [resetEmail, setResetEmail] = useState('');
   const [resetTokenInput, setResetTokenInput] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMsg, setResetMsg] = useState('');
   const [resetError, setResetError] = useState('');
@@ -319,16 +321,37 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                   Forgot Password?
                 </button>
               </div>
-              <input
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="form-input"
-                required
-                disabled={loading}
-                style={{ width: '100%', borderRadius: '12px', border: '1px solid #d1d5db', padding: '14px 16px', fontSize: '0.95rem', boxSizing: 'border-box' }}
-              />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="form-input"
+                  required
+                  disabled={loading}
+                  style={{ width: '100%', borderRadius: '12px', border: '1px solid #d1d5db', padding: '14px 44px 14px 16px', fontSize: '0.95rem', boxSizing: 'border-box' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '14px',
+                    background: 'none',
+                    border: 'none',
+                    color: '#718096',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 0,
+                  }}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', borderRadius: '12px', marginTop: '8px', fontSize: '0.95rem', fontWeight: 700 }} disabled={loading}>
@@ -440,22 +463,42 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     boxSizing: 'border-box'
                   }}
                 />
-                <input
-                  type="password"
-                  placeholder="New Password (min 6 characters)"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e0',
-                    marginBottom: '12px',
-                    boxSizing: 'border-box'
-                  }}
-                />
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                  <input
+                    type={showResetPassword ? 'text' : 'password'}
+                    placeholder="New Password (min 6 characters)"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={6}
+                    style={{
+                      width: '100%',
+                      padding: '10px 40px 10px 14px',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e0',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetPassword(!showResetPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      background: 'none',
+                      border: 'none',
+                      color: '#718096',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0,
+                    }}
+                    title={showResetPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showResetPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
                 <div style={{ marginBottom: '16px' }}>
                   <button
                     type="button"

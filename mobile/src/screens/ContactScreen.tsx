@@ -15,6 +15,35 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
         </TouchableOpacity>
       </View>
 
+      {/* Doctors & Specialists */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>👨‍⚕️ Our Specialists</Text>
+        
+        <View style={{ marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' }}>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: '#213932' }}>Dr. Anit Goswami, B.A.M.S</Text>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: '#2b6cb0', marginTop: 2 }}>Proctologist</Text>
+          <Text style={{ fontSize: 13, color: '#4a5568', marginTop: 2 }}>Specialist in Piles, Fistula & Skin Care</Text>
+        </View>
+
+        <View style={{ marginBottom: 4 }}>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: '#213932' }}>Dr. Poonam Goswami, B.A.M.S</Text>
+          <Text style={{ fontSize: 13, fontWeight: '700', color: '#2b6cb0', marginTop: 2 }}>General Physician</Text>
+          <Text style={{ fontSize: 13, color: '#4a5568', marginTop: 2 }}>Panchakarma Specialist</Text>
+        </View>
+      </View>
+
+      {/* Treatments & Specialties */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>🌿 Specialized Treatments</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {['Piles', 'Fissure', 'Fistula', 'Sinus', 'Panchakarma', 'Skin Specialist', 'General Healthcare'].map((item) => (
+            <View key={item} style={{ backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#166534' }}>{item}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
       {/* Clinic Timings */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>📅 Clinic Timings</Text>
@@ -29,19 +58,6 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
         <View style={styles.timingRow}>
           <Text style={styles.dayText}>Sunday</Text>
           <Text style={[styles.timeText, { color: '#f43f5e' }]}>Closed</Text>
-        </View>
-      </View>
-
-      {/* Doctor Availability */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>👨‍⚕️ Doctor Availability</Text>
-        <View style={styles.timingRow}>
-          <Text style={styles.dayText}>Morning Session</Text>
-          <Text style={styles.timeText}>8:00 AM – 11:00 AM</Text>
-        </View>
-        <View style={styles.timingRow}>
-          <Text style={styles.dayText}>Evening Session</Text>
-          <Text style={styles.timeText}>4:00 PM – 5:00 PM</Text>
         </View>
       </View>
 
@@ -79,21 +95,15 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
         </View>
         <View style={styles.contactItem}>
           <Text style={styles.contactLabel}>Address:</Text>
-          <Text style={styles.contactValue}>Amar Ayurveda Road, Near Town Junction, Palakkad, Kerala</Text>
+          <Text style={styles.contactValue}># 2 & 4, 7th Cross, R.T. Street, Bengaluru - 560 053</Text>
         </View>
         <View style={styles.contactItem}>
-          <Text style={styles.contactLabel}>Phone:</Text>
-          <Text style={styles.contactValue}>+91 491 254 3210</Text>
+          <Text style={styles.contactLabel}>Phone Numbers:</Text>
+          <Text style={styles.contactValue}>080 - 22268269, 080 - 41136539</Text>
         </View>
         <View style={styles.contactItem}>
-          <Text style={styles.contactLabel}>WhatsApp:</Text>
-          <Text style={styles.contactValue}>+91 98460 12345</Text>
-        </View>
-        <View style={styles.contactItem}>
-          <Text style={styles.contactLabel}>Location:</Text>
-          <Text style={[styles.contactValue, { color: '#213932', textDecorationLine: 'underline', fontWeight: '700' }]}>
-            Open in Google Maps
-          </Text>
+          <Text style={styles.contactLabel}>Email:</Text>
+          <Text style={styles.contactValue}>dranitgoswami@gmail.com</Text>
         </View>
       </View>
     </ScrollView>

@@ -194,13 +194,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         </View>
       )}
 
+      {/* Doctor & Clinic Info Card */}
+      <View style={styles.card}>
+        <Text style={{ fontSize: 14, fontWeight: '800', color: '#213932', marginBottom: 12 }}>👨‍⚕️ OUR CLINIC DOCTORS</Text>
+        <View style={{ marginBottom: 10, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: '#1a202c' }}>Dr. Anit Goswami, B.A.M.S</Text>
+          <Text style={{ fontSize: 12, color: '#4a5568' }}>Proctologist • Piles, Fistula & Skin Specialist</Text>
+        </View>
+        <View style={{ marginBottom: 10 }}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: '#1a202c' }}>Dr. Poonam Goswami, B.A.M.S</Text>
+          <Text style={{ fontSize: 12, color: '#4a5568' }}>General Physician • Panchakarma Specialist</Text>
+        </View>
+        <View style={{ marginTop: 6, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#f0f0f0' }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: '#718096' }}>CLINIC ADDRESS:</Text>
+          <Text style={{ fontSize: 12, color: '#2d3748', marginTop: 2 }}># 2 & 4, 7th Cross, R.T. Street, Bengaluru - 560 053</Text>
+          <Text style={{ fontSize: 12, color: '#2b6cb0', fontWeight: '600', marginTop: 4 }}>Ph: 080 - 22268269, 41136539</Text>
+        </View>
+      </View>
+
       {/* Navigation Options */}
       <View style={{ width: '100%', gap: 12, marginTop: 12 }}>
         <TouchableOpacity style={styles.navBtn} onPress={onNavigateToProfile}>
           <Text style={styles.navBtnText}>View My Profile Registry</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={onNavigateToContact}>
-          <Text style={styles.navBtnText}>View Clinic Timings & Contact</Text>
+          <Text style={styles.navBtnText}>View Full Timings & Contact</Text>
         </TouchableOpacity>
       </View>
 

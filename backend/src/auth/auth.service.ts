@@ -7,6 +7,7 @@ import { OtpSession } from '../entities/otp-session.entity';
 import * as jwt from 'jsonwebtoken';
 import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer';
+import * as path from 'path';
 
 import { SmsService } from './sms.service';
 import { RegisterDto } from './dto/register.dto';
@@ -215,15 +216,20 @@ export class AuthService implements OnModuleInit {
           },
         });
 
+        const logoPath = path.join(process.cwd(), 'assets/logo.png');
+
         const mailOptions = {
           from: `"Amar Ayurveda" <${fromEmail}>`,
           to: user.email,
           subject: 'Amar Ayurveda - Password Reset Code',
           text: `Hello,\n\nYou requested a password reset for your Amar Ayurveda account (${user.email}).\n\nYour 6-digit reset code is: ${resetToken}\n\nThis code will expire in 1 hour.`,
           html: `
-            <div style="font-family: Arial, sans-serif; padding: 24px; color: #333; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px;">
-              <h2 style="color: #213932; margin-top: 0;">🌿 Amar Ayurveda</h2>
-              <h3 style="color: #1a365d; margin-bottom: 8px;">Password Reset Request</h3>
+            <div style="font-family: Arial, sans-serif; padding: 28px; color: #333; max-width: 480px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+              <div style="display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #f0fdf4;">
+                <img src="cid:amar_logo" alt="Amar Ayurveda Logo" style="height: 52px; width: 52px; object-fit: contain; vertical-align: middle;" />
+                <span style="font-size: 22px; font-weight: 800; color: #213932; letter-spacing: -0.5px; vertical-align: middle; margin-left: 12px; font-family: sans-serif;">Amar Ayurveda</span>
+              </div>
+              <h3 style="color: #1a365d; margin-top: 0; margin-bottom: 8px;">Password Reset Request</h3>
               <p style="font-size: 14px; color: #4a5568;">Hello,</p>
               <p style="font-size: 14px; color: #4a5568;">You requested to reset your password for account <strong>${user.email}</strong>. Use the 6-digit verification code below in the app or portal:</p>
               <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 16px 24px; font-size: 28px; font-weight: 800; letter-spacing: 6px; text-align: center; border-radius: 12px; color: #166534; margin: 20px 0;">
@@ -234,6 +240,13 @@ export class AuthService implements OnModuleInit {
               <p style="font-size: 11px; color: #a0aec0; text-align: center;">If you did not request a password reset, please ignore this email.</p>
             </div>
           `,
+          attachments: [
+            {
+              filename: 'logo.png',
+              path: logoPath,
+              cid: 'amar_logo',
+            },
+          ],
         };
 
         await transporter.sendMail(mailOptions);

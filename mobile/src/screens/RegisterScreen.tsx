@@ -3,6 +3,7 @@ import {
   StyleSheet, Text, View, TextInput, TouchableOpacity,
   ActivityIndicator, ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { api } from '../api';
 
 interface RegisterScreenProps {
@@ -191,7 +192,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
             <TextInput style={styles.passwordInput} placeholder="At least 6 characters" placeholderTextColor="#a0aec0"
               secureTextEntry={!showPassword} value={password} onChangeText={setPassword} />
             <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)}>
-              <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#718096" />
             </TouchableOpacity>
           </View>
 
@@ -200,7 +201,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
             <TextInput style={styles.passwordInput} placeholder="Repeat your password" placeholderTextColor="#a0aec0"
               secureTextEntry={!showConfirmPassword} value={confirmPassword} onChangeText={setConfirmPassword} />
             <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-              <Text style={styles.eyeText}>{showConfirmPassword ? '🙈' : '👁️'}</Text>
+              <Ionicons name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#718096" />
             </TouchableOpacity>
           </View>
 

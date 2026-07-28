@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ImageBackground, Modal, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { api } from '../api';
 
 interface LoginScreenProps {
@@ -163,7 +164,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
                   style={styles.eyeBtn}
                   onPress={() => setShowPassword(!showPassword)}
                 >
-                  <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color="#718096"
+                  />
                 </TouchableOpacity>
               </View>
             </View>
@@ -269,7 +274,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
                       style={styles.eyeBtn}
                       onPress={() => setShowResetPassword(!showResetPassword)}
                     >
-                      <Text style={styles.eyeText}>{showResetPassword ? '🙈' : '👁️'}</Text>
+                      <Ionicons
+                        name={showResetPassword ? 'eye-off-outline' : 'eye-outline'}
+                        size={20}
+                        color="#718096"
+                      />
                     </TouchableOpacity>
                   </View>
                   <TouchableOpacity

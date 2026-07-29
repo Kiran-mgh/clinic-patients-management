@@ -183,23 +183,42 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
               <Text style={styles.sectionSub}>Tokens are valid only for the current day and expire at 5:00 PM.</Text>
 
               <View style={{ gap: 12, marginTop: 16 }}>
-                <TouchableOpacity
-                  style={styles.genButton}
-                  onPress={() => handleGenerateToken('medicine')}
-                  disabled={tokenLoading}
-                >
-                  <Text style={styles.genButtonText}>Medicine Consultation</Text>
-                  <Text style={styles.genButtonSub}>Available Monday to Saturday</Text>
-                </TouchableOpacity>
+                {(() => {
+                  const todayDay = new Date().getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
+                  const isTreatmentDay = todayDay === 2 || todayDay === 3 || todayDay === 4;
+                  const isMedicineDay = todayDay !== 0;
 
-                <TouchableOpacity
-                  style={[styles.genButton, { backgroundColor: '#f59e0b' }]}
-                  onPress={() => handleGenerateToken('treatment')}
-                  disabled={tokenLoading}
-                >
-                  <Text style={[styles.genButtonText, { color: '#0d1117' }]}>Treatment / Dressing</Text>
-                  <Text style={[styles.genButtonSub, { color: '#27272a' }]}>Tuesday, Wednesday & Thursday Only</Text>
-                </TouchableOpacity>
+                  return (
+                    <>
+                      <TouchableOpacity
+                        style={[styles.genButton, !isMedicineDay ? { backgroundColor: '#e2e8f0', opacity: 0.6 } : {}]}
+                        onPress={() => handleGenerateToken('medicine')}
+                        disabled={tokenLoading || !isMedicineDay}
+                      >
+                        <Text style={[styles.genButtonText, !isMedicineDay ? { color: '#64748b' } : {}]}>Medicine Consultation</Text>
+                        <Text style={[styles.genButtonSub, !isMedicineDay ? { color: '#64748b' } : {}]}>
+                          {isMedicineDay ? 'Available Monday to Saturday' : 'Clinic Closed on Sundays'}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[
+                          styles.genButton,
+                          { backgroundColor: isTreatmentDay ? '#f59e0b' : '#e2e8f0', opacity: isTreatmentDay ? 1 : 0.65 }
+                        ]}
+                        onPress={() => handleGenerateToken('treatment')}
+                        disabled={tokenLoading || !isTreatmentDay}
+                      >
+                        <Text style={[styles.genButtonText, { color: isTreatmentDay ? '#0d1117' : '#64748b' }]}>
+                          Treatment / Dressing
+                        </Text>
+                        <Text style={[styles.genButtonSub, { color: isTreatmentDay ? '#27272a' : '#64748b' }]}>
+                          {isTreatmentDay ? 'Available Today (Tue, Wed & Thu)' : 'Available Tuesday, Wednesday & Thursday Only (Disabled Today)'}
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  );
+                })()}
               </View>
             </View>
           )}

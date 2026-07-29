@@ -50,8 +50,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       fetchProfileAndToken();
     });
 
-    // 60-second fallback polling interval
-    const fallbackInterval = setInterval(fetchProfileAndToken, 60000);
+    // 15-second fallback polling interval
+    const fallbackInterval = setInterval(fetchProfileAndToken, 15000);
 
     return () => {
       socket.disconnect();

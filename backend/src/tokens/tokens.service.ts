@@ -216,8 +216,8 @@ export class TokensService {
       ? `You missed your token ${token.tokenNumber}! The doctor is currently serving ${currentServingToken ? currentServingToken.tokenNumber : 'later tokens'}. Please report to the doctor or reception right after Token ${lastTokenNumber} (Last token of the session).`
       : null;
 
-    // Estimate waiting time: 5 minutes per patient ahead
-    const estimatedWaitingTimeMinutes = exactAhead * 5;
+    // Estimate waiting time: 20 minutes per patient ahead
+    const estimatedWaitingTimeMinutes = exactAhead * 20;
 
     return {
       token: {

@@ -140,6 +140,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
               <Text style={styles.tokenTitle}>TODAY'S TOKEN</Text>
               <Text style={styles.tokenNumber}>{todayToken.tokenNumber}</Text>
 
+              {/* Missed Token Warning Banner */}
+              {todayToken.isMissed ? (
+                <View style={{ backgroundColor: '#fffbe6', borderWidth: 1, borderColor: '#ffe58f', borderRadius: 12, padding: 14, marginVertical: 12 }}>
+                  <Text style={{ fontSize: 14, fontWeight: '800', color: '#d46b08', marginBottom: 4 }}>
+                    ⚠️ MISSED TOKEN ALERT
+                  </Text>
+                  <Text style={{ fontSize: 13, color: '#ad4e00', lineHeight: 18 }}>
+                    {todayToken.missedMessage || `You missed your turn! The doctor is currently serving ${todayToken.currentServing}. Please report to the doctor right after Token ${todayToken.lastTokenNumber}.`}
+                  </Text>
+                </View>
+              ) : null}
+
               <View style={styles.divider} />
 
               <View style={styles.grid}>
@@ -148,19 +160,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                   <Text style={styles.gridValue}>{todayToken.currentServing}</Text>
                 </View>
                 <View style={styles.gridItem}>
-                  <Text style={styles.gridLabel}>Ahead</Text>
-                  <Text style={styles.gridValue}>{todayToken.patientsAhead} Patients</Text>
+                  <Text style={styles.gridLabel}>Total Tokens Today</Text>
+                  <Text style={styles.gridValue}>{todayToken.lastTokenNumber || '1'}</Text>
                 </View>
                 <View style={styles.gridItem}>
-                  <Text style={styles.gridLabel}>Est. Wait</Text>
-                  <Text style={styles.gridValue}>{todayToken.estimatedWaitingTimeMinutes} Mins</Text>
+                  <Text style={styles.gridLabel}>Ahead / Wait</Text>
+                  <Text style={styles.gridValue}>{todayToken.isMissed ? 'After Last' : `${todayToken.patientsAhead} Patients`}</Text>
                 </View>
               </View>
 
               <View style={styles.statusFooter}>
                 <Text style={styles.footerLabel}>Token State:</Text>
-                <Text style={[styles.badge, (styles as any)[`badge_${todayToken.status}`] || styles.badge_waiting]}>
-                  {todayToken.status.toUpperCase()}
+                <Text style={[styles.badge, todayToken.isMissed ? { backgroundColor: '#fffbe6', color: '#d46b08', borderColor: '#ffe58f' } : ((styles as any)[`badge_${todayToken.status}`] || styles.badge_waiting)]}>
+                  {todayToken.isMissed ? 'MISSED (WAIT AFTER LAST TOKEN)' : todayToken.status.toUpperCase()}
                 </Text>
               </View>
             </View>

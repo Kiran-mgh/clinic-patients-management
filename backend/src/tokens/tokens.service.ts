@@ -175,6 +175,47 @@ export class TokensService {
       },
     });
 
+    // Get latest served token if no token is currently in_progress
+    const latestServedToken = await this.tokenRepository.findOne({
+      where: {
+        serviceType: token.serviceType,
+        status: 'served',
+        generatedAt: MoreThanOrEqual(startOfToday),
+      },
+      order: { sequenceNumber: 'DESC' },
+    });
+
+    // Get last generated token for today
+    const lastGeneratedToken = await this.tokenRepository.findOne({
+      where: {
+        serviceType: token.serviceType,
+        generatedAt: MoreThanOrEqual(startOfToday),
+      },
+      order: { sequenceNumber: 'DESC' },
+    });
+
+    // Get total tokens generated today for this service
+    const totalTokensToday = await this.tokenRepository.count({
+      where: {
+        serviceType: token.serviceType,
+        generatedAt: MoreThanOrEqual(startOfToday),
+      },
+    });
+
+    const currentServingSeq = currentServingToken
+      ? currentServingToken.sequenceNumber
+      : (latestServedToken ? latestServedToken.sequenceNumber : 0);
+
+    const isMissed = token.status === 'waiting' && token.sequenceNumber < currentServingSeq;
+    const lastTokenNumber = lastGeneratedToken ? lastGeneratedToken.tokenNumber : token.tokenNumber;
+    const currentServingText = currentServingToken
+      ? currentServingToken.tokenNumber
+      : (latestServedToken ? `Last Served: ${latestServedToken.tokenNumber}` : 'None');
+
+    const missedMessage = isMissed
+      ? `You missed your token ${token.tokenNumber}! The doctor is currently serving ${currentServingToken ? currentServingToken.tokenNumber : 'later tokens'}. Please report to the doctor or reception right after Token ${lastTokenNumber} (Last token of the session).`
+      : null;
+
     // Estimate waiting time: 5 minutes per patient ahead
     const estimatedWaitingTimeMinutes = exactAhead * 5;
 
@@ -182,12 +223,17 @@ export class TokensService {
       token: {
         id: token.id,
         tokenNumber: token.tokenNumber,
-        status: token.status,
+        status: isMissed ? 'missed' : token.status,
         serviceType: token.serviceType,
         sequenceNumber: token.sequenceNumber,
         patientsAhead: exactAhead,
         estimatedWaitingTimeMinutes,
-        currentServing: currentServingToken ? currentServingToken.tokenNumber : 'None',
+        currentServing: currentServingText,
+        currentServingSequence: currentServingSeq,
+        lastTokenNumber,
+        totalTokensToday,
+        isMissed,
+        missedMessage,
         generatedAt: token.generatedAt,
       },
     };

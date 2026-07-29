@@ -78,14 +78,30 @@ export class QueueService {
     };
   }
 
-  async getTodayQueue(): Promise<Token[]> {
+  async getTodayQueue(): Promise<any[]> {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    return this.tokenRepository.find({
+    const tokens = await this.tokenRepository.find({
       where: { generatedAt: MoreThanOrEqual(startOfToday) },
       relations: ['patient'],
       order: { sequenceNumber: 'ASC' },
+    });
+
+    const activeMedicineToken = tokens.find(t => t.serviceType === 'medicine' && t.status === 'in_progress');
+    const activeTreatmentToken = tokens.find(t => t.serviceType === 'treatment' && t.status === 'in_progress');
+
+    const medServingSeq = activeMedicineToken ? activeMedicineToken.sequenceNumber : 0;
+    const trtServingSeq = activeTreatmentToken ? activeTreatmentToken.sequenceNumber : 0;
+
+    return tokens.map(t => {
+      const currentSeq = t.serviceType === 'medicine' ? medServingSeq : trtServingSeq;
+      const isMissed = t.status === 'waiting' && currentSeq > 0 && t.sequenceNumber < currentSeq;
+      return {
+        ...t,
+        isMissed,
+        effectiveStatus: isMissed ? 'missed' : t.status,
+      };
     });
   }
 

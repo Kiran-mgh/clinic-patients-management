@@ -218,15 +218,25 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                       <span style={{ textTransform: 'capitalize' }}>{t.serviceType}</span>
                     </td>
                     <td>
-                      <span className={`badge badge-${t.status}`}>
-                        {t.status === 'in_progress' ? 'Serving' : t.status}
-                      </span>
+                      {t.isMissed ? (
+                        <span className="badge" style={{ backgroundColor: '#fffbe6', color: '#d46b08', borderColor: '#ffe58f', fontWeight: 700 }}>
+                          ⚠️ Missed (Skipped)
+                        </span>
+                      ) : (
+                        <span className={`badge badge-${t.status}`}>
+                          {t.status === 'in_progress' ? 'Serving' : t.status}
+                        </span>
+                      )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                         {t.status === 'waiting' && (
-                          <button className="btn btn-secondary" style={{ padding: '6px 10px' }} onClick={() => handleStatusUpdate(t.id, 'in_progress')}>
-                            <Play size={14} /> Call
+                          <button 
+                            className="btn btn-secondary" 
+                            style={t.isMissed ? { backgroundColor: '#fffbe6', borderColor: '#ffe58f', color: '#d46b08', padding: '6px 10px', fontWeight: 700 } : { padding: '6px 10px' }} 
+                            onClick={() => handleStatusUpdate(t.id, 'in_progress')}
+                          >
+                            <Play size={14} /> {t.isMissed ? 'Call Missed Token' : 'Call'}
                           </button>
                         )}
                         {t.status === 'in_progress' && (

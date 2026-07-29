@@ -54,15 +54,15 @@ export class TokensService {
     }
     */
 
-    // 3. Treatment Availability: Tuesday (2) and Wednesday (3) only (BYPASSED FOR TESTING)
-    /*
+    // 3. Treatment Availability: Tuesday (2), Wednesday (3), and Thursday (4) only
     if (serviceType === 'treatment') {
       const dayOfWeek = now.getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
-      if (dayOfWeek !== 2 && dayOfWeek !== 3) {
-        throw new BadRequestException('Treatment services are available only on Tuesday and Wednesday.');
+      if (dayOfWeek !== 2 && dayOfWeek !== 3 && dayOfWeek !== 4) {
+        throw new BadRequestException(
+          'Treatment services are available only on Tuesday, Wednesday, and Thursday.'
+        );
       }
     }
-    */
 
     // 4. One Token Per Patient per day
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());

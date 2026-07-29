@@ -198,7 +198,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                   disabled={tokenLoading}
                 >
                   <Text style={[styles.genButtonText, { color: '#0d1117' }]}>Treatment / Dressing</Text>
-                  <Text style={[styles.genButtonSub, { color: '#27272a' }]}>Tuesday & Wednesday Only</Text>
+                  <Text style={[styles.genButtonSub, { color: '#27272a' }]}>Tuesday, Wednesday & Thursday Only</Text>
                 </TouchableOpacity>
               </View>
             </View>

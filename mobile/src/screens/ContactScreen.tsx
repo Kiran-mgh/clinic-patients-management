@@ -74,7 +74,7 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
         </View>
         <View style={styles.bulletRow}>
           <Text style={styles.bullet}>•</Text>
-          <Text style={styles.bulletText}>Treatment services are available only on Tuesday and Wednesday.</Text>
+          <Text style={styles.bulletText}>Treatment services are available only on Tuesday, Wednesday, and Thursday.</Text>
         </View>
         <View style={styles.bulletRow}>
           <Text style={styles.bullet}>•</Text>

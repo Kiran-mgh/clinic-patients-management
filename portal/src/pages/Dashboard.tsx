@@ -44,8 +44,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
       fetchMetrics();
     });
 
-    // 60-second fallback polling interval
-    const fallbackInterval = setInterval(fetchMetrics, 60000);
+    // 15-second fallback polling interval
+    const fallbackInterval = setInterval(fetchMetrics, 15000);
 
     return () => {
       socket.disconnect();
@@ -174,7 +174,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
             <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', color: 'hsl(var(--primary))' }}>Service Timing Rules Reminder</h3>
             <ul style={{ paddingLeft: '20px', color: 'hsl(var(--text-muted))', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <li>Token generation timing is restricted between <strong>6:00 AM and 4:30 PM</strong>.</li>
-              <li>Treatment token services are only enabled on <strong>Tuesdays</strong> and <strong>Wednesdays</strong>.</li>
+              <li>Treatment token services are enabled on <strong>Tuesdays</strong>, <strong>Wednesdays</strong>, and <strong>Thursdays</strong>.</li>
               <li>At <strong>5:00 PM</strong>, all remaining active/waiting tokens are automatically expired by the daily cron system.</li>
             </ul>
           </div>

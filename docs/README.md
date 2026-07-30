@@ -13,6 +13,7 @@ Welcome to the official developer and architecture documentation for the **Amar 
 | 🧪 [Testing & Quality Assurance Guide](./TESTING.md) | Automated Jest unit tests, WebSocket test workflows, and manual QA validation. | QA Engineers, Backend Developers |
 | 🔌 [API Reference & OpenAPI Docs](./API_DOCUMENTATION.md) | REST API endpoints, DTO schemas, authentication headers, and Swagger Basic Auth. | Frontend/Mobile Developers, Integrators |
 | 🚀 [Play Store Publishing Guide](./PLAY_STORE_PUBLISHING_GUIDE.md) | Step-by-step walkthrough to publish Amar Ayurveda to Google Play Store from scratch. | Product Managers, Mobile Developers |
+| 🛠️ [Maintenance & Patching Guide](./MAINTENANCE_AND_PATCHING.md) | Regular patching workflows for EC2, Web Portal, and Mobile App version updates. | DevOps, Mobile Developers |
 
 ---
 

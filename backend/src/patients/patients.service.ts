@@ -51,11 +51,13 @@ export class PatientsService {
       status = 'pending_verification'; // Case 2: Existing patient without Patient ID
     }
 
+
+
     const patient = this.patientRepository.create({
       id: userId,
       fullName: data.fullName,
       gender: data.gender,
-      dateOfBirth: data.dateOfBirth,
+      dateOfBirth: this.parseToIsoDate(data.dateOfBirth),
       email: data.email,
       bloodGroup: data.bloodGroup,
       profession: data.profession,
@@ -107,7 +109,7 @@ export class PatientsService {
       id: user.id,
       fullName: data.fullName,
       gender: data.gender,
-      dateOfBirth: data.dateOfBirth,
+      dateOfBirth: this.parseToIsoDate(data.dateOfBirth),
       email: data.email,
       bloodGroup: data.bloodGroup,
       profession: data.profession,
@@ -340,6 +342,15 @@ export class PatientsService {
     }
 
     return patient;
+  }
+
+  private parseToIsoDate(dateStr: string): string {
+    if (!dateStr) return dateStr;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+      const [day, month, year] = dateStr.split('/');
+      return `${year}-${month}-${day}`;
+    }
+    return dateStr;
   }
 
   private async logAction(userId: string, action: string, details: string) {

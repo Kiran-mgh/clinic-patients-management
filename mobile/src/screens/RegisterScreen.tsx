@@ -12,45 +12,29 @@ interface RegisterScreenProps {
 }
 
 const formatDob = (text: string, prevValue: string = '') => {
-  const isDeleting = text.length < prevValue.length;
-  let cleaned = text.replace(/\D/g, '');
+  let cleaned = text.replace(/\D/g, '').slice(0, 8);
 
+  if (cleaned.length >= 2) {
+    let day = parseInt(cleaned.slice(0, 2), 10);
+    if (day < 1) day = 1;
+    if (day > 31) day = 31;
+    cleaned = day.toString().padStart(2, '0') + cleaned.slice(2);
+  }
   if (cleaned.length >= 4) {
-    let year = parseInt(cleaned.slice(0, 4), 10);
+    let month = parseInt(cleaned.slice(2, 4), 10);
+    if (month < 1) month = 1;
+    if (month > 12) month = 12;
+    cleaned = cleaned.slice(0, 2) + month.toString().padStart(2, '0') + cleaned.slice(4);
+  }
+  if (cleaned.length >= 8) {
+    let year = parseInt(cleaned.slice(4, 8), 10);
     const currentYear = new Date().getFullYear();
     if (year > currentYear) year = currentYear;
-    cleaned = year.toString().padStart(4, '0') + cleaned.slice(4);
-  }
-  if (cleaned.length >= 5) {
-    let monthPart = cleaned.slice(4, 6);
-    if (monthPart.length === 2) {
-      let month = parseInt(monthPart, 10);
-      if (month < 1) month = 1;
-      if (month > 12) month = 12;
-      cleaned = cleaned.slice(0, 4) + month.toString().padStart(2, '0') + cleaned.slice(6);
-    }
-  }
-  if (cleaned.length >= 7) {
-    let dayPart = cleaned.slice(6, 8);
-    if (dayPart.length === 2) {
-      let day = parseInt(dayPart, 10);
-      if (day < 1) day = 1;
-      const year = parseInt(cleaned.slice(0, 4), 10);
-      const month = parseInt(cleaned.slice(4, 6), 10);
-      let maxDays = 31;
-      if (month === 2) {
-        maxDays = ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 29 : 28;
-      } else if ([4, 6, 9, 11].includes(month)) {
-        maxDays = 30;
-      }
-      if (day > maxDays) day = maxDays;
-      cleaned = cleaned.slice(0, 6) + day.toString().padStart(2, '0');
-    }
+    cleaned = cleaned.slice(0, 4) + year.toString().padStart(4, '0');
   }
 
-  cleaned = cleaned.slice(0, 8);
-  if (cleaned.length > 6) return cleaned.slice(0, 4) + '-' + cleaned.slice(4, 6) + '-' + cleaned.slice(6, 8);
-  if (cleaned.length > 4) return cleaned.slice(0, 4) + '-' + cleaned.slice(4, 6);
+  if (cleaned.length > 4) return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4, 8);
+  if (cleaned.length > 2) return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4);
   return cleaned;
 };
 
@@ -108,8 +92,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
 
     if (!dateOfBirth.trim()) { setError('Date of birth is required.'); return; }
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth.trim())) {
-      setError('Date of birth must be in YYYY-MM-DD format.');
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateOfBirth.trim())) {
+      setError('Date of birth must be in DD/MM/YYYY format.');
       return;
     }
 
@@ -229,8 +213,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
             ))}
           </View>
 
-          <Text style={styles.label}>DATE OF BIRTH * (YYYY-MM-DD)</Text>
-          <TextInput style={styles.input} placeholder="1985-12-30" placeholderTextColor="#a0aec0"
+          <Text style={styles.label}>DATE OF BIRTH * (DD/MM/YYYY)</Text>
+          <TextInput style={styles.input} placeholder="30/12/1985" placeholderTextColor="#a0aec0"
             keyboardType="numeric" maxLength={10}
             value={dateOfBirth} onChangeText={(t) => setDateOfBirth(formatDob(t, dateOfBirth))} />
 

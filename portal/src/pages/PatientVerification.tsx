@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { Check, Search, User, FileSpreadsheet } from 'lucide-react';
 import { io } from 'socket.io-client';
+import { formatToIndianDate } from '../utils/dateUtils';
 
 interface PatientVerificationProps {
   token: string | null;
@@ -198,7 +199,7 @@ export const PatientVerification: React.FC<PatientVerificationProps> = ({ token 
                 </div>
                 <div>
                   <span style={{ color: 'hsl(var(--text-muted))' }}>Date of Birth:</span>
-                  <div style={{ fontWeight: 600 }}>{selectedPatient.dateOfBirth}</div>
+                  <div style={{ fontWeight: 600 }}>{formatToIndianDate(selectedPatient.dateOfBirth)}</div>
                 </div>
                 <div>
                   <span style={{ color: 'hsl(var(--text-muted))' }}>Town/Residence:</span>

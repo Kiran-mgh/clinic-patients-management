@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { Search, User } from 'lucide-react';
+import { formatToIndianDate, formatDobInput } from '../utils/dateUtils';
 
 interface PatientSearchProps {
   token: string | null;
@@ -362,14 +363,14 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
               </div>
 
               <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(var(--text-muted))' }}>Date of Birth *</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(var(--text-muted))' }}>Date of Birth * (DD/MM/YYYY)</label>
                 <input
                   type="text"
                   required
-                  placeholder="YYYY-MM-DD"
+                  placeholder="30/12/1985"
                   maxLength={10}
                   value={newDateOfBirth}
-                  onChange={(e) => setNewDateOfBirth(formatDob(e.target.value, newDateOfBirth))}
+                  onChange={(e) => setNewDateOfBirth(formatDobInput(e.target.value))}
                   style={{ borderRadius: '8px', border: '1px solid hsl(var(--border-color))', padding: '10px 12px', background: 'none', color: '#1a202c' }}
                 />
               </div>
@@ -616,7 +617,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
                   <span style={{ color: 'hsl(var(--text-muted))' }}>Date of Birth:</span>
-                  <span style={{ fontWeight: 600 }}>{selectedPatient.dateOfBirth}</span>
+                  <span style={{ fontWeight: 600 }}>{formatToIndianDate(selectedPatient.dateOfBirth)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
                   <span style={{ color: 'hsl(var(--text-muted))' }}>Town/Residence:</span>

@@ -163,8 +163,8 @@ export const PatientVerification: React.FC<PatientVerificationProps> = ({ token 
           )}
         </div>
 
-        {/* Right Side: Verification Panel */}
-        <div className="glass-card">
+        {/* Right Side: Verification Panel (Sticky Frozen Panel) */}
+        <div className="glass-card" style={{ position: 'sticky', top: '24px', alignSelf: 'start', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
           {selectedPatient ? (
             <form onSubmit={handleApprove} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>

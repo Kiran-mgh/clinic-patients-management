@@ -576,8 +576,8 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
           )}
         </div>
 
-        {/* Right Side: Detail card */}
-        <div className="glass-card">
+        {/* Right Side: Detail card (Sticky Frozen Panel) */}
+        <div className="glass-card" style={{ position: 'sticky', top: '24px', alignSelf: 'start', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
           {selectedPatient ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>

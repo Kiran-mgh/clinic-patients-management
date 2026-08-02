@@ -212,6 +212,12 @@ export const PatientVerification: React.FC<PatientVerificationProps> = ({ token 
                   <span style={{ color: 'hsl(var(--text-muted))' }}>Blood Group:</span>
                   <div style={{ fontWeight: 600 }}>{selectedPatient.bloodGroup || 'N/A'}</div>
                 </div>
+                <div style={{ gridColumn: 'span 2', marginTop: '4px', paddingTop: '8px', borderTop: '1px solid hsl(var(--border-color))' }}>
+                  <span style={{ color: 'hsl(var(--text-muted))' }}>Piles / Fistula / Fissures Surgery History:</span>
+                  <div style={{ fontWeight: 600, color: selectedPatient.previousSurgeryDetails ? '#d97706' : 'hsl(var(--text-main))' }}>
+                    {selectedPatient.previousSurgeryDetails || 'None Reported'}
+                  </div>
+                </div>
               </div>
 
               {selectedPatient.isExisting && (

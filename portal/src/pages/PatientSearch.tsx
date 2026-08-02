@@ -139,6 +139,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
   const [newBloodGroup, setNewBloodGroup] = useState('');
   const [newProfession, setNewProfession] = useState('');
   const [newTown, setNewTown] = useState('');
+  const [newPreviousSurgeryDetails, setNewPreviousSurgeryDetails] = useState('');
   const [newIsExisting, setNewIsExisting] = useState(false);
   const [newExistingPatientId, setNewExistingPatientId] = useState('');
 
@@ -231,6 +232,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
         bloodGroup: newBloodGroup || undefined,
         profession: newProfession.trim(),
         town: newTown.trim(),
+        previousSurgeryDetails: newPreviousSurgeryDetails.trim() || undefined,
         isExisting: newIsExisting,
         existingPatientId: newIsExisting && newExistingPatientId.trim() ? newExistingPatientId.trim().toUpperCase() : undefined
       };
@@ -426,6 +428,17 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
                 />
               </div>
 
+              <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '6px', gridColumn: 'span 2' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(var(--text-muted))' }}>Was any surgery done previously for Piles / Fistula / Fissures? (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Yes - Piles surgery in 2021 / No / None"
+                  value={newPreviousSurgeryDetails}
+                  onChange={(e) => setNewPreviousSurgeryDetails(e.target.value)}
+                  style={{ borderRadius: '8px', border: '1px solid hsl(var(--border-color))', padding: '10px 12px', background: 'none', color: '#1a202c' }}
+                />
+              </div>
+
             </div>
 
             <div style={{ borderTop: '1px solid hsl(var(--border-color))', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -613,9 +626,15 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
                   <span style={{ color: 'hsl(var(--text-muted))' }}>Profession:</span>
                   <span style={{ fontWeight: 600 }}>{selectedPatient.profession}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
                   <span style={{ color: 'hsl(var(--text-muted))' }}>Blood Group:</span>
                   <span style={{ fontWeight: 600 }}>{selectedPatient.bloodGroup || 'Not Specified'}</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingTop: '4px' }}>
+                  <span style={{ color: 'hsl(var(--text-muted))' }}>Piles / Fistula / Fissures Surgery History:</span>
+                  <span style={{ fontWeight: 600, color: selectedPatient.previousSurgeryDetails ? '#d97706' : 'hsl(var(--text-main))' }}>
+                    {selectedPatient.previousSurgeryDetails || 'None Reported'}
+                  </span>
                 </div>
               </div>
 

@@ -74,6 +74,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
   const [isExisting, setIsExisting] = useState(false);
   const [hasPatientId, setHasPatientId] = useState(false);
   const [existingPatientId, setExistingPatientId] = useState('');
+  const [previousSurgeryDetails, setPreviousSurgeryDetails] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -140,6 +141,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
         bloodGroup: bloodGroup.trim() || undefined,
         profession: profession.trim() || undefined,
         town: town.trim(),
+        previousSurgeryDetails: previousSurgeryDetails.trim() || undefined,
         isExisting,
         existingPatientId: (isExisting && hasPatientId) ? existingPatientId.trim() : null,
       }, token);
@@ -261,6 +263,17 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
               </TouchableOpacity>
             </View>
           )}
+
+          <Text style={styles.label}>PREVIOUS SURGERY FOR PILES / FISTULA / FISSURES (OPTIONAL)</Text>
+          <TextInput
+            style={[styles.input, { height: 60, textAlignVertical: 'top', paddingTop: 10 }]}
+            placeholder="e.g. Yes - Piles surgery in 2021 / No / None"
+            placeholderTextColor="#a0aec0"
+            multiline
+            numberOfLines={2}
+            value={previousSurgeryDetails}
+            onChangeText={setPreviousSurgeryDetails}
+          />
 
           <View style={styles.divider} />
 

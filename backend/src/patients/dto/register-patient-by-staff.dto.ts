@@ -35,4 +35,7 @@ export class RegisterPatientByStaffDto {
 
   @IsOptional()
   existingPatientId?: string;
+
+  @IsOptional()
+  previousSurgeryDetails?: string;
 }

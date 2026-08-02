@@ -34,6 +34,7 @@ export class PatientsService {
       town: string;
       isExisting: boolean;
       existingPatientId?: string;
+      previousSurgeryDetails?: string;
     },
   ): Promise<Patient> {
     const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['patient'] });
@@ -59,6 +60,7 @@ export class PatientsService {
       bloodGroup: data.bloodGroup,
       profession: data.profession,
       town: data.town,
+      previousSurgeryDetails: data.previousSurgeryDetails,
       isExisting: data.isExisting,
       patientId: data.isExisting ? data.existingPatientId : null,
       status,
@@ -110,6 +112,7 @@ export class PatientsService {
       bloodGroup: data.bloodGroup,
       profession: data.profession,
       town: data.town,
+      previousSurgeryDetails: data.previousSurgeryDetails,
       isExisting: data.isExisting,
       patientId,
       status,

@@ -31,6 +31,9 @@ export class Patient {
   @Column()
   town: string;
 
+  @Column({ type: 'text', nullable: true })
+  previousSurgeryDetails: string;
+
   @Column({ default: 'pending_approval' })
   status: string; // 'pending_approval' | 'pending_verification' | 'active'
 

@@ -9,11 +9,11 @@ interface PatientSearchProps {
 
 /**
  * 1. Sanitization: All non-digit characters are stripped out.
- * 2. Structure: Input is automatically formatted into YYYY-MM-DD.
+ * 2. Structure: Input is automatically formatted into DD/MM/YYYY.
  * 3. Year validation: Typing a year in the future corrects it to the current year.
  * 4. Month validation: Entering a first digit > 1 auto-prefixes a '0'; entering > 12 caps it to 12.
  * 5. Day validation: Entering a first digit > 3 auto-prefixes a '0'; entering a day > max days for the month caps it to the limit (accounting for leap years).
- * 6. Bounds: The input automatically limits to 10 characters (YYYY-MM-DD format).
+ * 6. Bounds: The input automatically limits to 10 characters (DD/MM/YYYY format).
  */
 const formatDob = (text: string, prevValue: string = '') => {
   const isDeleting = text.length < prevValue.length;
@@ -200,8 +200,8 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
       return;
     }
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(newDateOfBirth)) {
-      setFormError('Date of birth must match YYYY-MM-DD format.');
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(newDateOfBirth)) {
+      setFormError('Date of birth must match DD/MM/YYYY format.');
       return;
     }
 

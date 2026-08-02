@@ -1,6 +1,9 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
+import * as nodemailer from 'nodemailer';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Patient } from '../entities/patient.entity';
 import { User } from '../entities/user.entity';
 import { AuditLog } from '../entities/audit-log.entity';
@@ -152,7 +155,10 @@ export class PatientsService {
   }
 
   async approvePatient(adminId: string, id: string, customPatientId?: string): Promise<Patient> {
-    const patient = await this.patientRepository.findOne({ where: { id } });
+    const patient = await this.patientRepository.findOne({
+      where: { id },
+      relations: ['user'],
+    });
     if (!patient) {
       throw new NotFoundException('Patient not found');
     }
@@ -173,6 +179,11 @@ export class PatientsService {
 
     const updatedPatient = await this.patientRepository.save(patient);
 
+    // Trigger automated approval email
+    this.sendApprovalEmail(updatedPatient).catch(err => {
+      console.error(`[APPROVAL EMAIL ERROR] Failed to send approval email: ${err.message}`);
+    });
+
     // Audit log
     await this.logAction(
       adminId,
@@ -184,6 +195,90 @@ export class PatientsService {
     this.queueGateway.emitQueueUpdate();
 
     return updatedPatient;
+  }
+
+  private async sendApprovalEmail(patient: Patient): Promise<void> {
+    const recipientEmail = patient.email || (patient.user && patient.user.email);
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      console.log(`[APPROVAL EMAIL SKIPPED] Patient ${patient.fullName} (ID: ${patient.patientId}) has no valid email address.`);
+      return;
+    }
+
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS;
+    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+    const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
+    const fromEmail = process.env.SMTP_FROM || smtpUser || 'no-reply@amar.vistarafabtech.com';
+
+    if (smtpUser && smtpPass) {
+      try {
+        const transporter = nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: smtpPort === 465,
+          auth: {
+            user: smtpUser,
+            pass: smtpPass,
+          },
+        });
+
+        const logoPath = path.join(process.cwd(), 'assets/logo.png');
+        const hasLogoFile = fs.existsSync(logoPath);
+
+        const mailOptions: any = {
+          from: `"Amar Ayurveda" <${fromEmail}>`,
+          to: recipientEmail,
+          subject: '🎉 Your Amar Ayurveda Registration is Approved!',
+          text: `Hello ${patient.fullName},\n\nGreat news! Your registration at Amar Ayurveda has been approved.\n\nYour Assigned Patient ID is: ${patient.patientId}\n\nYou can now open the Amar Ayurveda Mobile App to generate daily consultation tokens and track live queue status.\n\nClinic Address:\n#2 & 4 7th Cross, R.T. Street, Bengaluru - 560 053\nPhone: 080 - 22268269\n\nThank you for choosing Amar Ayurveda!`,
+          html: `
+            <div style="font-family: Arial, sans-serif; padding: 28px; color: #333; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+              <div style="display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #f0fdf4;">
+                ${hasLogoFile ? '<img src="cid:amar_logo" alt="Amar Ayurveda Logo" style="height: 36px; width: 36px; object-fit: contain; vertical-align: middle;" />' : '<span style="font-size: 20px;">🌿</span>'}
+                <span style="font-size: 20px; font-weight: 800; color: #213932; letter-spacing: -0.5px; vertical-align: middle; margin-left: 10px; font-family: sans-serif;">Amar Ayurveda</span>
+              </div>
+              <h2 style="color: #166534; margin-top: 0; margin-bottom: 8px;">🎉 Registration Approved!</h2>
+              <p style="font-size: 14px; color: #4a5568;">Dear <strong>${patient.fullName}</strong>,</p>
+              <p style="font-size: 14px; color: #4a5568;">Great news! Your registration profile at <strong>Amar Ayurveda</strong> has been reviewed and approved by the clinic.</p>
+              
+              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 18px 24px; text-align: center; border-radius: 12px; margin: 20px 0;">
+                <span style="font-size: 12px; font-weight: 700; color: #15803d; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px;">Your Assigned Patient ID</span>
+                <span style="font-size: 32px; font-weight: 900; color: #166534; letter-spacing: 2px; font-family: monospace;">${patient.patientId}</span>
+              </div>
+
+              <p style="font-size: 14px; color: #4a5568; margin-bottom: 12px;"><strong>What you can do now:</strong></p>
+              <ul style="font-size: 13px; color: #4a5568; padding-left: 20px; margin-bottom: 20px; line-height: 1.7;">
+                <li>Open the <strong>Amar Ayurveda Mobile App</strong></li>
+                <li>Generate daily consultation tokens for Medicine or Treatment</li>
+                <li>View live queue positions and estimated waiting times</li>
+              </ul>
+
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; margin-top: 16px;">
+                <p style="margin: 0; font-size: 12px; font-weight: 700; color: #334155;">📍 Clinic Contact & Location:</p>
+                <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">#2 & 4 7th Cross, R.T. Street, Bengaluru - 560 053</p>
+                <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">📞 Phone: 080 - 22268269</p>
+              </div>
+
+              <hr style="border: 0; border-top: 1px solid #edf2f7; margin: 24px 0 16px 0;" />
+              <p style="font-size: 11px; color: #a0aec0; text-align: center; margin: 0;">Thank you for choosing Amar Ayurveda. Wish you good health!</p>
+            </div>
+          `,
+          attachments: hasLogoFile ? [
+            {
+              filename: 'logo.png',
+              path: logoPath,
+              cid: 'amar_logo',
+            },
+          ] : [],
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`[SMTP EMAIL SENT] Sent approval email to ${recipientEmail} with Patient ID ${patient.patientId}`);
+      } catch (mailError: any) {
+        console.error(`[SMTP EMAIL ERROR] Failed to send approval email to ${recipientEmail}: ${mailError.message}`);
+      }
+    } else {
+      console.warn(`[SMTP WARN] Real SMTP credentials not set in .env. Approval email for ${patient.fullName} (${recipientEmail}) with Patient ID ${patient.patientId} logged.`);
+    }
   }
 
   async searchPatients(query: string): Promise<Patient[]> {

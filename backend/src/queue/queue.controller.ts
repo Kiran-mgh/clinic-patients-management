@@ -40,7 +40,9 @@ export class QueueController {
     @Param('id') id: string,
     @Body('status') status: string,
     @Body('notes') notes?: string,
+    @Body('paymentStatus') paymentStatus?: string,
+    @Body('paymentNotes') paymentNotes?: string,
   ) {
-    return this.queueService.updateTokenStatus(req.user.id, id, status, notes);
+    return this.queueService.updateTokenStatus(req.user.id, id, status, notes, paymentStatus, paymentNotes);
   }
 }

@@ -155,7 +155,14 @@ export class QueueService {
     return updatedToken;
   }
 
-  async updateTokenStatus(adminId: string, id: string, status: string, notes?: string): Promise<Token> {
+  async updateTokenStatus(
+    adminId: string,
+    id: string,
+    status: string,
+    notes?: string,
+    paymentStatus?: string,
+    paymentNotes?: string,
+  ): Promise<Token> {
     if (!['served', 'cancelled', 'waiting', 'in_progress'].includes(status)) {
       throw new BadRequestException('Invalid status value');
     }
@@ -168,11 +175,18 @@ export class QueueService {
     const now = new Date();
     token.status = status;
 
+    if (notes !== undefined) {
+      token.notes = notes;
+    }
+    if (paymentStatus !== undefined) {
+      token.paymentStatus = paymentStatus;
+    }
+    if (paymentNotes !== undefined) {
+      token.paymentNotes = paymentNotes;
+    }
+
     if (status === 'served') {
       token.servedAt = now;
-      if (notes) {
-        token.notes = notes;
-      }
     } else if (status === 'cancelled') {
       token.cancelledAt = now;
     }
@@ -257,6 +271,9 @@ export class QueueService {
         patientName: t.patient?.fullName || '',
         patientCustomId: t.patient?.patientId || '',
         notes: t.notes || '',
+        paymentStatus: t.paymentStatus || 'Unpaid',
+        paymentNotes: t.paymentNotes || '',
+        paymentDisplay: (t.paymentStatus || 'Unpaid') + (t.paymentNotes ? ` (${t.paymentNotes})` : ''),
       })),
       newPatients: newPatients.map(p => ({
         id: p.id,

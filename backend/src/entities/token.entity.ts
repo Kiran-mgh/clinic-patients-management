@@ -39,4 +39,10 @@ export class Token {
 
   @Column({ type: 'text', nullable: true })
   notes: string;
+
+  @Column({ default: 'Unpaid' })
+  paymentStatus: string; // 'Paid' | 'Unpaid'
+
+  @Column({ type: 'text', nullable: true })
+  paymentNotes: string;
 }

@@ -19,6 +19,9 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
   const [detailError, setDetailError] = useState('');
   const [servingToken, setServingToken] = useState<any>(null);
   const [healthNotes, setHealthNotes] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<'Unpaid' | 'Paid'>('Unpaid');
+  const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
 
   const handlePatientClick = async (patientId: string) => {
     if (!patientId) return;
@@ -84,10 +87,15 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
     }
   };
 
-  const handleStatusUpdate = async (id: string, status: string, notes?: string) => {
+  const handleStatusUpdate = async (id: string, status: string, notes?: string, payStatus?: string, payNotes?: string) => {
     setError('');
     try {
-      await api.patch(`/queue/tokens/${id}/status`, { status, notes }, token);
+      await api.patch(`/queue/tokens/${id}/status`, {
+        status,
+        notes,
+        paymentStatus: payStatus,
+        paymentNotes: payNotes,
+      }, token);
       fetchQueue();
     } catch (err: any) {
       setError(err.message || 'Failed to update token status');
@@ -99,7 +107,10 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
     const matchesSearch = t.tokenNumber.toLowerCase().includes(searchToken.toLowerCase()) ||
                           t.patient?.fullName.toLowerCase().includes(searchToken.toLowerCase());
     const matchesType = filterType === 'all' || t.serviceType === filterType;
-    return matchesSearch && matchesType;
+    const matchesPayment = paymentFilter === 'all' ||
+      (paymentFilter === 'paid' && t.paymentStatus === 'Paid') ||
+      (paymentFilter === 'unpaid' && t.paymentStatus !== 'Paid');
+    return matchesSearch && matchesType && matchesPayment;
   });
 
   const medicineQueue = filteredQueue.filter((t) => t.serviceType === 'medicine');
@@ -168,16 +179,38 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
             <button className={`btn ${filterType === 'treatment' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => setFilterType('treatment')}>Treatment</button>
           </div>
 
-          {/* Search Token */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'hsl(var(--bg-primary))', border: '1px solid hsl(var(--border-color))', borderRadius: '8px', padding: '6px 12px', width: '300px' }}>
-            <Search size={18} style={{ color: 'hsl(var(--text-muted))' }} />
-            <input
-              type="text"
-              placeholder="Search token or patient name..."
-              value={searchToken}
-              onChange={(e) => setSearchToken(e.target.value)}
-              style={{ background: 'none', border: 'none', outline: 'none', color: 'hsl(var(--text-main))', fontSize: '0.9rem', width: '100%' }}
-            />
+          {/* Payment Filter & Search */}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <select
+              value={paymentFilter}
+              onChange={(e: any) => setPaymentFilter(e.target.value)}
+              style={{
+                borderRadius: '8px',
+                border: '1px solid hsl(var(--border-color))',
+                padding: '7px 12px',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                color: paymentFilter === 'unpaid' ? '#b91c1c' : paymentFilter === 'paid' ? '#15803d' : '#1a202c',
+                background: '#ffffff',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">All Payment Statuses</option>
+              <option value="unpaid">Unpaid Only</option>
+              <option value="paid">Paid Only</option>
+            </select>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'hsl(var(--bg-primary))', border: '1px solid hsl(var(--border-color))', borderRadius: '8px', padding: '6px 12px', width: '260px' }}>
+              <Search size={18} style={{ color: 'hsl(var(--text-muted))' }} />
+              <input
+                type="text"
+                placeholder="Search token or patient..."
+                value={searchToken}
+                onChange={(e) => setSearchToken(e.target.value)}
+                style={{ background: 'none', border: 'none', outline: 'none', color: 'hsl(var(--text-main))', fontSize: '0.9rem', width: '100%' }}
+              />
+            </div>
           </div>
         </div>
 
@@ -193,6 +226,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                   <th>Token</th>
                   <th>Patient Info</th>
                   <th>Service</th>
+                  <th>Payment Status</th>
                   <th>Status</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -216,6 +250,28 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                     </td>
                     <td>
                       <span style={{ textTransform: 'capitalize' }}>{t.serviceType}</span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '3px 10px',
+                          borderRadius: '6px',
+                          fontSize: '0.75rem',
+                          fontWeight: 800,
+                          width: 'fit-content',
+                          background: t.paymentStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
+                          color: t.paymentStatus === 'Paid' ? 'hsl(var(--success))' : 'hsl(var(--danger))',
+                          border: t.paymentStatus === 'Paid' ? '1px solid hsla(150, 55%, 32%, 0.25)' : '1px solid hsla(350, 65%, 44%, 0.25)'
+                        }}>
+                          {t.paymentStatus === 'Paid' ? '✓ Paid' : '⏳ Unpaid'}
+                        </span>
+                        {t.paymentNotes && (
+                          <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
+                            {t.paymentNotes}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       {t.isMissed ? (
@@ -479,14 +535,14 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'hsl(var(--text-primary))' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'hsl(var(--text-primary))' }}>
                 Patient Health Notes / Prescription (Optional)
               </label>
               <textarea
                 value={healthNotes}
                 onChange={(e) => setHealthNotes(e.target.value)}
                 placeholder="Enter prescription, treatment notes, or medical remarks..."
-                rows={5}
+                rows={4}
                 style={{
                   width: '100%',
                   padding: '12px',
@@ -502,21 +558,87 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
               />
             </div>
 
+            {/* Payment Details Section */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '16px',
+              padding: '16px',
+              background: 'hsla(var(--primary) / 0.04)',
+              borderRadius: '12px',
+              border: '1px solid hsl(var(--border-color))'
+            }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase' }}>
+                  Payment Status
+                </label>
+                <select
+                  value={paymentStatus}
+                  onChange={(e: any) => setPaymentStatus(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid hsl(var(--border-color))',
+                    fontSize: '0.9rem',
+                    fontWeight: 800,
+                    color: paymentStatus === 'Paid' ? '#15803d' : '#b91c1c',
+                    background: paymentStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.1)' : 'hsla(350, 65%, 44%, 0.1)',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="Unpaid">⏳ Unpaid</option>
+                  <option value="Paid">✓ Paid</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
+                  Payment Notes / Ref
+                </label>
+                <input
+                  type="text"
+                  value={paymentNotes}
+                  onChange={(e) => setPaymentNotes(e.target.value)}
+                  placeholder="e.g. Cash ₹500, UPI #9821"
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid hsl(var(--border-color))',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    color: '#1a202c',
+                    background: '#ffffff',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+            </div>
+
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
               <button 
                 className="btn btn-secondary" 
                 style={{ padding: '8px 16px', cursor: 'pointer' }}
-                onClick={() => { setServingToken(null); setHealthNotes(''); }}
+                onClick={() => {
+                  setServingToken(null);
+                  setHealthNotes('');
+                  setPaymentStatus('Unpaid');
+                  setPaymentNotes('');
+                }}
               >
                 Cancel
               </button>
               <button 
                 className="btn btn-success" 
-                style={{ padding: '8px 24px', cursor: 'pointer', fontWeight: 500 }}
+                style={{ padding: '8px 24px', cursor: 'pointer', fontWeight: 600 }}
                 onClick={() => {
-                  handleStatusUpdate(servingToken.id, 'served', healthNotes);
+                  handleStatusUpdate(servingToken.id, 'served', healthNotes, paymentStatus, paymentNotes);
                   setServingToken(null);
                   setHealthNotes('');
+                  setPaymentStatus('Unpaid');
+                  setPaymentNotes('');
                 }}
               >
                 Complete & Serve

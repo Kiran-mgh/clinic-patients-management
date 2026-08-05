@@ -719,8 +719,8 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                   onClick={() => exportToCSV(
                     reportData.visits, 
                     'visited_patients_report', 
-                    ['Date / Time of Visit', 'Patient ID', 'Patient Name', 'Token Number', 'Service Type', 'Status', 'Clinical Notes'],
-                    ['date', 'patientCustomId', 'patientName', 'tokenNumber', 'serviceType', 'status', 'notes']
+                    ['Date / Time of Visit', 'Patient ID', 'Patient Name', 'Token Number', 'Service Type', 'Payment Status', 'Status', 'Clinical Notes'],
+                    ['date', 'patientCustomId', 'patientName', 'tokenNumber', 'serviceType', 'paymentDisplay', 'status', 'notes']
                   )}
                   style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                 >
@@ -730,9 +730,9 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                   className="btn btn-secondary" 
                   onClick={() => exportToPDF(
                     'Visited Patients Operational Report', 
-                    ['Date / Time of Visit', 'Patient ID', 'Patient Name', 'Token Number', 'Service Type', 'Status', 'Clinical Notes'],
+                    ['Date / Time of Visit', 'Patient ID', 'Patient Name', 'Token Number', 'Service Type', 'Payment Status', 'Status', 'Clinical Notes'],
                     reportData.visits,
-                    ['date', 'patientCustomId', 'patientName', 'tokenNumber', 'serviceType', 'status', 'notes']
+                    ['date', 'patientCustomId', 'patientName', 'tokenNumber', 'serviceType', 'paymentDisplay', 'status', 'notes']
                   )}
                   style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                 >
@@ -750,6 +750,7 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                     <th>Patient Name</th>
                     <th>Token Number</th>
                     <th>Service Type</th>
+                    <th>Payment Status</th>
                     <th>Status</th>
                     <th>Clinical Notes</th>
                   </tr>
@@ -757,7 +758,7 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                 <tbody>
                   {reportData.visits.length === 0 ? (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', color: 'hsl(var(--text-muted))', padding: '32px 0' }}>
+                      <td colSpan={8} style={{ textAlign: 'center', color: 'hsl(var(--text-muted))', padding: '32px 0' }}>
                         No patient visits recorded in this range.
                       </td>
                     </tr>
@@ -773,6 +774,21 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                           <td>
                             <span className={`badge ${visit.serviceType === 'medicine' ? 'badge-waiting' : 'badge-pending'}`} style={{ fontSize: '0.7rem' }}>
                               {visit.serviceType}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontSize: '0.7rem',
+                              fontWeight: 800,
+                              background: visit.paymentStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
+                              color: visit.paymentStatus === 'Paid' ? 'hsl(var(--success))' : 'hsl(var(--danger))',
+                              border: visit.paymentStatus === 'Paid' ? '1px solid hsla(150, 55%, 32%, 0.25)' : '1px solid hsla(350, 65%, 44%, 0.25)'
+                            }}>
+                              {visit.paymentStatus === 'Paid' ? '✓ Paid' : '⏳ Unpaid'}
+                              {visit.paymentNotes ? ` (${visit.paymentNotes})` : ''}
                             </span>
                           </td>
                           <td>

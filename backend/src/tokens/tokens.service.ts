@@ -57,9 +57,20 @@ export class TokensService {
     const startMinutes = startH * 60 + startM;
     const endMinutes = endH * 60 + endM;
 
+    const format12H = (tStr: string) => {
+      const [hStr, mStr] = tStr.split(':');
+      let h = parseInt(hStr, 10);
+      const m = mStr || '00';
+      if (isNaN(h)) return tStr;
+      const p = h >= 12 ? 'PM' : 'AM';
+      h = h % 12;
+      if (h === 0) h = 12;
+      return `${h}:${m} ${p}`;
+    };
+
     if (currentMinutes < startMinutes || currentMinutes > endMinutes) {
       throw new BadRequestException(
-        `Token generation is available only between ${tokenSettings.startTime} and ${tokenSettings.endTime}.`
+        `Token generation is available only between ${format12H(tokenSettings.startTime)} and ${format12H(tokenSettings.endTime)}.`
       );
     }
 

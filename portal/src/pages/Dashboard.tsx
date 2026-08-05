@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import { Stethoscope, Users, Clock, CheckCircle, XCircle, RefreshCw, UserCheck, Settings, Power } from 'lucide-react';
 import { io } from 'socket.io-client';
+import { formatTo12HourTime } from '../utils/dateUtils';
 
 interface DashboardProps {
   token: string | null;
@@ -295,7 +296,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
             <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>Daily Start Time</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
+                    Daily Start Time ({formatTo12HourTime(startTime)})
+                  </label>
                   <input
                     type="time"
                     value={startTime}
@@ -305,7 +308,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>Daily End Time</label>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
+                    Daily End Time ({formatTo12HourTime(endTime)})
+                  </label>
                   <input
                     type="time"
                     value={endTime}
@@ -405,7 +410,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
           <div className="glass-card">
             <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', color: 'hsl(var(--primary))' }}>Service Timing Rules Reminder</h3>
             <ul style={{ paddingLeft: '20px', color: 'hsl(var(--text-muted))', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li>Token generation timing is active strictly between <strong>{startTime} and {endTime}</strong>.</li>
+              <li>Token generation timing is active strictly between <strong>{formatTo12HourTime(startTime)} and {formatTo12HourTime(endTime)}</strong>.</li>
               <li>Treatment token services are enabled on <strong>Tuesdays</strong>, <strong>Wednesdays</strong>, and <strong>Thursdays</strong>.</li>
               <li>At <strong>5:00 PM</strong>, all remaining active/waiting tokens are automatically expired by the daily cron system.</li>
             </ul>

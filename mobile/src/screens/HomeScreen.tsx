@@ -302,6 +302,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                     );
                   }
 
+                  const format12H = (tStr?: string | null) => {
+                    if (!tStr) return '';
+                    if (/am|pm/i.test(tStr)) return tStr;
+                    const [hStr, mStr] = tStr.split(':');
+                    let h = parseInt(hStr, 10);
+                    const m = mStr || '00';
+                    if (isNaN(h)) return tStr;
+                    const p = h >= 12 ? 'PM' : 'AM';
+                    h = h % 12;
+                    if (h === 0) h = 12;
+                    return `${h}:${m} ${p}`;
+                  };
+
+                  const startTimeFormatted = format12H(startTimeStr);
+                  const endTimeFormatted = format12H(endTimeStr);
+
                   return (
                     <>
                       <TouchableOpacity
@@ -312,7 +328,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                         <Text style={[styles.genButtonText, !isMedicineDay ? { color: '#64748b' } : {}]}>Medicine Consultation</Text>
                         <Text style={[styles.genButtonSub, !isMedicineDay ? { color: '#64748b' } : {}]}>
                           {isMedicineDay
-                            ? `Available Today • Hours: ${startTimeStr} - ${endTimeStr}`
+                            ? `Available Today • Hours: ${startTimeFormatted} - ${endTimeFormatted}`
                             : `Not Available Today • Allowed Days: ${medDayText}`}
                         </Text>
                       </TouchableOpacity>
@@ -330,7 +346,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                         </Text>
                         <Text style={[styles.genButtonSub, { color: isTreatmentDay ? '#27272a' : '#64748b' }]}>
                           {isTreatmentDay
-                            ? `Available Today • Hours: ${startTimeStr} - ${endTimeStr}`
+                            ? `Available Today • Hours: ${startTimeFormatted} - ${endTimeFormatted}`
                             : `Not Available Today • Allowed Days: ${treatDayText}`}
                         </Text>
                       </TouchableOpacity>

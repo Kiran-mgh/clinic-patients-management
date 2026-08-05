@@ -53,3 +53,19 @@ export function formatDobInput(text: string): string {
   if (cleaned.length > 2) return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4);
   return cleaned;
 }
+
+export function formatTo12HourTime(timeStr?: string | null): string {
+  if (!timeStr) return '';
+  if (/am|pm/i.test(timeStr)) return timeStr;
+
+  const [hStr, mStr] = timeStr.split(':');
+  let hour = parseInt(hStr, 10);
+  const minute = mStr || '00';
+  if (isNaN(hour)) return timeStr;
+
+  const period = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  if (hour === 0) hour = 12;
+
+  return `${hour}:${minute} ${period}`;
+}

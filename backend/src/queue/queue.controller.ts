@@ -11,6 +11,7 @@ export class QueueController {
   constructor(private readonly queueService: QueueService) {}
 
   @Get('dashboard')
+  @Get('overview')
   async getDashboardMetrics() {
     return this.queueService.getDashboardMetrics();
   }

@@ -23,7 +23,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
   const fetchMetrics = async () => {
     try {
       setError('');
-      const data = await api.get('/queue/overview', token);
+      const data = await api.get('/queue/dashboard', token);
       setMetrics(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load metrics');

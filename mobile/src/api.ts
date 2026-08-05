@@ -46,4 +46,29 @@ export const api = {
       handleNetworkError(err);
     }
   },
+
+  async put(endpoint: string, body: any, token: string | null = null) {
+    try {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'PUT',
+        headers: getHeaders(token),
+        body: JSON.stringify(body),
+      });
+      return await handleResponse(response);
+    } catch (err: any) {
+      handleNetworkError(err);
+    }
+  },
+
+  async delete(endpoint: string, token: string | null = null) {
+    try {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'DELETE',
+        headers: getHeaders(token),
+      });
+      return await handleResponse(response);
+    } catch (err: any) {
+      handleNetworkError(err);
+    }
+  },
 };

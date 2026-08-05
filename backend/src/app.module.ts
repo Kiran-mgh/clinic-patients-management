@@ -12,12 +12,14 @@ import { Patient } from './entities/patient.entity';
 import { Token } from './entities/token.entity';
 import { OtpSession } from './entities/otp-session.entity';
 import { AuditLog } from './entities/audit-log.entity';
+import { SystemSetting } from './entities/system-setting.entity';
 
 // Modules
 import { AuthModule } from './auth/auth.module';
 import { PatientsModule } from './patients/patients.module';
 import { TokensModule } from './tokens/tokens.module';
 import { QueueModule } from './queue/queue.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -44,7 +46,7 @@ import { QueueModule } from './queue/queue.module';
             username: dbUsername,
             password: dbPassword,
             database: dbName,
-            entities: [User, Patient, Token, OtpSession, AuditLog],
+            entities: [User, Patient, Token, OtpSession, AuditLog, SystemSetting],
             synchronize: true, // Set false and use migrations in strict production
           };
         } else {
@@ -52,7 +54,7 @@ import { QueueModule } from './queue/queue.module';
           return {
             type: 'sqlite',
             database: 'amar_hospital.sqlite',
-            entities: [User, Patient, Token, OtpSession, AuditLog],
+            entities: [User, Patient, Token, OtpSession, AuditLog, SystemSetting],
             synchronize: true,
           };
         }
@@ -62,6 +64,7 @@ import { QueueModule } from './queue/queue.module';
     PatientsModule,
     TokensModule,
     QueueModule,
+    SettingsModule,
   ],
   controllers: [AppController],
 })

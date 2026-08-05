@@ -6,6 +6,7 @@ import { Token } from '../entities/token.entity';
 import { Patient } from '../entities/patient.entity';
 import { AuditLog } from '../entities/audit-log.entity';
 import { QueueGateway } from '../queue/queue.gateway';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class TokensService {
@@ -19,6 +20,7 @@ export class TokensService {
     @InjectDataSource()
     private dataSource: DataSource,
     private queueGateway: QueueGateway,
+    private settingsService: SettingsService,
   ) {}
 
   async generateToken(userId: string, serviceType: string): Promise<Token> {
@@ -42,17 +44,24 @@ export class TokensService {
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
 
-    // 2. Token Generation Timing: 6:00 AM and 4:30 PM (16:30) (BYPASSED FOR TESTING)
-    /*
-    const isTooEarly = currentHour < 6;
-    const isTooLate = currentHour > 16 || (currentHour === 16 && currentMinute > 30);
+    // 2. Dynamic Token Generation Timing (Default: 7:00 AM to 3:30 PM)
+    const tokenSettings = await this.settingsService.getTokenSettings();
+    if (!tokenSettings.enabled) {
+      throw new BadRequestException('Token generation is currently paused by the clinic.');
+    }
 
-    if (isTooEarly || isTooLate) {
+    const [startH, startM] = tokenSettings.startTime.split(':').map(Number);
+    const [endH, endM] = tokenSettings.endTime.split(':').map(Number);
+
+    const currentMinutes = currentHour * 60 + currentMinute;
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+
+    if (currentMinutes < startMinutes || currentMinutes > endMinutes) {
       throw new BadRequestException(
-        'Token generation is closed for today. Please generate your token tomorrow after 6:00 AM.'
+        `Token generation is available only between ${tokenSettings.startTime} and ${tokenSettings.endTime}.`
       );
     }
-    */
 
     // 3. Treatment Availability: Tuesday (2), Wednesday (3), and Thursday (4) only
     if (serviceType === 'treatment') {

@@ -1,11 +1,12 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { Repository, Like, DataSource } from 'typeorm';
 import * as nodemailer from 'nodemailer';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Patient } from '../entities/patient.entity';
 import { User } from '../entities/user.entity';
+import { Token } from '../entities/token.entity';
 import { AuditLog } from '../entities/audit-log.entity';
 import { RegisterPatientByStaffDto } from './dto/register-patient-by-staff.dto';
 import { QueueGateway } from '../queue/queue.gateway';
@@ -19,6 +20,8 @@ export class PatientsService {
     private userRepository: Repository<User>,
     @InjectRepository(AuditLog)
     private auditLogRepository: Repository<AuditLog>,
+    @InjectDataSource()
+    private dataSource: DataSource,
     private queueGateway: QueueGateway,
   ) {}
 
@@ -342,6 +345,86 @@ export class PatientsService {
     }
 
     return patient;
+  }
+
+  async updateProfile(
+    userId: string,
+    data: {
+      fullName?: string;
+      gender?: string;
+      dateOfBirth?: string;
+      town?: string;
+      profession?: string;
+      bloodGroup?: string;
+      previousSurgeryDetails?: string;
+    },
+  ): Promise<Patient> {
+    const patient = await this.patientRepository.findOne({
+      where: { id: userId },
+      relations: ['user'],
+    });
+
+    if (!patient) {
+      throw new NotFoundException('Patient profile not found');
+    }
+
+    if (data.fullName && data.fullName.trim()) {
+      patient.fullName = data.fullName.trim();
+      if (patient.user) {
+        patient.user.name = data.fullName.trim();
+        await this.userRepository.save(patient.user);
+      }
+    }
+    if (data.gender) patient.gender = data.gender;
+    if (data.dateOfBirth) patient.dateOfBirth = this.parseToIsoDate(data.dateOfBirth);
+    if (data.town && data.town.trim()) patient.town = data.town.trim();
+    if (data.profession !== undefined) patient.profession = data.profession ? data.profession.trim() : null;
+    if (data.bloodGroup !== undefined) patient.bloodGroup = data.bloodGroup || null;
+    if (data.previousSurgeryDetails !== undefined) patient.previousSurgeryDetails = data.previousSurgeryDetails ? data.previousSurgeryDetails.trim() : null;
+
+    const savedPatient = await this.patientRepository.save(patient);
+
+    await this.logAction(userId, 'PATIENT_UPDATE_PROFILE', `Patient ${savedPatient.fullName} updated profile details`);
+    this.queueGateway.emitQueueUpdate();
+
+    return savedPatient;
+  }
+
+  async deletePatient(adminId: string, id: string): Promise<{ message: string }> {
+    const patient = await this.patientRepository.findOne({
+      where: { id },
+      relations: ['user', 'tokens'],
+    });
+
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    const patientName = patient.fullName;
+    const patientDisplayId = patient.patientId || patient.id;
+
+    // 1. Delete associated tokens if any exist
+    if (patient.tokens && patient.tokens.length > 0) {
+      await this.dataSource.getRepository(Token).delete({ patientId: id });
+    }
+
+    // 2. Delete Patient profile entity
+    await this.patientRepository.delete({ id });
+
+    // 3. Delete User account entity
+    if (patient.user) {
+      await this.userRepository.delete({ id: patient.user.id });
+    } else {
+      await this.userRepository.delete({ id });
+    }
+
+    // 4. Audit Log
+    await this.logAction(adminId, 'PATIENT_DELETE', `Deleted patient profile and user account for ${patientName} (${patientDisplayId})`);
+
+    // 5. Broadcast real-time update
+    this.queueGateway.emitQueueUpdate();
+
+    return { message: `Successfully deleted patient ${patientName} (${patientDisplayId}).` };
   }
 
   private parseToIsoDate(dateStr: string): string {

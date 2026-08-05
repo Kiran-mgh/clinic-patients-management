@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Search, User } from 'lucide-react';
+import { Search, User, Trash2 } from 'lucide-react';
 import { formatToIndianDate, formatDobInput } from '../utils/dateUtils';
 
 interface PatientSearchProps {
@@ -147,6 +147,28 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
+
+  // Deletion Modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeletePatient = async () => {
+    if (!selectedPatient || deleteConfirmText !== 'DELETE') return;
+    setDeleting(true);
+    try {
+      await api.delete(`/patients/${selectedPatient.id}`, token);
+      setShowDeleteModal(false);
+      setDeleteConfirmText('');
+      setSelectedPatient(null);
+      fetchPatients(query);
+      alert('Patient profile has been permanently deleted.');
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete patient profile');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Load all patients on component mount
   const fetchPatients = async (searchQuery: string) => {
@@ -580,17 +602,41 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
         <div className="glass-card" style={{ position: 'sticky', top: '24px', alignSelf: 'start', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
           {selectedPatient ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                <div style={{ padding: '12px', background: 'hsla(var(--primary) / 0.08)', color: 'hsl(var(--primary))', borderRadius: '12px' }}>
-                  <User size={24} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{selectedPatient.fullName}</h3>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.85rem', color: 'hsl(var(--text-muted))' }}>ID: {selectedPatient.patientId || 'Unassigned'}</span>
-                    <span className={`badge badge-${selectedPatient.status}`}>{selectedPatient.status}</span>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  <div style={{ padding: '12px', background: 'hsla(var(--primary) / 0.08)', color: 'hsl(var(--primary))', borderRadius: '12px' }}>
+                    <User size={24} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{selectedPatient.fullName}</h3>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.85rem', color: 'hsl(var(--text-muted))' }}>ID: {selectedPatient.patientId || 'Unassigned'}</span>
+                      <span className={`badge badge-${selectedPatient.status}`}>{selectedPatient.status}</span>
+                    </div>
                   </div>
                 </div>
+
+                <button
+                  onClick={() => {
+                    setDeleteConfirmText('');
+                    setShowDeleteModal(true);
+                  }}
+                  className="btn"
+                  style={{
+                    background: 'hsla(350, 65%, 44%, 0.1)',
+                    color: 'hsl(var(--danger))',
+                    border: '1px solid hsla(350, 65%, 44%, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '0.8rem',
+                    padding: '8px 12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Trash2 size={15} />
+                  Delete Patient
+                </button>
               </div>
 
               {/* Details table */}
@@ -728,6 +774,96 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
           )}
         </div>
       </div>
+
+      {/* Delete Patient Confirmation Modal */}
+      {showDeleteModal && selectedPatient && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div className="glass-card animate-scale-in" style={{ width: '90%', maxWidth: '480px', background: '#ffffff', borderRadius: '16px', padding: '28px', border: '1px solid hsla(350, 65%, 44%, 0.3)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', color: 'hsl(var(--danger))' }}>
+              <div style={{ padding: '10px', background: 'hsla(350, 65%, 44%, 0.1)', borderRadius: '10px' }}>
+                <Trash2 size={24} />
+              </div>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0, color: 'hsl(var(--danger))' }}>Permanently Delete Patient?</h3>
+            </div>
+
+            <p style={{ fontSize: '0.95rem', color: '#4a5568', lineHeight: '1.5', marginBottom: '12px' }}>
+              Are you sure you want to delete patient <strong>{selectedPatient.fullName} ({selectedPatient.patientId || selectedPatient.id})</strong>?
+            </p>
+
+            <div style={{
+              padding: '12px 14px',
+              backgroundColor: 'hsla(350, 65%, 44%, 0.08)',
+              borderLeft: '4px solid hsl(var(--danger))',
+              borderRadius: '6px',
+              marginBottom: '20px',
+              fontSize: '0.85rem',
+              color: 'hsl(var(--danger))',
+              fontWeight: 600
+            }}>
+              ⚠️ Warning: This will permanently wipe their registration, user login account, and visit history. This action cannot be undone.
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase', marginBottom: '6px' }}>
+                Type <strong style={{ color: 'hsl(var(--danger))' }}>DELETE</strong> below to confirm:
+              </label>
+              <input
+                type="text"
+                placeholder="Type DELETE"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid hsl(var(--border-color))',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  letterSpacing: '1px',
+                  color: '#1a202c'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn"
+                disabled={deleteConfirmText !== 'DELETE' || deleting}
+                onClick={handleDeletePatient}
+                style={{
+                  background: deleteConfirmText === 'DELETE' ? 'hsl(var(--danger))' : '#cbd5e0',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  cursor: deleteConfirmText === 'DELETE' ? 'pointer' : 'not-allowed',
+                  opacity: deleting ? 0.7 : 1
+                }}
+              >
+                {deleting ? 'Deleting...' : 'Permanently Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

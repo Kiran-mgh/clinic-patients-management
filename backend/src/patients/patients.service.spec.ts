@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PatientsService } from './patients.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { getRepositoryToken, getDataSourceToken } from '@nestjs/typeorm';
 import { Patient } from '../entities/patient.entity';
 import { User } from '../entities/user.entity';
 import { AuditLog } from '../entities/audit-log.entity';
@@ -30,6 +30,10 @@ describe('PatientsService', () => {
     emitQueueUpdate: jest.fn(),
   };
 
+  const mockDataSource = {
+    getRepository: jest.fn().mockReturnValue({ delete: jest.fn() }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -37,6 +41,7 @@ describe('PatientsService', () => {
         { provide: getRepositoryToken(Patient), useValue: mockPatientRepository },
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
         { provide: getRepositoryToken(AuditLog), useValue: mockAuditLogRepository },
+        { provide: getDataSourceToken(), useValue: mockDataSource },
         { provide: QueueGateway, useValue: mockQueueGateway },
       ],
     }).compile();

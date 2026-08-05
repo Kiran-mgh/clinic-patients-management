@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Users, Clock, CheckCircle, XCircle, UserCheck, Stethoscope, RefreshCw } from 'lucide-react';
+import { Stethoscope, Users, Clock, CheckCircle, XCircle, RefreshCw, UserCheck, Settings, Power } from 'lucide-react';
 import { io } from 'socket.io-client';
 
 interface DashboardProps {
   token: string | null;
-  onNavigate: (screen: 'dashboard' | 'verification' | 'queue' | 'search') => void;
+  onNavigate: (page: any) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
@@ -13,21 +13,77 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Token Timing Settings State
+  const [startTime, setStartTime] = useState('07:00');
+  const [endTime, setEndTime] = useState('15:30');
+  const [tokenEnabled, setTokenEnabled] = useState(true);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsMsg, setSettingsMsg] = useState('');
+
   const fetchMetrics = async () => {
-    setLoading(true);
-    setError('');
     try {
-      const data = await api.get('/queue/dashboard', token);
+      setError('');
+      const data = await api.get('/queue/overview', token);
       setMetrics(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch dashboard metrics');
+      setError(err.message || 'Failed to load metrics');
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchTokenSettings = async () => {
+    try {
+      const data = await api.get('/settings/tokens', token);
+      if (data) {
+        if (data.startTime) setStartTime(data.startTime);
+        if (data.endTime) setEndTime(data.endTime);
+        if (data.enabled !== undefined) setTokenEnabled(data.enabled);
+      }
+    } catch (err) {
+      console.error('Failed to fetch token settings', err);
+    }
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    setSettingsMsg('');
+    try {
+      await api.put('/settings/tokens', {
+        startTime,
+        endTime,
+        enabled: tokenEnabled,
+      }, token);
+      setSettingsMsg('Token generation timings updated successfully!');
+      setTimeout(() => setSettingsMsg(''), 4000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update token settings');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleToggleEnabled = async () => {
+    const nextState = !tokenEnabled;
+    setTokenEnabled(nextState);
+    try {
+      await api.put('/settings/tokens', {
+        startTime,
+        endTime,
+        enabled: nextState,
+      }, token);
+      setSettingsMsg(`Token generation is now ${nextState ? 'ENABLED' : 'PAUSED'}.`);
+      setTimeout(() => setSettingsMsg(''), 4000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to toggle token generation');
+      setTokenEnabled(!nextState);
+    }
+  };
+
   useEffect(() => {
     fetchMetrics();
+    fetchTokenSettings();
 
     const socketUrl = import.meta.env.VITE_API_URL
       ? import.meta.env.VITE_API_URL.replace(/\/api$/, '')
@@ -42,10 +98,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
     socket.on('queue_updated', () => {
       console.log('[Socket] Received queue_updated, syncing dashboard...');
       fetchMetrics();
+      fetchTokenSettings();
     });
 
     // 15-second fallback polling interval
-    const fallbackInterval = setInterval(fetchMetrics, 15000);
+    const fallbackInterval = setInterval(() => {
+      fetchMetrics();
+      fetchTokenSettings();
+    }, 15000);
 
     return () => {
       socket.disconnect();
@@ -169,11 +229,83 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
             </div>
           </div>
 
+          {/* Dynamic Token Timing Settings Card */}
+          <div className="glass-card" style={{ borderLeft: `4px solid ${tokenEnabled ? 'hsl(var(--primary))' : 'hsl(var(--danger))'}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{ padding: '10px', background: tokenEnabled ? 'hsla(var(--primary) / 0.1)' : 'hsla(350, 65%, 44%, 0.1)', color: tokenEnabled ? 'hsl(var(--primary))' : 'hsl(var(--danger))', borderRadius: '10px' }}>
+                  <Settings size={22} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>Dynamic Token Generation Timings</h3>
+                  <p style={{ fontSize: '0.85rem', color: 'hsl(var(--text-muted))', margin: 0 }}>Set clinic token generation hours or temporarily pause token creation.</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleToggleEnabled}
+                className={`btn ${tokenEnabled ? 'btn-secondary' : 'btn-primary'}`}
+                style={{
+                  display: 'flex', gap: '8px', alignItems: 'center',
+                  background: tokenEnabled ? 'hsla(142, 70%, 45%, 0.15)' : 'hsl(var(--danger))',
+                  color: tokenEnabled ? '#15803d' : '#ffffff',
+                  borderColor: tokenEnabled ? 'hsla(142, 70%, 45%, 0.3)' : 'hsl(var(--danger))',
+                  fontWeight: 700
+                }}
+              >
+                <Power size={16} />
+                {tokenEnabled ? 'Token Generation: ENABLED' : 'Token Generation: PAUSED'}
+              </button>
+            </div>
+
+            {settingsMsg && (
+              <div style={{
+                backgroundColor: 'hsla(142, 70%, 45%, 0.1)',
+                border: '1px solid hsla(142, 70%, 45%, 0.3)',
+                color: '#15803d',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                marginBottom: '16px',
+                fontSize: '0.9rem',
+                fontWeight: 600
+              }}>
+                {settingsMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveSettings} style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>Daily Start Time</label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  style={{ borderRadius: '8px', border: '1px solid hsl(var(--border-color))', padding: '10px 14px', fontWeight: 600, color: '#1a202c' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>Daily End Time</label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  style={{ borderRadius: '8px', border: '1px solid hsl(var(--border-color))', padding: '10px 14px', fontWeight: 600, color: '#1a202c' }}
+                />
+              </div>
+
+              <button type="submit" className="btn btn-primary" disabled={savingSettings} style={{ padding: '10px 24px', borderRadius: '8px' }}>
+                {savingSettings ? 'Saving...' : 'Save Timing Settings'}
+              </button>
+            </form>
+          </div>
+
           {/* Guidelines and info */}
           <div className="glass-card">
             <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', color: 'hsl(var(--primary))' }}>Service Timing Rules Reminder</h3>
             <ul style={{ paddingLeft: '20px', color: 'hsl(var(--text-muted))', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li>Token generation timing is restricted between <strong>6:00 AM and 4:30 PM</strong>.</li>
+              <li>Token generation timing is active strictly between <strong>{startTime} and {endTime}</strong>.</li>
               <li>Treatment token services are enabled on <strong>Tuesdays</strong>, <strong>Wednesdays</strong>, and <strong>Thursdays</strong>.</li>
               <li>At <strong>5:00 PM</strong>, all remaining active/waiting tokens are automatically expired by the daily cron system.</li>
             </ul>

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Put, Delete, Get, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { PatientsService } from './patients.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -27,6 +27,19 @@ export class PatientsController {
   @UseGuards(JwtAuthGuard)
   async getProfile(@Req() req: any) {
     return this.patientsService.getProfile(req.user.id);
+  }
+
+  @Put('profile')
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(@Req() req: any, @Body() body: any) {
+    return this.patientsService.updateProfile(req.user.id, body);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'doctor')
+  async deletePatient(@Req() req: any, @Param('id') id: string) {
+    return this.patientsService.deletePatient(req.user.id, id);
   }
 
   @Get('pending')

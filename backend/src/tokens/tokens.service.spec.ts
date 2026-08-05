@@ -7,6 +7,7 @@ import { Patient } from '../entities/patient.entity';
 import { AuditLog } from '../entities/audit-log.entity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { QueueGateway } from '../queue/queue.gateway';
+import { SettingsService } from '../settings/settings.service';
 
 describe('TokensService Unit Tests', () => {
   let service: TokensService;
@@ -46,6 +47,10 @@ describe('TokensService Unit Tests', () => {
     emitQueueUpdate: jest.fn(),
   };
 
+  const mockSettingsService = {
+    getTokenSettings: jest.fn().mockResolvedValue({ startTime: '07:00', endTime: '15:30', enabled: true }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -55,6 +60,7 @@ describe('TokensService Unit Tests', () => {
         { provide: getRepositoryToken(AuditLog), useValue: mockAuditRepository },
         { provide: getDataSourceToken(), useValue: mockDataSource },
         { provide: QueueGateway, useValue: mockQueueGateway },
+        { provide: SettingsService, useValue: mockSettingsService },
       ],
     }).compile();
 

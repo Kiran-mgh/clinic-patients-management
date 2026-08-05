@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image, Modal, TextInput } from 'react-native';
 import { api } from '../api';
 import { io } from 'socket.io-client';
 
@@ -16,6 +16,79 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
   const [loading, setLoading] = useState(true);
   const [tokenLoading, setTokenLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Edit Profile States
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFullName, setEditFullName] = useState('');
+  const [editGender, setEditGender] = useState('Male');
+  const [editDateOfBirth, setEditDateOfBirth] = useState('');
+  const [editTown, setEditTown] = useState('');
+  const [editProfession, setEditProfession] = useState('');
+  const [editBloodGroup, setEditBloodGroup] = useState('');
+  const [editPreviousSurgeryDetails, setEditPreviousSurgeryDetails] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const formatDobText = (text: string): string => {
+    let cleaned = text.replace(/\D/g, '').slice(0, 8);
+    if (cleaned.length > 4) return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4, 8);
+    if (cleaned.length > 2) return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4);
+    return cleaned;
+  };
+
+  const openEditModal = () => {
+    if (!profile) return;
+    setEditFullName(profile.fullName || '');
+    setEditGender(profile.gender || 'Male');
+
+    // Format DOB to DD/MM/YYYY
+    let dobFormatted = profile.dateOfBirth || '';
+    if (/^\d{4}-\d{2}-\d{2}/.test(dobFormatted)) {
+      const [y, m, d] = dobFormatted.split('T')[0].split('-');
+      dobFormatted = `${d}/${m}/${y}`;
+    }
+    setEditDateOfBirth(dobFormatted);
+    setEditTown(profile.town || '');
+    setEditProfession(profile.profession || '');
+    setEditBloodGroup(profile.bloodGroup || '');
+    setEditPreviousSurgeryDetails(profile.previousSurgeryDetails || '');
+    setShowEditModal(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editFullName.trim()) {
+      Alert.alert('Validation Error', 'Full Name is required.');
+      return;
+    }
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(editDateOfBirth.trim())) {
+      Alert.alert('Validation Error', 'Date of Birth must match DD/MM/YYYY format.');
+      return;
+    }
+    if (!editTown.trim()) {
+      Alert.alert('Validation Error', 'City / Address is required.');
+      return;
+    }
+
+    setSavingProfile(true);
+    try {
+      await api.put('/patients/profile', {
+        fullName: editFullName.trim(),
+        gender: editGender,
+        dateOfBirth: editDateOfBirth.trim(),
+        town: editTown.trim(),
+        profession: editProfession.trim() || undefined,
+        bloodGroup: editBloodGroup || undefined,
+        previousSurgeryDetails: editPreviousSurgeryDetails.trim() || undefined,
+      }, token);
+
+      await fetchProfileAndToken();
+      setShowEditModal(false);
+      Alert.alert('Profile Updated', 'Your profile details have been updated successfully!');
+    } catch (err: any) {
+      Alert.alert('Update Failed', err.message || 'Failed to update profile details.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   const fetchProfileAndToken = async () => {
     setError('');
@@ -85,7 +158,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
   }
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -105,10 +179,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
 
       {/* Account Info card */}
       <View style={styles.card}>
-        <Text style={styles.cardLabel}>Patient ID</Text>
-        <Text style={styles.cardValue}>
-          {profile?.patientId || 'Pending Verification'}
-        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View>
+            <Text style={styles.cardLabel}>Patient ID</Text>
+            <Text style={styles.cardValue}>
+              {profile?.patientId || 'Pending Verification'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={{ backgroundColor: '#f0fdf4', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#bbf7d0' }}
+            onPress={openEditModal}
+          >
+            <Text style={{ color: '#166534', fontWeight: '700', fontSize: 13 }}>✏️ EDIT PROFILE</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.statusRow}>
           <Text style={styles.statusLabel}>Account Status:</Text>
           <Text style={[
@@ -255,6 +339,120 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
 
 
     </ScrollView>
+
+      {/* Edit Profile Modal */}
+      <Modal visible={showEditModal} animationType="slide" transparent={true} onRequestClose={() => setShowEditModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <View style={{ width: '100%', maxWidth: 500, maxHeight: '85%', backgroundColor: '#ffffff', borderRadius: 20, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 8 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#213932', marginBottom: 4 }}>✏️ EDIT PROFILE DETAILS</Text>
+            <Text style={{ fontSize: 12, color: '#718096', marginBottom: 16 }}>Update your details anytime. Changes reflect immediately across clinic systems.</Text>
+
+            <ScrollView contentContainerStyle={{ gap: 14 }}>
+              <View>
+                <Text style={styles.modalLabel}>FULL NAME *</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editFullName}
+                  onChangeText={setEditFullName}
+                  placeholder="Your Full Name"
+                  placeholderTextColor="#a0aec0"
+                />
+              </View>
+
+              <View>
+                <Text style={styles.modalLabel}>GENDER *</Text>
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                  {['Male', 'Female', 'Other'].map((g) => (
+                    <TouchableOpacity
+                      key={g}
+                      style={[styles.genderChip, editGender === g && styles.genderChipActive]}
+                      onPress={() => setEditGender(g)}
+                    >
+                      <Text style={[styles.genderChipText, editGender === g && styles.genderChipTextActive]}>{g}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View>
+                <Text style={styles.modalLabel}>DATE OF BIRTH * (DD/MM/YYYY)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editDateOfBirth}
+                  onChangeText={(t) => setEditDateOfBirth(formatDobText(t))}
+                  placeholder="30/12/1985"
+                  placeholderTextColor="#a0aec0"
+                  keyboardType="numeric"
+                  maxLength={10}
+                />
+              </View>
+
+              <View>
+                <Text style={styles.modalLabel}>CITY / ADDRESS (KARNATAKA) *</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editTown}
+                  onChangeText={setEditTown}
+                  placeholder="e.g. Bengaluru / Mysore"
+                  placeholderTextColor="#a0aec0"
+                />
+              </View>
+
+              <View>
+                <Text style={styles.modalLabel}>PROFESSION (OPTIONAL)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editProfession}
+                  onChangeText={setEditProfession}
+                  placeholder="Engineer / Teacher / Businessman"
+                  placeholderTextColor="#a0aec0"
+                />
+              </View>
+
+              <View>
+                <Text style={styles.modalLabel}>BLOOD GROUP (OPTIONAL)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editBloodGroup}
+                  onChangeText={setEditBloodGroup}
+                  placeholder="e.g. O+, A+, B+"
+                  placeholderTextColor="#a0aec0"
+                />
+              </View>
+
+              <View>
+                <Text style={styles.modalLabel}>PREVIOUS SURGERY FOR PILES/FISTULA/FISSURES (OPTIONAL)</Text>
+                <TextInput
+                  style={[styles.modalInput, { height: 70, textAlignVertical: 'top' }]}
+                  value={editPreviousSurgeryDetails}
+                  onChangeText={setEditPreviousSurgeryDetails}
+                  placeholder="Mention year or details if any surgery was performed previously"
+                  placeholderTextColor="#a0aec0"
+                  multiline={true}
+                />
+              </View>
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 18, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#edf2f7' }}>
+              <TouchableOpacity
+                style={{ flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: '#edf2f7', alignItems: 'center' }}
+                onPress={() => setShowEditModal(false)}
+              >
+                <Text style={{ color: '#4a5568', fontWeight: '700' }}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ flex: 1.5, paddingVertical: 12, borderRadius: 10, backgroundColor: '#213932', alignItems: 'center', opacity: savingProfile ? 0.7 : 1 }}
+                onPress={handleSaveProfile}
+                disabled={savingProfile}
+              >
+                <Text style={{ color: '#ffffff', fontWeight: '800' }}>{savingProfile ? 'Saving...' : 'Save Changes'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 };
 
@@ -528,5 +726,44 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  modalLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#4a5568',
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  modalInput: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#1a202c',
+  },
+  genderChip: {
+    flex: 1,
+    paddingVertical: 8,
+    backgroundColor: '#edf2f7',
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  genderChipActive: {
+    backgroundColor: '#213932',
+    borderColor: '#213932',
+  },
+  genderChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4a5568',
+  },
+  genderChipTextActive: {
+    color: '#ffffff',
+    fontWeight: '700',
   },
 });

@@ -45,4 +45,14 @@ export class QueueController {
   ) {
     return this.queueService.updateTokenStatus(req.user.id, id, status, notes, paymentStatus, paymentNotes);
   }
+
+  @Patch('tokens/:id/payment')
+  async updateTokenPayment(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body('paymentStatus') paymentStatus: string,
+    @Body('paymentNotes') paymentNotes?: string,
+  ) {
+    return this.queueService.updateTokenPayment(req.user.id, id, paymentStatus, paymentNotes);
+  }
 }

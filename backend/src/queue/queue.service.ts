@@ -201,6 +201,36 @@ export class QueueService {
     return updatedToken;
   }
 
+  async updateTokenPayment(
+    adminId: string,
+    id: string,
+    paymentStatus: string,
+    paymentNotes?: string,
+  ): Promise<Token> {
+    if (!['Paid', 'Unpaid'].includes(paymentStatus)) {
+      throw new BadRequestException('Invalid payment status value');
+    }
+
+    const token = await this.tokenRepository.findOne({ where: { id }, relations: ['patient'] });
+    if (!token) {
+      throw new NotFoundException('Token not found');
+    }
+
+    token.paymentStatus = paymentStatus;
+    if (paymentNotes !== undefined) {
+      token.paymentNotes = paymentNotes;
+    }
+
+    const updatedToken = await this.tokenRepository.save(token);
+
+    await this.logAction(adminId, 'TOKEN_PAYMENT_UPDATE', `Updated payment status of token ${token.tokenNumber} to ${paymentStatus}`);
+
+    // Broadcast real-time update
+    this.queueGateway.emitQueueUpdate();
+
+    return updatedToken;
+  }
+
   async getReports(startDateStr: string, endDateStr: string): Promise<any> {
     const start = new Date(startDateStr);
     start.setHours(0, 0, 0, 0);

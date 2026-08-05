@@ -249,15 +249,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
           </div>
 
           {/* Dynamic Token Timing Settings Card */}
-          <div className="glass-card" style={{ borderLeft: `4px solid ${tokenEnabled ? 'hsl(var(--primary))' : 'hsl(var(--danger))'}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ padding: '10px', background: tokenEnabled ? 'hsla(var(--primary) / 0.1)' : 'hsla(350, 65%, 44%, 0.1)', color: tokenEnabled ? 'hsl(var(--primary))' : 'hsl(var(--danger))', borderRadius: '10px' }}>
-                  <Settings size={22} />
+          <div className="glass-card animate-fade-in" style={{ borderLeft: `4px solid ${tokenEnabled ? 'hsl(var(--primary))' : 'hsl(var(--danger))'}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                <div style={{
+                  padding: '12px',
+                  background: tokenEnabled ? 'hsla(var(--primary) / 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
+                  color: tokenEnabled ? 'hsl(var(--primary))' : 'hsl(var(--danger))',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Clock size={24} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>Dynamic Token Generation Timings</h3>
-                  <p style={{ fontSize: '0.85rem', color: 'hsl(var(--text-muted))', margin: 0 }}>Set clinic token generation hours or temporarily pause token creation.</p>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'hsl(var(--text-color))' }}>
+                    Token Generation Rules & Timings
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: 'hsl(var(--text-muted))', margin: '4px 0 0 0' }}>
+                    Configure clinic operating hours, allowed days per service, or temporarily pause token creation.
+                  </p>
                 </div>
               </div>
 
@@ -266,66 +278,125 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                 onClick={handleToggleEnabled}
                 className={`btn ${tokenEnabled ? 'btn-secondary' : 'btn-primary'}`}
                 style={{
-                  display: 'flex', gap: '8px', alignItems: 'center',
-                  background: tokenEnabled ? 'hsla(142, 70%, 45%, 0.15)' : 'hsl(var(--danger))',
-                  color: tokenEnabled ? '#15803d' : '#ffffff',
-                  borderColor: tokenEnabled ? 'hsla(142, 70%, 45%, 0.3)' : 'hsl(var(--danger))',
-                  fontWeight: 700
+                  display: 'inline-flex',
+                  gap: '8px',
+                  alignItems: 'center',
+                  background: tokenEnabled ? 'hsla(150, 55%, 32%, 0.12)' : 'hsl(var(--danger))',
+                  color: tokenEnabled ? 'hsl(var(--success))' : '#ffffff',
+                  border: tokenEnabled ? '1px solid hsla(150, 55%, 32%, 0.3)' : '1px solid hsl(var(--danger))',
+                  fontWeight: 700,
+                  borderRadius: '10px',
+                  padding: '10px 18px'
                 }}
               >
-                <Power size={16} />
+                <Power size={18} />
                 {tokenEnabled ? 'Token Generation: ENABLED' : 'Token Generation: PAUSED'}
               </button>
             </div>
 
             {settingsMsg && (
               <div style={{
-                backgroundColor: 'hsla(142, 70%, 45%, 0.1)',
-                border: '1px solid hsla(142, 70%, 45%, 0.3)',
-                color: '#15803d',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                marginBottom: '16px',
+                backgroundColor: 'hsla(150, 55%, 32%, 0.1)',
+                border: '1px solid hsla(150, 55%, 32%, 0.3)',
+                color: 'hsl(var(--success))',
+                padding: '12px 16px',
+                borderRadius: '10px',
+                marginBottom: '20px',
                 fontSize: '0.9rem',
-                fontWeight: 600
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
               }}>
+                <CheckCircle size={18} />
                 {settingsMsg}
               </div>
             )}
 
-            <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
-                    Daily Start Time ({formatTo12HourTime(startTime)})
+            <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {/* Timing Selection Row */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '20px',
+                padding: '16px',
+                background: 'hsla(var(--primary) / 0.03)',
+                borderRadius: '12px',
+                border: '1px solid hsl(var(--border-color))'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Daily Start Time
                   </label>
-                  <input
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                    style={{ borderRadius: '8px', border: '1px solid hsl(var(--border-color))', padding: '10px 14px', fontWeight: 600, color: '#1a202c' }}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      style={{
+                        borderRadius: '10px',
+                        border: '1px solid hsl(var(--border-color))',
+                        padding: '10px 14px',
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        color: 'hsl(var(--text-color))',
+                        background: '#ffffff',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
+                      }}
+                    />
+                    <span style={{
+                      fontSize: '0.9rem',
+                      fontWeight: 800,
+                      color: 'hsl(var(--primary))',
+                      background: 'hsla(var(--primary) / 0.1)',
+                      padding: '8px 14px',
+                      borderRadius: '8px'
+                    }}>
+                      {formatTo12HourTime(startTime)}
+                    </span>
+                  </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
-                    Daily End Time ({formatTo12HourTime(endTime)})
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Daily End Time
                   </label>
-                  <input
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                    style={{ borderRadius: '8px', border: '1px solid hsl(var(--border-color))', padding: '10px 14px', fontWeight: 600, color: '#1a202c' }}
-                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      style={{
+                        borderRadius: '10px',
+                        border: '1px solid hsl(var(--border-color))',
+                        padding: '10px 14px',
+                        fontWeight: 700,
+                        fontSize: '1rem',
+                        color: 'hsl(var(--text-color))',
+                        background: '#ffffff',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
+                      }}
+                    />
+                    <span style={{
+                      fontSize: '0.9rem',
+                      fontWeight: 800,
+                      color: 'hsl(var(--primary))',
+                      background: 'hsla(var(--primary) / 0.1)',
+                      padding: '8px 14px',
+                      borderRadius: '8px'
+                    }}>
+                      {formatTo12HourTime(endTime)}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               {/* Medicine Allowed Days */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Medicine Consultation Allowed Days
                 </label>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   {[
                     { day: 0, label: 'Sun' },
                     { day: 1, label: 'Mon' },
@@ -342,14 +413,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                         type="button"
                         onClick={() => toggleMedicineDay(day)}
                         style={{
-                          padding: '6px 14px',
-                          borderRadius: '8px',
+                          padding: '8px 16px',
+                          borderRadius: '10px',
                           border: active ? '1px solid hsl(var(--primary))' : '1px solid hsl(var(--border-color))',
-                          background: active ? 'hsla(var(--primary) / 0.12)' : 'none',
+                          background: active ? 'hsla(var(--primary) / 0.12)' : '#ffffff',
                           color: active ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
-                          fontWeight: 700,
+                          fontWeight: 800,
                           fontSize: '0.85rem',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          boxShadow: active ? '0 2px 6px hsla(var(--primary) / 0.15)' : 'none'
                         }}
                       >
                         {active ? '✓ ' : ''}{label}
@@ -360,11 +433,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
               </div>
 
               {/* Treatment Allowed Days */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Treatment / Dressing Allowed Days
                 </label>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   {[
                     { day: 0, label: 'Sun' },
                     { day: 1, label: 'Mon' },
@@ -381,14 +454,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                         type="button"
                         onClick={() => toggleTreatmentDay(day)}
                         style={{
-                          padding: '6px 14px',
-                          borderRadius: '8px',
-                          border: active ? '1px solid #f59e0b' : '1px solid hsl(var(--border-color))',
-                          background: active ? 'rgba(245, 158, 11, 0.12)' : 'none',
-                          color: active ? '#b45309' : 'hsl(var(--text-muted))',
-                          fontWeight: 700,
+                          padding: '8px 16px',
+                          borderRadius: '10px',
+                          border: active ? '1px solid hsl(var(--primary))' : '1px solid hsl(var(--border-color))',
+                          background: active ? 'hsla(var(--primary) / 0.12)' : '#ffffff',
+                          color: active ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+                          fontWeight: 800,
                           fontSize: '0.85rem',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          boxShadow: active ? '0 2px 6px hsla(var(--primary) / 0.15)' : 'none'
                         }}
                       >
                         {active ? '✓ ' : ''}{label}
@@ -398,9 +473,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                 </div>
               </div>
 
-              <div>
-                <button type="submit" className="btn btn-primary" disabled={savingSettings} style={{ padding: '10px 28px', borderRadius: '8px' }}>
-                  {savingSettings ? 'Saving...' : 'Save Configuration'}
+              <div style={{ paddingTop: '8px' }}>
+                <button type="submit" className="btn btn-primary" disabled={savingSettings} style={{ padding: '12px 32px', borderRadius: '10px', fontWeight: 800 }}>
+                  {savingSettings ? 'Saving Configuration...' : 'Save Configuration'}
                 </button>
               </div>
             </form>

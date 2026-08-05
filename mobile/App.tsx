@@ -7,6 +7,8 @@ import { HomeScreen } from './src/screens/HomeScreen';
 import { ContactScreen } from './src/screens/ContactScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 
+import registerRootComponent from 'expo/build/launch/registerRootComponent';
+
 export default function App() {
   const [token, setToken] = useState<string | null>(null);
   const [showRegister, setShowRegister] = useState(false);
@@ -86,3 +88,5 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight : 0,
   },
 });
+
+registerRootComponent(App);

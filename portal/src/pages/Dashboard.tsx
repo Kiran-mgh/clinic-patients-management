@@ -9,6 +9,140 @@ interface DashboardProps {
   onNavigate: (page: any) => void;
 }
 
+interface TimePicker12HProps {
+  value: string; // 24-hr format e.g. "07:00" or "15:30"
+  onChange: (val: string) => void;
+  label: string;
+}
+
+const TimePicker12H: React.FC<TimePicker12HProps> = ({ value, onChange, label }) => {
+  const parseVal = (valStr: string) => {
+    const parts = (valStr || '07:00').split(':');
+    let h = parseInt(parts[0] || '7', 10);
+    const m = parts[1] || '00';
+    if (isNaN(h)) h = 7;
+
+    const period = h >= 12 ? 'PM' : 'AM';
+    let hour12 = h % 12;
+    if (hour12 === 0) hour12 = 12;
+
+    const hourStr = String(hour12).padStart(2, '0');
+    return { hourStr, minute: m, period };
+  };
+
+  const { hourStr, minute, period } = parseVal(value);
+
+  const updateTime = (newHour12: string, newMin: string, newPeriod: string) => {
+    let h = parseInt(newHour12, 10);
+    if (newPeriod === 'PM' && h < 12) h += 12;
+    if (newPeriod === 'AM' && h === 12) h = 0;
+
+    const h24 = String(h).padStart(2, '0');
+    const m24 = newMin.padStart(2, '0');
+    onChange(`${h24}:${m24}`);
+  };
+
+  const hoursList = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+  const minutesList = ['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'];
+
+  const selectStyle: React.CSSProperties = {
+    padding: '8px 12px',
+    borderRadius: '10px',
+    border: '1px solid hsl(var(--primary) / 0.3)',
+    background: '#ffffff',
+    color: 'hsl(var(--primary))',
+    fontWeight: 800,
+    fontSize: '0.95rem',
+    cursor: 'pointer',
+    outline: 'none',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        {label}
+      </label>
+
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        background: '#ffffff',
+        padding: '8px 14px',
+        borderRadius: '12px',
+        border: '1px solid hsl(var(--border-color))',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+        flexWrap: 'wrap'
+      }}>
+        <Clock size={18} style={{ color: 'hsl(var(--primary))' }} />
+
+        {/* Hour Select */}
+        <select
+          value={hourStr}
+          onChange={(e) => updateTime(e.target.value, minute, period)}
+          style={selectStyle}
+        >
+          {hoursList.map(h => (
+            <option key={h} value={h}>{h}</option>
+          ))}
+        </select>
+
+        <span style={{ fontWeight: 800, color: 'hsl(var(--primary))', fontSize: '1.1rem' }}>:</span>
+
+        {/* Minute Select */}
+        <select
+          value={minute}
+          onChange={(e) => updateTime(hourStr, e.target.value, period)}
+          style={selectStyle}
+        >
+          {minutesList.map(m => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
+
+        {/* AM / PM Segmented Toggle */}
+        <div style={{ display: 'flex', borderRadius: '8px', background: 'hsla(var(--primary) / 0.08)', padding: '3px', marginLeft: '4px' }}>
+          <button
+            type="button"
+            onClick={() => updateTime(hourStr, minute, 'AM')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              border: 'none',
+              background: period === 'AM' ? 'hsl(var(--primary))' : 'transparent',
+              color: period === 'AM' ? '#ffffff' : 'hsl(var(--primary))',
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            AM
+          </button>
+          <button
+            type="button"
+            onClick={() => updateTime(hourStr, minute, 'PM')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              border: 'none',
+              background: period === 'PM' ? 'hsl(var(--primary))' : 'transparent',
+              color: period === 'PM' ? '#ffffff' : 'hsl(var(--primary))',
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            PM
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -317,78 +451,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
               {/* Timing Selection Row */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: '20px',
-                padding: '16px',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '24px',
+                padding: '20px',
                 background: 'hsla(var(--primary) / 0.03)',
-                borderRadius: '12px',
+                borderRadius: '14px',
                 border: '1px solid hsl(var(--border-color))'
               }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Daily Start Time
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      style={{
-                        borderRadius: '10px',
-                        border: '1px solid hsl(var(--border-color))',
-                        padding: '10px 14px',
-                        fontWeight: 700,
-                        fontSize: '1rem',
-                        color: 'hsl(var(--text-color))',
-                        background: '#ffffff',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
-                      }}
-                    />
-                    <span style={{
-                      fontSize: '0.9rem',
-                      fontWeight: 800,
-                      color: 'hsl(var(--primary))',
-                      background: 'hsla(var(--primary) / 0.1)',
-                      padding: '8px 14px',
-                      borderRadius: '8px'
-                    }}>
-                      {formatTo12HourTime(startTime)}
-                    </span>
-                  </div>
-                </div>
+                <TimePicker12H
+                  label="Daily Start Time"
+                  value={startTime}
+                  onChange={(val) => setStartTime(val)}
+                />
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Daily End Time
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      style={{
-                        borderRadius: '10px',
-                        border: '1px solid hsl(var(--border-color))',
-                        padding: '10px 14px',
-                        fontWeight: 700,
-                        fontSize: '1rem',
-                        color: 'hsl(var(--text-color))',
-                        background: '#ffffff',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
-                      }}
-                    />
-                    <span style={{
-                      fontSize: '0.9rem',
-                      fontWeight: 800,
-                      color: 'hsl(var(--primary))',
-                      background: 'hsla(var(--primary) / 0.1)',
-                      padding: '8px 14px',
-                      borderRadius: '8px'
-                    }}>
-                      {formatTo12HourTime(endTime)}
-                    </span>
-                  </div>
-                </div>
+                <TimePicker12H
+                  label="Daily End Time"
+                  value={endTime}
+                  onChange={(val) => setEndTime(val)}
+                />
               </div>
 
               {/* Medicine Allowed Days */}

@@ -13,12 +13,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Token Timing Settings State
+  // Token Timing & Days Settings State
   const [startTime, setStartTime] = useState('07:00');
   const [endTime, setEndTime] = useState('15:30');
   const [tokenEnabled, setTokenEnabled] = useState(true);
+  const [medicineDays, setMedicineDays] = useState<number[]>([1, 2, 3, 4, 5, 6]);
+  const [treatmentDays, setTreatmentDays] = useState<number[]>([2, 3, 4]);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState('');
+
+  const toggleMedicineDay = (day: number) => {
+    setMedicineDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
+    );
+  };
+
+  const toggleTreatmentDay = (day: number) => {
+    setTreatmentDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
+    );
+  };
 
   const fetchMetrics = async () => {
     try {
@@ -39,6 +53,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
         if (data.startTime) setStartTime(data.startTime);
         if (data.endTime) setEndTime(data.endTime);
         if (data.enabled !== undefined) setTokenEnabled(data.enabled);
+        if (data.medicineAllowedDays) setMedicineDays(data.medicineAllowedDays);
+        if (data.treatmentAllowedDays) setTreatmentDays(data.treatmentAllowedDays);
       }
     } catch (err) {
       console.error('Failed to fetch token settings', err);
@@ -54,8 +70,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
         startTime,
         endTime,
         enabled: tokenEnabled,
+        medicineAllowedDays: medicineDays,
+        treatmentAllowedDays: treatmentDays,
       }, token);
-      setSettingsMsg('Token generation timings updated successfully!');
+      setSettingsMsg('Token generation rules & day configuration updated successfully!');
       setTimeout(() => setSettingsMsg(''), 4000);
     } catch (err: any) {
       alert(err.message || 'Failed to update token settings');
@@ -274,30 +292,112 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
               </div>
             )}
 
-            <form onSubmit={handleSaveSettings} style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>Daily Start Time</label>
-                <input
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  style={{ borderRadius: '8px', border: '1px solid hsl(var(--border-color))', padding: '10px 14px', fontWeight: 600, color: '#1a202c' }}
-                />
+            <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>Daily Start Time</label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    style={{ borderRadius: '8px', border: '1px solid hsl(var(--border-color))', padding: '10px 14px', fontWeight: 600, color: '#1a202c' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>Daily End Time</label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    style={{ borderRadius: '8px', border: '1px solid hsl(var(--border-color))', padding: '10px 14px', fontWeight: 600, color: '#1a202c' }}
+                  />
+                </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>Daily End Time</label>
-                <input
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  style={{ borderRadius: '8px', border: '1px solid hsl(var(--border-color))', padding: '10px 14px', fontWeight: 600, color: '#1a202c' }}
-                />
+              {/* Medicine Allowed Days */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
+                  Medicine Consultation Allowed Days
+                </label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { day: 0, label: 'Sun' },
+                    { day: 1, label: 'Mon' },
+                    { day: 2, label: 'Tue' },
+                    { day: 3, label: 'Wed' },
+                    { day: 4, label: 'Thu' },
+                    { day: 5, label: 'Fri' },
+                    { day: 6, label: 'Sat' },
+                  ].map(({ day, label }) => {
+                    const active = medicineDays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleMedicineDay(day)}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          border: active ? '1px solid hsl(var(--primary))' : '1px solid hsl(var(--border-color))',
+                          background: active ? 'hsla(var(--primary) / 0.12)' : 'none',
+                          color: active ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {active ? '✓ ' : ''}{label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <button type="submit" className="btn btn-primary" disabled={savingSettings} style={{ padding: '10px 24px', borderRadius: '8px' }}>
-                {savingSettings ? 'Saving...' : 'Save Timing Settings'}
-              </button>
+              {/* Treatment Allowed Days */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
+                  Treatment / Dressing Allowed Days
+                </label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { day: 0, label: 'Sun' },
+                    { day: 1, label: 'Mon' },
+                    { day: 2, label: 'Tue' },
+                    { day: 3, label: 'Wed' },
+                    { day: 4, label: 'Thu' },
+                    { day: 5, label: 'Fri' },
+                    { day: 6, label: 'Sat' },
+                  ].map(({ day, label }) => {
+                    const active = treatmentDays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleTreatmentDay(day)}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          border: active ? '1px solid #f59e0b' : '1px solid hsl(var(--border-color))',
+                          background: active ? 'rgba(245, 158, 11, 0.12)' : 'none',
+                          color: active ? '#b45309' : 'hsl(var(--text-muted))',
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {active ? '✓ ' : ''}{label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <button type="submit" className="btn btn-primary" disabled={savingSettings} style={{ padding: '10px 28px', borderRadius: '8px' }}>
+                  {savingSettings ? 'Saving...' : 'Save Configuration'}
+                </button>
+              </div>
             </form>
           </div>
 

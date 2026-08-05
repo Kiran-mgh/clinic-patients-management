@@ -63,14 +63,20 @@ export class TokensService {
       );
     }
 
-    // 3. Treatment Availability: Tuesday (2), Wednesday (3), and Thursday (4) only
-    if (serviceType === 'treatment') {
-      const dayOfWeek = now.getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
-      if (dayOfWeek !== 2 && dayOfWeek !== 3 && dayOfWeek !== 4) {
-        throw new BadRequestException(
-          'Treatment services are available only on Tuesday, Wednesday, and Thursday.'
-        );
-      }
+    // 3. Dynamic Day Availability Validation
+    const dayOfWeek = now.getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
+    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    const allowedDays = serviceType === 'medicine'
+      ? (tokenSettings.medicineAllowedDays || [1, 2, 3, 4, 5, 6])
+      : (tokenSettings.treatmentAllowedDays || [2, 3, 4]);
+
+    if (!allowedDays.includes(dayOfWeek)) {
+      const dayListStr = allowedDays.map(d => DAY_NAMES[d]).join(', ');
+      const serviceName = serviceType === 'medicine' ? 'Medicine Consultation' : 'Treatment';
+      throw new BadRequestException(
+        `${serviceName} tokens are enabled only on: ${dayListStr}. (Not available today).`
+      );
     }
 
     // 4. One Token Per Patient per day

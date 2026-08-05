@@ -16,6 +16,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
   const [loading, setLoading] = useState(true);
   const [tokenLoading, setTokenLoading] = useState(false);
   const [error, setError] = useState('');
+  const [tokenConfig, setTokenConfig] = useState<any>(null);
 
   // Edit Profile States
   const [showEditModal, setShowEditModal] = useState(false);
@@ -95,6 +96,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
     try {
       const prof = await api.get('/patients/profile', token);
       setProfile(prof);
+
+      const cfg = await api.get('/settings/tokens', token);
+      setTokenConfig(cfg);
 
       if (prof.status === 'active') {
         const tokRes = await api.get('/tokens/today', token);
@@ -268,9 +272,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
 
               <View style={{ gap: 12, marginTop: 16 }}>
                 {(() => {
-                  const todayDay = new Date().getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
-                  const isTreatmentDay = todayDay === 2 || todayDay === 3 || todayDay === 4;
-                  const isMedicineDay = todayDay !== 0;
+                  const now = new Date();
+                  const todayDay = now.getDay(); // 0: Sun, 1: Mon, ...
+                  const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+                  const isGloballyEnabled = tokenConfig ? tokenConfig.enabled : true;
+                  const startTimeStr = tokenConfig?.startTime || '07:00';
+                  const endTimeStr = tokenConfig?.endTime || '15:30';
+
+                  const medAllowedDays = tokenConfig?.medicineAllowedDays || [1, 2, 3, 4, 5, 6];
+                  const treatAllowedDays = tokenConfig?.treatmentAllowedDays || [2, 3, 4];
+
+                  const isMedicineDay = medAllowedDays.includes(todayDay);
+                  const isTreatmentDay = treatAllowedDays.includes(todayDay);
+
+                  const medDayText = medAllowedDays.map(d => DAY_SHORT[d]).join(', ');
+                  const treatDayText = treatAllowedDays.map(d => DAY_SHORT[d]).join(', ');
+
+                  if (!isGloballyEnabled) {
+                    return (
+                      <View style={{ backgroundColor: '#fff5f5', borderWidth: 1, borderColor: '#feb2b2', borderRadius: 12, padding: 16 }}>
+                        <Text style={{ fontSize: 15, fontWeight: '800', color: '#c53030', marginBottom: 4 }}>
+                          ⏸️ Token Generation Paused
+                        </Text>
+                        <Text style={{ fontSize: 13, color: '#9b2c2c', lineHeight: 18 }}>
+                          Token generation is currently paused by the clinic doctor. Please check back shortly.
+                        </Text>
+                      </View>
+                    );
+                  }
 
                   return (
                     <>
@@ -281,7 +311,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                       >
                         <Text style={[styles.genButtonText, !isMedicineDay ? { color: '#64748b' } : {}]}>Medicine Consultation</Text>
                         <Text style={[styles.genButtonSub, !isMedicineDay ? { color: '#64748b' } : {}]}>
-                          {isMedicineDay ? 'Available Monday to Saturday' : 'Clinic Closed on Sundays'}
+                          {isMedicineDay
+                            ? `Available Today • Hours: ${startTimeStr} - ${endTimeStr}`
+                            : `Not Available Today • Allowed Days: ${medDayText}`}
                         </Text>
                       </TouchableOpacity>
 
@@ -297,7 +329,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                           Treatment / Dressing
                         </Text>
                         <Text style={[styles.genButtonSub, { color: isTreatmentDay ? '#27272a' : '#64748b' }]}>
-                          {isTreatmentDay ? 'Available Today (Tue, Wed & Thu)' : 'Available Tuesday, Wednesday & Thursday Only (Disabled Today)'}
+                          {isTreatmentDay
+                            ? `Available Today • Hours: ${startTimeStr} - ${endTimeStr}`
+                            : `Not Available Today • Allowed Days: ${treatDayText}`}
                         </Text>
                       </TouchableOpacity>
                     </>

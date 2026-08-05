@@ -4,6 +4,14 @@ import { Repository } from 'typeorm';
 import { SystemSetting } from '../entities/system-setting.entity';
 import { QueueGateway } from '../queue/queue.gateway';
 
+export interface TokenSettingsResponse {
+  startTime: string;
+  endTime: string;
+  enabled: boolean;
+  medicineAllowedDays: number[];
+  treatmentAllowedDays: number[];
+}
+
 @Injectable()
 export class SettingsService {
   constructor(
@@ -30,22 +38,35 @@ export class SettingsService {
     await this.settingsRepository.save(setting);
   }
 
-  async getTokenSettings(): Promise<{ startTime: string; endTime: string; enabled: boolean }> {
+  async getTokenSettings(): Promise<TokenSettingsResponse> {
     const startTime = await this.getSetting('token_start_time', '07:00');
     const endTime = await this.getSetting('token_end_time', '15:30');
     const enabledStr = await this.getSetting('token_generation_enabled', 'true');
+    const medDaysStr = await this.getSetting('medicine_allowed_days', '1,2,3,4,5,6');
+    const treatDaysStr = await this.getSetting('treatment_allowed_days', '2,3,4');
+
+    const medicineAllowedDays = medDaysStr ? medDaysStr.split(',').map(d => parseInt(d.trim(), 10)).filter(d => !isNaN(d)) : [1, 2, 3, 4, 5, 6];
+    const treatmentAllowedDays = treatDaysStr ? treatDaysStr.split(',').map(d => parseInt(d.trim(), 10)).filter(d => !isNaN(d)) : [2, 3, 4];
 
     return {
       startTime,
       endTime,
       enabled: enabledStr === 'true',
+      medicineAllowedDays,
+      treatmentAllowedDays,
     };
   }
 
   async updateTokenSettings(
     adminId: string,
-    data: { startTime?: string; endTime?: string; enabled?: boolean },
-  ): Promise<{ startTime: string; endTime: string; enabled: boolean }> {
+    data: {
+      startTime?: string;
+      endTime?: string;
+      enabled?: boolean;
+      medicineAllowedDays?: number[];
+      treatmentAllowedDays?: number[];
+    },
+  ): Promise<TokenSettingsResponse> {
     if (data.startTime) {
       await this.setSetting('token_start_time', data.startTime);
     }
@@ -54,6 +75,12 @@ export class SettingsService {
     }
     if (data.enabled !== undefined) {
       await this.setSetting('token_generation_enabled', data.enabled ? 'true' : 'false');
+    }
+    if (data.medicineAllowedDays) {
+      await this.setSetting('medicine_allowed_days', data.medicineAllowedDays.join(','));
+    }
+    if (data.treatmentAllowedDays) {
+      await this.setSetting('treatment_allowed_days', data.treatmentAllowedDays.join(','));
     }
 
     // Broadcast real-time update

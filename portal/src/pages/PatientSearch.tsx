@@ -777,17 +777,39 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
 
       {/* Delete Patient Confirmation Modal */}
       {showDeleteModal && selectedPatient && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 1000
-        }}>
-          <div className="glass-card animate-scale-in" style={{ width: '90%', maxWidth: '480px', background: '#ffffff', borderRadius: '16px', padding: '28px', border: '1px solid hsla(350, 65%, 44%, 0.3)', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+        <div
+          onClick={() => {
+            setShowDeleteModal(false);
+            setDeleteConfirmText('');
+          }}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 99999
+          }}
+        >
+          <div
+            className="glass-card animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '90%',
+              maxWidth: '480px',
+              background: '#ffffff',
+              borderRadius: '16px',
+              padding: '28px',
+              border: '1px solid hsla(350, 65%, 44%, 0.3)',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+              margin: 'auto'
+            }}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', color: 'hsl(var(--danger))' }}>
               <div style={{ padding: '10px', background: 'hsla(350, 65%, 44%, 0.1)', borderRadius: '10px' }}>
                 <Trash2 size={24} />

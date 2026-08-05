@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../api';
 import { Search, User, Trash2 } from 'lucide-react';
 import { formatToIndianDate, formatDobInput } from '../utils/dateUtils';
@@ -776,7 +777,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
       </div>
 
       {/* Delete Patient Confirmation Modal */}
-      {showDeleteModal && selectedPatient && (
+      {showDeleteModal && selectedPatient && createPortal(
         <div
           onClick={() => {
             setShowDeleteModal(false);
@@ -793,7 +794,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 99999
+            zIndex: 999999
           }}
         >
           <div
@@ -884,7 +885,8 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

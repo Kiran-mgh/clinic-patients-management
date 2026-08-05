@@ -29,6 +29,18 @@ export class PatientsController {
     return this.patientsService.getProfile(req.user.id);
   }
 
+  @Post('request-email-otp')
+  @UseGuards(JwtAuthGuard)
+  async requestEmailOtp(@Body('email') email: string) {
+    return this.patientsService.requestEmailOtp(email);
+  }
+
+  @Post('verify-email-otp')
+  @UseGuards(JwtAuthGuard)
+  async verifyEmailOtp(@Body('email') email: string, @Body('otpCode') otpCode: string) {
+    return this.patientsService.verifyEmailOtp(email, otpCode);
+  }
+
   @Put('profile')
   @UseGuards(JwtAuthGuard)
   async updateProfile(@Req() req: any, @Body() body: any) {

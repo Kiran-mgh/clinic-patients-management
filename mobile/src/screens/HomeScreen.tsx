@@ -23,6 +23,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
   const [editFullName, setEditFullName] = useState('');
   const [editGender, setEditGender] = useState('Male');
   const [editDateOfBirth, setEditDateOfBirth] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [emailOtpCode, setEmailOtpCode] = useState('');
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+
   const [editTown, setEditTown] = useState('');
   const [editProfession, setEditProfession] = useState('');
   const [editBloodGroup, setEditBloodGroup] = useState('');
@@ -48,11 +55,53 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       dobFormatted = `${d}/${m}/${y}`;
     }
     setEditDateOfBirth(dobFormatted);
+    setEditEmail(profile.email || '');
+    setEmailOtpCode('');
+    setEmailOtpSent(false);
+    setEmailVerified(false);
+
     setEditTown(profile.town || '');
     setEditProfession(profile.profession || '');
     setEditBloodGroup(profile.bloodGroup || '');
     setEditPreviousSurgeryDetails(profile.previousSurgeryDetails || '');
     setShowEditModal(true);
+  };
+
+  const handleRequestEmailOtp = async () => {
+    if (!editEmail.trim() || !editEmail.includes('@')) {
+      Alert.alert('Validation Error', 'Please enter a valid email address.');
+      return;
+    }
+    setSendingOtp(true);
+    try {
+      const res = await api.post('/patients/request-email-otp', { email: editEmail.trim() }, token);
+      setEmailOtpSent(true);
+      Alert.alert(
+        'OTP Sent',
+        `${res.message || 'Verification OTP sent to your new email.'}\n\n[Dev OTP Code: ${res.otpCode || '123456'}]`
+      );
+    } catch (err: any) {
+      Alert.alert('OTP Request Failed', err.message || 'Could not send verification OTP.');
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    if (!emailOtpCode.trim() || emailOtpCode.trim().length !== 6) {
+      Alert.alert('Validation Error', 'Please enter the 6-digit OTP code.');
+      return;
+    }
+    setVerifyingOtp(true);
+    try {
+      await api.post('/patients/verify-email-otp', { email: editEmail.trim(), otpCode: emailOtpCode.trim() }, token);
+      setEmailVerified(true);
+      Alert.alert('Success', 'Your new email address has been verified successfully!');
+    } catch (err: any) {
+      Alert.alert('Verification Failed', err.message || 'Invalid or expired OTP code.');
+    } finally {
+      setVerifyingOtp(false);
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -69,12 +118,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       return;
     }
 
+    const emailChanged = editEmail.trim().toLowerCase() !== (profile?.email || '').toLowerCase();
+    if (emailChanged && !emailVerified) {
+      Alert.alert('Email Verification Required', 'Please verify your new email address via OTP before saving.');
+      return;
+    }
+
     setSavingProfile(true);
     try {
       await api.put('/patients/profile', {
         fullName: editFullName.trim(),
         gender: editGender,
         dateOfBirth: editDateOfBirth.trim(),
+        email: editEmail.trim() || undefined,
+        otpCode: emailChanged ? emailOtpCode.trim() : undefined,
         town: editTown.trim(),
         profession: editProfession.trim() || undefined,
         bloodGroup: editBloodGroup || undefined,
@@ -436,6 +493,92 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                   maxLength={10}
                 />
               </View>
+
+              <View>
+                <Text style={styles.modalLabel}>EMAIL ADDRESS (REQUIRED FOR UPDATES)</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={editEmail}
+                  onChangeText={(t) => {
+                    setEditEmail(t);
+                    if (t.trim().toLowerCase() !== (profile?.email || '').toLowerCase()) {
+                      setEmailVerified(false);
+                      setEmailOtpSent(false);
+                    }
+                  }}
+                  placeholder="name@example.com"
+                  placeholderTextColor="#a0aec0"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              {/* Email OTP Verification Box */}
+              {editEmail.trim().toLowerCase() !== (profile?.email || '').toLowerCase() && (
+                <View style={{ backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0', borderRadius: 10, padding: 12, gap: 10 }}>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#166534' }}>
+                    📧 EMAIL OTP VERIFICATION REQUIRED
+                  </Text>
+                  <Text style={{ fontSize: 11, color: '#15803d', lineHeight: 15 }}>
+                    Changing your email address requires OTP verification to confirm ownership.
+                  </Text>
+
+                  {!emailVerified ? (
+                    <>
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: '#213932',
+                          paddingVertical: 8,
+                          paddingHorizontal: 12,
+                          borderRadius: 8,
+                          alignItems: 'center',
+                          opacity: sendingOtp ? 0.7 : 1
+                        }}
+                        onPress={handleRequestEmailOtp}
+                        disabled={sendingOtp}
+                      >
+                        <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: 12 }}>
+                          {sendingOtp ? 'Sending OTP...' : 'Send OTP to New Email'}
+                        </Text>
+                      </TouchableOpacity>
+
+                      {emailOtpSent && (
+                        <View style={{ gap: 8, marginTop: 4 }}>
+                          <TextInput
+                            style={[styles.modalInput, { height: 40, fontSize: 16, fontWeight: '800', letterSpacing: 3, textAlign: 'center' }]}
+                            value={emailOtpCode}
+                            onChangeText={setEmailOtpCode}
+                            placeholder="Enter 6-digit OTP"
+                            placeholderTextColor="#a0aec0"
+                            keyboardType="numeric"
+                            maxLength={6}
+                          />
+                          <TouchableOpacity
+                            style={{
+                              backgroundColor: '#166534',
+                              paddingVertical: 8,
+                              paddingHorizontal: 12,
+                              borderRadius: 8,
+                              alignItems: 'center',
+                              opacity: verifyingOtp ? 0.7 : 1
+                            }}
+                            onPress={handleVerifyEmailOtp}
+                            disabled={verifyingOtp}
+                          >
+                            <Text style={{ color: '#ffffff', fontWeight: '800', fontSize: 12 }}>
+                              {verifyingOtp ? 'Verifying...' : 'Verify Email OTP'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </>
+                  ) : (
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: '#15803d' }}>
+                      ✓ Email Verified via OTP
+                    </Text>
+                  )}
+                </View>
+              )}
 
               <View>
                 <Text style={styles.modalLabel}>CITY / ADDRESS (KARNATAKA) *</Text>

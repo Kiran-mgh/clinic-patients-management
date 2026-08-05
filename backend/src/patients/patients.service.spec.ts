@@ -4,6 +4,7 @@ import { getRepositoryToken, getDataSourceToken } from '@nestjs/typeorm';
 import { Patient } from '../entities/patient.entity';
 import { User } from '../entities/user.entity';
 import { AuditLog } from '../entities/audit-log.entity';
+import { OtpSession } from '../entities/otp-session.entity';
 import { QueueGateway } from '../queue/queue.gateway';
 
 describe('PatientsService', () => {
@@ -26,6 +27,12 @@ describe('PatientsService', () => {
     save: jest.fn(),
   };
 
+  const mockOtpSessionRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    findOne: jest.fn(),
+  };
+
   const mockQueueGateway = {
     emitQueueUpdate: jest.fn(),
   };
@@ -41,6 +48,7 @@ describe('PatientsService', () => {
         { provide: getRepositoryToken(Patient), useValue: mockPatientRepository },
         { provide: getRepositoryToken(User), useValue: mockUserRepository },
         { provide: getRepositoryToken(AuditLog), useValue: mockAuditLogRepository },
+        { provide: getRepositoryToken(OtpSession), useValue: mockOtpSessionRepository },
         { provide: getDataSourceToken(), useValue: mockDataSource },
         { provide: QueueGateway, useValue: mockQueueGateway },
       ],

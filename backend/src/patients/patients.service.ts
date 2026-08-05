@@ -8,6 +8,7 @@ import { Patient } from '../entities/patient.entity';
 import { User } from '../entities/user.entity';
 import { Token } from '../entities/token.entity';
 import { AuditLog } from '../entities/audit-log.entity';
+import { OtpSession } from '../entities/otp-session.entity';
 import { RegisterPatientByStaffDto } from './dto/register-patient-by-staff.dto';
 import { QueueGateway } from '../queue/queue.gateway';
 
@@ -20,6 +21,8 @@ export class PatientsService {
     private userRepository: Repository<User>,
     @InjectRepository(AuditLog)
     private auditLogRepository: Repository<AuditLog>,
+    @InjectRepository(OtpSession)
+    private otpSessionRepository: Repository<OtpSession>,
     @InjectDataSource()
     private dataSource: DataSource,
     private queueGateway: QueueGateway,
@@ -347,12 +350,87 @@ export class PatientsService {
     return patient;
   }
 
+  async requestEmailOtp(email: string): Promise<{ message: string; otpCode: string }> {
+    if (!email || !email.includes('@')) {
+      throw new BadRequestException('A valid email address is required.');
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+    const session = this.otpSessionRepository.create({
+      mobileNumber: cleanEmail,
+      otpCode,
+      expiresAt,
+      verified: false,
+    });
+    await this.otpSessionRepository.save(session);
+
+    // Send email asynchronously
+    this.sendEmailOtpAsync(cleanEmail, otpCode);
+
+    return {
+      message: `Verification OTP code sent to ${cleanEmail}`,
+      otpCode,
+    };
+  }
+
+  async verifyEmailOtp(email: string, otpCode: string): Promise<{ verified: boolean }> {
+    if (!email || !otpCode) {
+      throw new BadRequestException('Email and OTP code are required.');
+    }
+    const cleanEmail = email.trim().toLowerCase();
+    const session = await this.otpSessionRepository.findOne({
+      where: { mobileNumber: cleanEmail, otpCode: otpCode.trim() },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!session) {
+      throw new BadRequestException('Invalid OTP code.');
+    }
+    if (session.expiresAt < new Date()) {
+      throw new BadRequestException('OTP code has expired.');
+    }
+
+    session.verified = true;
+    await this.otpSessionRepository.save(session);
+
+    return { verified: true };
+  }
+
+  private async sendEmailOtpAsync(email: string, otpCode: string) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT || '587', 10),
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER || '',
+          pass: process.env.SMTP_PASS || '',
+        },
+      });
+
+      if (process.env.SMTP_USER) {
+        await transporter.sendMail({
+          from: `"Amar Ayurveda Clinic" <${process.env.SMTP_USER}>`,
+          to: email,
+          subject: 'Email Verification OTP Code - Amar Ayurveda Clinic',
+          text: `Your email verification OTP code is: ${otpCode}. It will expire in 10 minutes.`,
+        });
+      }
+    } catch (err: any) {
+      console.warn(`[EMAIL OTP WARN] Could not send live email to ${email}: ${err.message}`);
+    }
+  }
+
   async updateProfile(
     userId: string,
     data: {
       fullName?: string;
       gender?: string;
       dateOfBirth?: string;
+      email?: string;
+      otpCode?: string;
       town?: string;
       profession?: string;
       bloodGroup?: string;
@@ -377,6 +455,29 @@ export class PatientsService {
     }
     if (data.gender) patient.gender = data.gender;
     if (data.dateOfBirth) patient.dateOfBirth = this.parseToIsoDate(data.dateOfBirth);
+
+    // Email OTP Verification Check
+    if (data.email && data.email.trim() && data.email.trim().toLowerCase() !== (patient.email || '').toLowerCase()) {
+      const newEmail = data.email.trim().toLowerCase();
+
+      const verifiedSession = await this.otpSessionRepository.findOne({
+        where: { mobileNumber: newEmail, verified: true },
+        order: { createdAt: 'DESC' },
+      });
+
+      if (!verifiedSession && data.otpCode) {
+        await this.verifyEmailOtp(newEmail, data.otpCode);
+      } else if (!verifiedSession) {
+        throw new BadRequestException('Please verify your new email address with OTP before saving.');
+      }
+
+      patient.email = newEmail;
+      if (patient.user) {
+        patient.user.email = newEmail;
+        await this.userRepository.save(patient.user);
+      }
+    }
+
     if (data.town && data.town.trim()) patient.town = data.town.trim();
     if (data.profession !== undefined) patient.profession = data.profession ? data.profession.trim() : null;
     if (data.bloodGroup !== undefined) patient.bloodGroup = data.bloodGroup || null;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../api';
-import { Search, User, Trash2 } from 'lucide-react';
+import { Search, User, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { formatToIndianDate, formatDobInput } from '../utils/dateUtils';
 
 interface PatientSearchProps {
@@ -149,23 +149,30 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
   const [formSuccess, setFormSuccess] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
 
-  // Deletion Modal state
+  // Deletion Modal & Action Message state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState('');
+  const [actionErrorMsg, setActionErrorMsg] = useState('');
 
   const handleDeletePatient = async () => {
     if (!selectedPatient || deleteConfirmText !== 'DELETE') return;
     setDeleting(true);
+    setActionSuccessMsg('');
+    setActionErrorMsg('');
     try {
+      const patientName = selectedPatient.fullName;
       await api.delete(`/patients/${selectedPatient.id}`, token);
       setShowDeleteModal(false);
       setDeleteConfirmText('');
       setSelectedPatient(null);
       fetchPatients(query);
-      alert('Patient profile has been permanently deleted.');
+      setActionSuccessMsg(`Patient profile for "${patientName}" has been permanently deleted.`);
+      setTimeout(() => setActionSuccessMsg(''), 6000);
     } catch (err: any) {
-      alert(err.message || 'Failed to delete patient profile');
+      setActionErrorMsg(err.message || 'Failed to delete patient profile');
+      setTimeout(() => setActionErrorMsg(''), 6000);
     } finally {
       setDeleting(false);
     }
@@ -311,6 +318,44 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
           {showRegisterForm ? 'Close Registration' : 'Register New Patient'}
         </button>
       </div>
+
+      {actionSuccessMsg && (
+        <div className="animate-fade-in" style={{
+          backgroundColor: 'hsla(150, 55%, 32%, 0.12)',
+          border: '1px solid hsla(150, 55%, 32%, 0.3)',
+          color: 'hsl(var(--success))',
+          padding: '14px 20px',
+          borderRadius: '12px',
+          fontSize: '0.95rem',
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.04)'
+        }}>
+          <CheckCircle size={20} />
+          {actionSuccessMsg}
+        </div>
+      )}
+
+      {actionErrorMsg && (
+        <div className="animate-fade-in" style={{
+          backgroundColor: 'hsla(350, 65%, 44%, 0.12)',
+          border: '1px solid hsla(350, 65%, 44%, 0.3)',
+          color: 'hsl(var(--danger))',
+          padding: '14px 20px',
+          borderRadius: '12px',
+          fontSize: '0.95rem',
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.04)'
+        }}>
+          <XCircle size={20} />
+          {actionErrorMsg}
+        </div>
+      )}
 
       {showRegisterForm && (
         <div className="glass-card animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px' }}>

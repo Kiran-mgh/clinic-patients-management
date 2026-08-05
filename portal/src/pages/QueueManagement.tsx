@@ -28,6 +28,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
   const [editPayStatus, setEditPayStatus] = useState<'Unpaid' | 'Paid'>('Unpaid');
   const [editPayNotes, setEditPayNotes] = useState('');
   const [savingPayment, setSavingPayment] = useState(false);
+  const [paymentModalError, setPaymentModalError] = useState('');
 
   const handlePatientClick = async (patientId: string) => {
     if (!patientId) return;
@@ -112,12 +113,13 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
     setEditingPaymentToken(t);
     setEditPayStatus(t.paymentStatus === 'Paid' ? 'Paid' : 'Unpaid');
     setEditPayNotes(t.paymentNotes || '');
+    setPaymentModalError('');
   };
 
   const handleSavePaymentUpdate = async () => {
     if (!editingPaymentToken) return;
     setSavingPayment(true);
-    setError('');
+    setPaymentModalError('');
     try {
       await api.patch(`/queue/tokens/${editingPaymentToken.id}/payment`, {
         paymentStatus: editPayStatus,
@@ -126,7 +128,8 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
       setEditingPaymentToken(null);
       fetchQueue();
     } catch (err: any) {
-      setError(err.message || 'Failed to update payment status');
+      console.error('Payment update error:', err);
+      setPaymentModalError(err.message || 'Failed to update payment status');
     } finally {
       setSavingPayment(false);
     }
@@ -282,46 +285,37 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                       <span style={{ textTransform: 'capitalize' }}>{t.serviceType}</span>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '3px 10px',
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditPaymentModal(t);
+                          }}
+                          title="Click to change payment status"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 10px',
                             borderRadius: '6px',
                             fontSize: '0.75rem',
                             fontWeight: 800,
                             width: 'fit-content',
                             background: t.paymentStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
                             color: t.paymentStatus === 'Paid' ? 'hsl(var(--success))' : 'hsl(var(--danger))',
-                            border: t.paymentStatus === 'Paid' ? '1px solid hsla(150, 55%, 32%, 0.25)' : '1px solid hsla(350, 65%, 44%, 0.25)'
-                          }}>
-                            {t.paymentStatus === 'Paid' ? '✓ Paid' : '⏳ Unpaid'}
-                          </span>
-                          {t.paymentNotes && (
-                            <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
-                              {t.paymentNotes}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => openEditPaymentModal(t)}
-                          title="Update Payment Status"
-                          style={{
-                            background: 'none',
-                            border: '1px solid hsl(var(--border-color))',
-                            borderRadius: '6px',
-                            padding: '3px 7px',
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            color: 'hsl(var(--primary))',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
+                            border: t.paymentStatus === 'Paid' ? '1px solid hsla(150, 55%, 32%, 0.25)' : '1px solid hsla(350, 65%, 44%, 0.25)',
+                            cursor: 'pointer'
                           }}
                         >
-                          <Edit size={12} /> Edit
+                          <span>{t.paymentStatus === 'Paid' ? '✓ Paid' : '⏳ Unpaid'}</span>
+                          <Edit size={11} style={{ opacity: 0.8 }} />
                         </button>
+                        {t.paymentNotes && (
+                          <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
+                            {t.paymentNotes}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td>
@@ -349,11 +343,6 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                         {t.status === 'in_progress' && (
                           <button className="btn btn-success" style={{ padding: '6px 10px' }} onClick={() => setServingToken(t)}>
                             <Check size={14} /> Serve
-                          </button>
-                        )}
-                        {t.status === 'served' && (
-                          <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.8rem', fontWeight: 600 }} onClick={() => openEditPaymentModal(t)}>
-                            <Edit size={14} /> Update Payment
                           </button>
                         )}
                         {(t.status === 'waiting' || t.status === 'in_progress') && (
@@ -747,6 +736,19 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                 Updating payment details for Token <strong>{editingPaymentToken.tokenNumber}</strong> ({editingPaymentToken.patient?.fullName || 'Patient'})
               </p>
             </div>
+
+            {paymentModalError && (
+              <div style={{
+                backgroundColor: 'hsla(350, 80%, 55%, 0.15)',
+                color: 'hsl(350, 80%, 55%)',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: '1px solid hsla(350, 80%, 55%, 0.3)',
+                fontSize: '0.85rem'
+              }}>
+                {paymentModalError}
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase' }}>

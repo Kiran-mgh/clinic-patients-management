@@ -562,43 +562,31 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
         </div>
       )}
 
-      {/* Frozen Header & Search Box Container */}
-      <div style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-        backgroundColor: 'hsl(var(--bg-primary))',
-        padding: '16px 0',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-        borderBottom: '1px solid hsl(var(--border-color) / 0.5)'
-      }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '16px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            background: 'hsl(var(--bg-secondary))',
-            border: '1px solid hsl(var(--border-color))',
-            borderRadius: '12px',
-            padding: '12px 16px',
-            flexGrow: 1
-          }}>
-            <Search size={20} style={{ color: 'hsl(var(--text-muted))' }} />
-            <input
-              type="text"
-              placeholder="Search by Patient ID (e.g. AH000001), Full Name, or Mobile Number..."
-              value={query}
-              onChange={(e) => handleQueryChange(e.target.value)}
-              style={{ background: 'none', border: 'none', outline: 'none', color: '#1a202c', fontSize: '1rem', width: '100%' }}
-            />
-          </div>
-          <button type="submit" className="btn btn-primary" style={{ padding: '0 32px', borderRadius: '12px' }}>
-            {loading ? 'Searching...' : 'Search'}
-          </button>
-        </form>
-      </div>
+      {/* Search Bar */}
+      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '16px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          background: 'hsl(var(--bg-secondary))',
+          border: '1px solid hsl(var(--border-color))',
+          borderRadius: '12px',
+          padding: '12px 16px',
+          flexGrow: 1
+        }}>
+          <Search size={20} style={{ color: 'hsl(var(--text-muted))' }} />
+          <input
+            type="text"
+            placeholder="Search by Patient ID (e.g. AH000001), Full Name, or Mobile Number..."
+            value={query}
+            onChange={(e) => handleQueryChange(e.target.value)}
+            style={{ background: 'none', border: 'none', outline: 'none', color: '#1a202c', fontSize: '1rem', width: '100%' }}
+          />
+        </div>
+        <button type="submit" className="btn btn-primary" style={{ padding: '0 32px', borderRadius: '12px' }}>
+          {loading ? 'Searching...' : 'Search'}
+        </button>
+      </form>
 
       {error && (
         <div style={{
@@ -628,9 +616,9 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
           ) : results.length === 0 ? (
             <p style={{ color: 'hsl(var(--text-muted))' }}>No matching patient profiles found in the registry.</p>
           ) : (
-            <div className="table-container" style={{ maxHeight: '600px', overflowY: 'auto' }}>
+            <div className="table-container" style={{ maxHeight: '520px', overflowY: 'auto' }}>
               <table className="custom-table">
-                <thead style={{ position: 'sticky', top: 0, background: 'hsl(var(--bg-primary))' }}>
+                <thead style={{ position: 'sticky', top: 0, backgroundColor: 'hsl(var(--bg-secondary))', zIndex: 2 }}>
                   <tr>
                     <th>Patient ID</th>
                     <th>Name</th>

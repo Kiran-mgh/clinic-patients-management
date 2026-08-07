@@ -3,6 +3,7 @@ import { SettingsService } from './settings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { UpdateTokenSettingsDto } from './dto/update-token-settings.dto';
 
 @Controller('settings')
 export class SettingsController {
@@ -18,8 +19,8 @@ export class SettingsController {
   @Put('tokens')
   async updateTokenSettings(
     @Req() req: any,
-    @Body() body: { startTime?: string; endTime?: string; enabled?: boolean },
+    @Body() dto: UpdateTokenSettingsDto,
   ) {
-    return this.settingsService.updateTokenSettings(req.user.id, body);
+    return this.settingsService.updateTokenSettings(req.user.id, dto);
   }
 }

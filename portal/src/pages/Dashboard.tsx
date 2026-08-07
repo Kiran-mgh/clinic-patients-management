@@ -156,14 +156,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
   const [treatmentDays, setTreatmentDays] = useState<number[]>([2, 3, 4]);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState('');
+  const [isFormDirty, setIsFormDirty] = useState(false);
 
   const toggleMedicineDay = (day: number) => {
+    setIsFormDirty(true);
     setMedicineDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
     );
   };
 
   const toggleTreatmentDay = (day: number) => {
+    setIsFormDirty(true);
     setTreatmentDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
     );
@@ -181,15 +184,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
     }
   };
 
-  const fetchTokenSettings = async () => {
+  const fetchTokenSettings = async (force: boolean = false) => {
     try {
       const data = await api.get('/settings/tokens', token);
       if (data) {
-        if (data.startTime) setStartTime(data.startTime);
-        if (data.endTime) setEndTime(data.endTime);
+        // Prevent background polling from overwriting unsaved form inputs if user is actively editing
+        if (force || !isFormDirty) {
+          if (data.startTime) setStartTime(data.startTime);
+          if (data.endTime) setEndTime(data.endTime);
+          if (data.medicineAllowedDays) setMedicineDays(data.medicineAllowedDays);
+          if (data.treatmentAllowedDays) setTreatmentDays(data.treatmentAllowedDays);
+        }
         if (data.enabled !== undefined) setTokenEnabled(data.enabled);
-        if (data.medicineAllowedDays) setMedicineDays(data.medicineAllowedDays);
-        if (data.treatmentAllowedDays) setTreatmentDays(data.treatmentAllowedDays);
       }
     } catch (err) {
       console.error('Failed to fetch token settings', err);
@@ -201,13 +207,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
     setSavingSettings(true);
     setSettingsMsg('');
     try {
-      await api.put('/settings/tokens', {
+      const updated = await api.put('/settings/tokens', {
         startTime,
         endTime,
         enabled: tokenEnabled,
         medicineAllowedDays: medicineDays,
         treatmentAllowedDays: treatmentDays,
       }, token);
+      if (updated) {
+        if (updated.startTime) setStartTime(updated.startTime);
+        if (updated.endTime) setEndTime(updated.endTime);
+        if (updated.medicineAllowedDays) setMedicineDays(updated.medicineAllowedDays);
+        if (updated.treatmentAllowedDays) setTreatmentDays(updated.treatmentAllowedDays);
+      }
+      setIsFormDirty(false);
       setSettingsMsg('Token generation rules & day configuration updated successfully!');
       setTimeout(() => setSettingsMsg(''), 4000);
     } catch (err: any) {
@@ -461,13 +474,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                 <TimePicker12H
                   label="Daily Start Time"
                   value={startTime}
-                  onChange={(val) => setStartTime(val)}
+                  onChange={(val) => {
+                    setStartTime(val);
+                    setIsFormDirty(true);
+                  }}
                 />
 
                 <TimePicker12H
                   label="Daily End Time"
                   value={endTime}
-                  onChange={(val) => setEndTime(val)}
+                  onChange={(val) => {
+                    setEndTime(val);
+                    setIsFormDirty(true);
+                  }}
                 />
               </div>
 

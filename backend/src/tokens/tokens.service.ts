@@ -40,9 +40,7 @@ export class TokensService {
       throw new BadRequestException('Invalid service type. Must be medicine or treatment.');
     }
 
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
+    const { currentHour, currentMinute, dayOfWeek } = this.getISTCurrentTimeAndDay();
 
     // 2. Dynamic Token Generation Timing (Default: 7:00 AM to 3:30 PM)
     const tokenSettings = await this.settingsService.getTokenSettings();
@@ -74,8 +72,7 @@ export class TokensService {
       );
     }
 
-    // 3. Dynamic Day Availability Validation
-    const dayOfWeek = now.getDay(); // 0: Sun, 1: Mon, 2: Tue, 3: Wed, 4: Thu, 5: Fri, 6: Sat
+    // 3. Dynamic Day Availability Validation (evaluated in IST)
     const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
     const allowedDays = serviceType === 'medicine'
@@ -90,8 +87,8 @@ export class TokensService {
       );
     }
 
-    // 4. One Token Per Patient per day
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // 4. One Token Per Patient per day (evaluated in IST)
+    const startOfToday = this.getStartOfTodayIST();
     const existingToken = await this.tokenRepository.findOne({
       where: {
         patientId: patient.id,
@@ -108,10 +105,10 @@ export class TokensService {
     const isPostgres = this.dataSource.options.type === 'postgres';
 
     if (isPostgres) {
-      const year = now.getFullYear();
-      const month = (now.getMonth() + 1).toString().padStart(2, '0');
-      const day = now.getDate().toString().padStart(2, '0');
-      const dateSuffix = `${year}_${month}_${day}`;
+      const now = new Date();
+      const istDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' });
+      const istDateStr = istDateFormatter.format(now);
+      const dateSuffix = istDateStr.replace(/-/g, '_');
       const seqName = `${serviceType}_token_seq_${dateSuffix}`;
 
       // Create sequence dynamically for the current day if it does not exist
@@ -159,8 +156,7 @@ export class TokensService {
   }
 
   async getTodayToken(userId: string): Promise<any> {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = this.getStartOfTodayIST();
 
     const token = await this.tokenRepository.findOne({
       where: {
@@ -266,8 +262,7 @@ export class TokensService {
   }
 
   async getQueueStatus(): Promise<any> {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = this.getStartOfTodayIST();
 
     const getStatusForType = async (type: string) => {
       const currentServing = await this.tokenRepository.findOne({
@@ -298,12 +293,11 @@ export class TokensService {
     };
   }
 
-  // 6. Token Validity: automatically expire all active/waiting tokens at 5:00 PM daily
-  @Cron('0 17 * * *')
+  // 6. Token Validity: automatically expire all active/waiting tokens at 5:00 PM IST daily
+  @Cron('0 17 * * *', { timeZone: 'Asia/Kolkata' })
   async handleDailyExpiration() {
-    console.log('[CRON] Running daily token expiration reset at 5:00 PM');
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    console.log('[CRON] Running daily token expiration reset at 5:00 PM IST');
+    const startOfToday = this.getStartOfTodayIST();
 
     const activeTokens = await this.tokenRepository.createQueryBuilder('token')
       .where('token.status IN (:...statuses)', { statuses: ['waiting', 'in_progress'] })
@@ -322,8 +316,51 @@ export class TokensService {
     await this.logAction(
       null,
       'SYSTEM_CRON_RESET',
-      `Auto-expired active tokens at 5:00 PM. Total expired: ${activeTokens.length}`,
+      `Auto-expired active tokens at 5:00 PM IST. Total expired: ${activeTokens.length}`,
     );
+  }
+
+  private getISTCurrentTimeAndDay() {
+    const now = new Date();
+    const istTimeFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    const istTimeString = istTimeFormatter.format(now);
+    const [hStr, mStr] = istTimeString.split(':');
+    let currentHour = parseInt(hStr, 10);
+    if (currentHour === 24) currentHour = 0;
+    const currentMinute = parseInt(mStr, 10);
+
+    const istDateFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kolkata',
+      weekday: 'short',
+    });
+    const dayNameShort = istDateFormatter.format(now);
+    const SHORT_DAYS_MAP: { [key: string]: number } = {
+      Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+    };
+    const dayOfWeek = SHORT_DAYS_MAP[dayNameShort] !== undefined ? SHORT_DAYS_MAP[dayNameShort] : now.getDay();
+
+    return { currentHour, currentMinute, dayOfWeek };
+  }
+
+  private getStartOfTodayIST(): Date {
+    const now = new Date();
+    try {
+      const istDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' });
+      const istDateStr = istDateFormatter.format(now);
+      const [y, m, d] = istDateStr.split('-').map(Number);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        const utcMs = typeof Date.UTC === 'function' ? Date.UTC(y, m - 1, d, 0, 0, 0) : new Date(y, m - 1, d).getTime();
+        return new Date(utcMs - (5.5 * 60 * 60 * 1000));
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
   private async logAction(userId: string | null, action: string, details: string) {

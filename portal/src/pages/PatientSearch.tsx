@@ -603,7 +603,12 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
       )}
 
       {/* Results grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px', alignItems: 'start' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+        gap: '32px',
+        alignItems: 'start'
+      }}>
         {/* Left Side: Results */}
         <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <h3 style={{ fontSize: '1.2rem' }}>Patients Registry ({results.length})</h3>
@@ -644,8 +649,8 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
           )}
         </div>
 
-        {/* Right Side: Detail card (Sticky Frozen Panel) */}
-        <div className="glass-card" style={{ position: 'sticky', top: '24px', alignSelf: 'start', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
+        {/* Right Side: Detail card */}
+        <div className="glass-card" style={{ alignSelf: 'start', maxHeight: 'calc(100vh - 180px)', overflowY: 'auto' }}>
           {selectedPatient ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               <div style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>

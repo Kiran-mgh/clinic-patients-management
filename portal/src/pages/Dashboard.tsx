@@ -73,7 +73,9 @@ const TimePicker12H: React.FC<TimePicker12HProps> = ({ value, onChange, label })
         borderRadius: '12px',
         border: '1px solid hsl(var(--border-color))',
         boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-        flexWrap: 'wrap'
+        flexWrap: 'nowrap',
+        whiteSpace: 'nowrap',
+        width: 'fit-content'
       }}>
         <Clock size={18} style={{ color: 'hsl(var(--primary))' }} />
 
@@ -464,7 +466,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
               {/* Timing Selection Row */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
                 gap: '24px',
                 padding: '20px',
                 background: 'hsla(var(--primary) / 0.03)',

@@ -309,3 +309,33 @@ h1, h2, h3, h4, .brand-font {
   color: hsl(var(--danger));
   border: 1px solid hsla(var(--danger) / 0.15);
 }
+
+/* Responsive Layout Optimizations */
+@media (max-width: 1200px) {
+  .main-content {
+    padding: 24px;
+    gap: 24px;
+  }
+  .sidebar {
+    width: 220px;
+    padding: 16px;
+  }
+  .glass-card {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-container {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid hsl(var(--border-color));
+  }
+  .main-content {
+    height: auto;
+    padding: 16px;
+  }
+}

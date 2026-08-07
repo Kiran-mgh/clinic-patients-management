@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../api';
-import { Search, User, Trash2, CheckCircle, XCircle, CreditCard } from 'lucide-react';
+import { Search, User, Trash2, CheckCircle, XCircle, CreditCard, Download } from 'lucide-react';
 import { formatToIndianDate, formatDobInput } from '../utils/dateUtils';
 
 interface PatientSearchProps {
@@ -297,6 +297,48 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
     } finally {
       setFormSubmitting(false);
     }
+  };
+
+  const handleExportCSV = () => {
+    if (!results || results.length === 0) return;
+
+    const headers = [
+      'Patient ID',
+      'Full Name',
+      'Mobile Number',
+      'Email',
+      'Gender',
+      'Date of Birth',
+      'Town / Residence',
+      'Profession',
+      'Blood Group',
+      'Status',
+      'Registration Date'
+    ];
+
+    const rows = results.map((p) => [
+      `"${(p.patientId || 'Pending').replace(/"/g, '""')}"`,
+      `"${(p.fullName || '').replace(/"/g, '""')}"`,
+      `"${(p.user?.mobileNumber || '').replace(/"/g, '""')}"`,
+      `"${(p.user?.email || p.email || '').replace(/"/g, '""')}"`,
+      `"${(p.gender || '').replace(/"/g, '""')}"`,
+      `"${p.dateOfBirth ? formatToIndianDate(p.dateOfBirth) : ''}"`,
+      `"${(p.town || '').replace(/"/g, '""')}"`,
+      `"${(p.profession || '').replace(/"/g, '""')}"`,
+      `"${(p.bloodGroup || '').replace(/"/g, '""')}"`,
+      `"${(p.status || '').replace(/"/g, '""')}"`,
+      `"${p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN') : ''}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    const timestamp = new Date().toISOString().slice(0, 10);
+    link.setAttribute('download', `Patients_Registry_${timestamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -609,7 +651,26 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
       }}>
         {/* Left Side: Results */}
         <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <h3 style={{ fontSize: '1.2rem' }}>Patients Registry ({results.length})</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Patients Registry ({results.length})</h3>
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              disabled={results.length === 0}
+              className="btn btn-secondary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.825rem',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                cursor: results.length === 0 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <Download size={15} /> Export CSV
+            </button>
+          </div>
 
           {loading && results.length === 0 ? (
             <p style={{ color: 'hsl(var(--text-muted))' }}>Searching records...</p>

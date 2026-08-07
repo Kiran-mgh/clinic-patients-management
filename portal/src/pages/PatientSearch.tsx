@@ -740,29 +740,23 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
                   <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <CreditCard size={18} /> Payment & Billing History
                   </h4>
-                  {selectedPatient.tokens && selectedPatient.tokens.length > 0 && (
-                    <div style={{ display: 'flex', gap: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
-                      <span style={{ padding: '2px 8px', borderRadius: '6px', background: 'hsla(150, 55%, 32%, 0.1)', color: 'hsl(var(--success))' }}>
-                        Paid: {selectedPatient.tokens.filter((t: any) => t.paymentStatus === 'Paid').length}
-                      </span>
-                      <span style={{ padding: '2px 8px', borderRadius: '6px', background: 'hsla(350, 65%, 44%, 0.1)', color: 'hsl(var(--danger))' }}>
-                        Unpaid: {selectedPatient.tokens.filter((t: any) => t.paymentStatus !== 'Paid').length}
-                      </span>
-                    </div>
+                  {selectedPatient.tokens && (
+                    <span style={{ padding: '2px 8px', borderRadius: '6px', background: 'hsla(150, 55%, 32%, 0.1)', color: 'hsl(var(--success))', fontSize: '0.75rem', fontWeight: 800 }}>
+                      Paid Transactions: {selectedPatient.tokens.filter((t: any) => t.paymentStatus === 'Paid').length}
+                    </span>
                   )}
                 </div>
 
                 {detailLoading ? (
                   <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem', fontStyle: 'italic' }}>Loading payment history...</p>
-                ) : selectedPatient.tokens && selectedPatient.tokens.length > 0 ? (
+                ) : selectedPatient.tokens && selectedPatient.tokens.filter((t: any) => t.paymentStatus === 'Paid').length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
-                    {selectedPatient.tokens.map((t: any) => {
+                    {selectedPatient.tokens.filter((t: any) => t.paymentStatus === 'Paid').map((t: any) => {
                       const dateStr = new Date(t.generatedAt).toLocaleDateString('en-IN', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric'
                       });
-                      const isPaid = t.paymentStatus === 'Paid';
                       return (
                         <div key={`pay-${t.id}`} style={{
                           display: 'flex',
@@ -775,35 +769,30 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
                           fontSize: '0.85rem'
                         }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <div style={{ fontWeight: 700, color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              Token {t.tokenNumber} ({t.serviceType})
+                            <div style={{ fontWeight: 700, color: 'hsl(var(--text-primary))' }}>
+                              Payment Date: {dateStr}
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))' }}>
-                              {dateStr}
+                            <div style={{ fontSize: '0.8rem', color: 'hsl(var(--text-muted))', fontStyle: t.paymentNotes ? 'normal' : 'italic' }}>
+                              Notes: {t.paymentNotes || 'No notes added'}
                             </div>
-                            {t.paymentNotes && (
-                              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--text-main))', fontWeight: 600, fontStyle: 'italic', marginTop: '2px' }}>
-                                📝 {t.paymentNotes}
-                              </div>
-                            )}
                           </div>
                           <span style={{
-                            padding: '3px 9px',
+                            padding: '3px 10px',
                             borderRadius: '6px',
                             fontSize: '0.75rem',
                             fontWeight: 800,
-                            background: isPaid ? 'hsla(150, 55%, 32%, 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
-                            color: isPaid ? 'hsl(var(--success))' : 'hsl(var(--danger))',
-                            border: isPaid ? '1px solid hsla(150, 55%, 32%, 0.25)' : '1px solid hsla(350, 65%, 44%, 0.25)'
+                            background: 'hsla(150, 55%, 32%, 0.12)',
+                            color: 'hsl(var(--success))',
+                            border: '1px solid hsla(150, 55%, 32%, 0.25)'
                           }}>
-                            {isPaid ? '✓ Paid' : '⏳ Unpaid'}
+                            ✓ Paid
                           </span>
                         </div>
                       );
                     })}
                   </div>
                 ) : (
-                  <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem', fontStyle: 'italic' }}>No payment records logged for this patient yet.</p>
+                  <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem', fontStyle: 'italic' }}>No paid transactions recorded for this patient.</p>
                 )}
               </div>
 

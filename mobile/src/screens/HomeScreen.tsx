@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image, Modal, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image, Modal, TextInput, Linking } from 'react-native';
 import { api } from '../api';
 import { io } from 'socket.io-client';
 
@@ -240,19 +240,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
 
       {/* Account Info card */}
       <View style={styles.card}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View>
-            <Text style={styles.cardLabel}>Patient ID</Text>
-            <Text style={styles.cardValue}>
-              {profile?.patientId || 'Pending Verification'}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={{ backgroundColor: '#f0fdf4', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#bbf7d0' }}
-            onPress={openEditModal}
-          >
-            <Text style={{ color: '#166534', fontWeight: '700', fontSize: 13 }}>✏️ EDIT PROFILE</Text>
-          </TouchableOpacity>
+        <View>
+          <Text style={styles.cardLabel}>Patient ID</Text>
+          <Text style={styles.cardValue}>
+            {profile?.patientId || 'Pending Verification'}
+          </Text>
         </View>
         <View style={styles.statusRow}>
           <Text style={styles.statusLabel}>Account Status:</Text>
@@ -301,15 +293,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
 
               <View style={styles.grid}>
                 <View style={styles.gridItem}>
-                  <Text style={styles.gridLabel}>Serving</Text>
+                  <Text style={styles.gridLabel}>SERVING</Text>
                   <Text style={styles.gridValue}>{todayToken.currentServing}</Text>
                 </View>
                 <View style={styles.gridItem}>
-                  <Text style={styles.gridLabel}>Total Tokens Today</Text>
+                  <Text style={styles.gridLabel}>TOTAL TOKENS</Text>
                   <Text style={styles.gridValue}>{todayToken.lastTokenNumber || '1'}</Text>
                 </View>
                 <View style={styles.gridItem}>
-                  <Text style={styles.gridLabel}>Ahead / Wait</Text>
+                  <Text style={styles.gridLabel}>AHEAD / WAIT</Text>
                   <Text style={styles.gridValue}>{todayToken.isMissed ? 'After Last' : `${todayToken.patientsAhead} Patients`}</Text>
                 </View>
               </View>
@@ -334,8 +326,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                   const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
                   const isGloballyEnabled = tokenConfig ? tokenConfig.enabled : true;
-                  const startTimeStr = tokenConfig?.startTime || '07:00';
-                  const endTimeStr = tokenConfig?.endTime || '15:30';
+                  const isSaturday = todayDay === 6;
+                  const startTimeStr = isSaturday
+                    ? (tokenConfig?.saturdayStartTime || '07:30')
+                    : (tokenConfig?.startTime || '07:00');
+                  const endTimeStr = isSaturday
+                    ? (tokenConfig?.saturdayEndTime || '13:00')
+                    : (tokenConfig?.endTime || '15:30');
 
                   const medAllowedDays = tokenConfig?.medicineAllowedDays || [1, 2, 3, 4, 5, 6];
                   const treatAllowedDays = tokenConfig?.treatmentAllowedDays || [2, 3, 4];
@@ -429,18 +426,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         </View>
         <View style={{ marginTop: 6, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#f0f0f0' }}>
           <Text style={{ fontSize: 11, fontWeight: '700', color: '#718096' }}>CLINIC ADDRESS:</Text>
-          <Text style={{ fontSize: 12, color: '#2d3748', marginTop: 2 }}># 2 & 4, 7th Cross, R.T. Street, Bengaluru - 560 053</Text>
-          <Text style={{ fontSize: 12, color: '#2b6cb0', fontWeight: '600', marginTop: 4 }}>Ph: 080 - 22268269, 41136539</Text>
+          <Text style={{ fontSize: 13, color: '#2d3748', fontWeight: '600', marginTop: 2 }}>#226/4, 7th Cross, R.T.Street, Bengaluru - 560053</Text>
+          <Text style={{ fontSize: 12, color: '#2b6cb0', fontWeight: '600', marginTop: 4 }}>Ph: 080 - 22268269, 080 - 41136539</Text>
+          <TouchableOpacity
+            onPress={() => {
+              Linking.openURL('https://maps.app.goo.gl/v6DAwnEmM3ofYDM88').catch((err) => console.error('Failed to open Google Maps', err));
+            }}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#f0fdf4',
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: '#86efac',
+              marginTop: 8,
+              gap: 6
+            }}
+          >
+            <Text style={{ fontSize: 15 }}>📍</Text>
+            <Text style={{ color: '#166534', fontWeight: '800', fontSize: 12, textDecorationLine: 'underline' }}>
+              Open in Google Maps ↗
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
       {/* Navigation Options */}
       <View style={{ width: '100%', gap: 12, marginTop: 12 }}>
         <TouchableOpacity style={styles.navBtn} onPress={onNavigateToProfile}>
-          <Text style={styles.navBtnText}>View My Profile Registry</Text>
+          <Text style={styles.navBtnText}>My profile</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={onNavigateToContact}>
-          <Text style={styles.navBtnText}>View Full Timings & Contact</Text>
+          <Text style={styles.navBtnText}>Clinic Details</Text>
         </TouchableOpacity>
       </View>
 
@@ -797,32 +817,34 @@ const styles = StyleSheet.create({
   },
   gridLabel: {
     color: '#718096',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   gridValue: {
     color: '#1a202c',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '900',
     marginTop: 4,
   },
   statusFooter: {
     flexDirection: 'row',
     marginTop: 20,
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   footerLabel: {
-    color: '#718096',
-    fontSize: 13,
+    color: '#213932',
+    fontSize: 15,
+    fontWeight: '800',
   },
   badge: {
     borderRadius: 12,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    fontSize: 11,
-    fontWeight: '700',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    fontSize: 13,
+    fontWeight: '800',
     borderWidth: 1,
   },
   badge_waiting: { backgroundColor: 'rgba(33, 57, 50, 0.05)', borderColor: 'rgba(33, 57, 50, 0.1)', color: '#213932' },

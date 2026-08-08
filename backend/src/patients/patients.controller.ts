@@ -75,8 +75,19 @@ export class PatientsController {
   @Get('search')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'doctor')
-  async searchPatients(@Query('query') query: string) {
-    return this.patientsService.searchPatients(query);
+  async searchPatients(
+    @Query('query') query?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.patientsService.searchPatients(query, page, limit);
+  }
+
+  @Get('export')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'doctor')
+  async exportAllPatients(@Query('query') query?: string) {
+    return this.patientsService.exportAllPatients(query);
   }
 
   @Get(':id/detail')

@@ -5,8 +5,9 @@ import { PatientVerification } from './pages/PatientVerification';
 import { QueueManagement } from './pages/QueueManagement';
 import { PatientSearch } from './pages/PatientSearch';
 import { Reports } from './pages/Reports';
+import { Settings } from './pages/Settings';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
-import { LayoutDashboard, UserCheck, Stethoscope, Search, LogOut, Activity, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, UserCheck, Stethoscope, Search, LogOut, Activity, BarChart3, Settings as SettingsIcon } from 'lucide-react';
 
 function App() {
   if (typeof window !== 'undefined' && window.location.pathname === '/privacy-policy') {
@@ -15,7 +16,7 @@ function App() {
 
   const [token, setToken] = useState<string | null>(localStorage.getItem('amar_staff_token'));
   const [user, setUser] = useState<any>(null);
-  const [screen, setScreen] = useState<'dashboard' | 'verification' | 'queue' | 'search' | 'reports'>('dashboard');
+  const [screen, setScreen] = useState<'dashboard' | 'verification' | 'queue' | 'search' | 'reports' | 'settings'>('dashboard');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('amar_staff_user');
@@ -90,6 +91,13 @@ function App() {
             <BarChart3 size={18} />
             Reports & Analytics
           </a>
+          <a
+            className={`nav-link ${screen === 'settings' ? 'active' : ''}`}
+            onClick={() => setScreen('settings')}
+          >
+            <SettingsIcon size={18} />
+            Clinic Settings
+          </a>
         </nav>
 
         {/* User Card & Logout */}
@@ -122,6 +130,7 @@ function App() {
         {screen === 'queue' && <QueueManagement token={token} />}
         {screen === 'search' && <PatientSearch token={token} />}
         {screen === 'reports' && <Reports token={token} />}
+        {screen === 'settings' && <Settings token={token} />}
       </main>
     </div>
   );

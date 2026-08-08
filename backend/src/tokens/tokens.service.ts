@@ -48,8 +48,13 @@ export class TokensService {
       throw new BadRequestException('Token generation is currently paused by the clinic.');
     }
 
-    const [startH, startM] = tokenSettings.startTime.split(':').map(Number);
-    const [endH, endM] = tokenSettings.endTime.split(':').map(Number);
+    // 2. Dynamic Time Availability Validation (evaluated in IST)
+    const isSaturday = dayOfWeek === 6;
+    const activeStartTime = isSaturday ? (tokenSettings.saturdayStartTime || '07:30') : (tokenSettings.startTime || '07:00');
+    const activeEndTime = isSaturday ? (tokenSettings.saturdayEndTime || '13:00') : (tokenSettings.endTime || '15:30');
+
+    const [startH, startM] = activeStartTime.split(':').map(Number);
+    const [endH, endM] = activeEndTime.split(':').map(Number);
 
     const currentMinutes = currentHour * 60 + currentMinute;
     const startMinutes = startH * 60 + startM;
@@ -67,8 +72,9 @@ export class TokensService {
     };
 
     if (currentMinutes < startMinutes || currentMinutes > endMinutes) {
+      const dayLabel = isSaturday ? 'on Saturdays' : 'on Weekdays (Mon-Fri)';
       throw new BadRequestException(
-        `Token generation is available only between ${format12H(tokenSettings.startTime)} and ${format12H(tokenSettings.endTime)}.`
+        `Token generation ${dayLabel} is available only between ${format12H(activeStartTime)} and ${format12H(activeEndTime)}.`
       );
     }
 

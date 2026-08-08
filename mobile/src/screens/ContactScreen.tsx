@@ -1,11 +1,15 @@
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Linking } from 'react-native';
 
 interface ContactScreenProps {
   onGoBack: () => void;
 }
 
 export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
+  const openGoogleMaps = () => {
+    const url = 'https://maps.app.goo.gl/v6DAwnEmM3ofYDM88';
+    Linking.openURL(url).catch((err) => console.error('Failed to open Google Maps', err));
+  };
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <View style={styles.header}>
@@ -46,14 +50,14 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
 
       {/* Clinic Timings */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>📅 Clinic Timings</Text>
+        <Text style={styles.sectionTitle}>📅 Clinic Timings & Token Generation</Text>
         <View style={styles.timingRow}>
-          <Text style={styles.dayText}>Monday - Friday</Text>
-          <Text style={styles.timeText}>7:00 AM – 7:00 PM</Text>
+          <Text style={styles.dayText}>Monday - Friday (Token Window)</Text>
+          <Text style={styles.timeText}>7:00 AM – 3:30 PM</Text>
         </View>
         <View style={styles.timingRow}>
-          <Text style={styles.dayText}>Saturday</Text>
-          <Text style={styles.timeText}>7:00 AM – 11:00 AM</Text>
+          <Text style={styles.dayText}>Saturday (Special Token Window)</Text>
+          <Text style={styles.timeText}>7:30 AM – 1:00 PM</Text>
         </View>
         <View style={styles.timingRow}>
           <Text style={styles.dayText}>Sunday</Text>
@@ -95,11 +99,35 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
         </View>
         <View style={styles.contactItem}>
           <Text style={styles.contactLabel}>Address:</Text>
-          <Text style={styles.contactValue}># 2 & 4, 7th Cross, R.T. Street, Bengaluru - 560 053</Text>
+          <Text style={styles.contactValue}>#226/4, 7th Cross, R.T.Street, Bengaluru - 560053</Text>
         </View>
         <View style={styles.contactItem}>
           <Text style={styles.contactLabel}>Phone Numbers:</Text>
           <Text style={styles.contactValue}>080 - 22268269, 080 - 41136539</Text>
+        </View>
+        <View style={styles.contactItem}>
+          <TouchableOpacity
+            onPress={openGoogleMaps}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#f0fdf4',
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: '#86efac',
+              marginTop: 2,
+              marginBottom: 4,
+              gap: 8
+            }}
+          >
+            <Text style={{ fontSize: 16 }}>📍</Text>
+            <Text style={{ color: '#166534', fontWeight: '800', fontSize: 13, textDecorationLine: 'underline' }}>
+              Open in Google Maps ↗
+            </Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.contactItem}>
           <Text style={styles.contactLabel}>Email:</Text>

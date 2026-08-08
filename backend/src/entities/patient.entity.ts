@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, OneToOne, JoinColumn, OneToMany, Index } from 'typeorm';
 import { User } from './user.entity';
 import { Token } from './token.entity';
 
@@ -7,9 +7,11 @@ export class Patient {
   @PrimaryColumn('uuid')
   id: string; // matches user.id
 
+  @Index()
   @Column({ unique: true, nullable: true })
   patientId: string; // e.g., 'AH000001', assigned after approval
 
+  @Index()
   @Column()
   fullName: string;
 
@@ -34,6 +36,7 @@ export class Patient {
   @Column({ type: 'text', nullable: true })
   previousSurgeryDetails: string;
 
+  @Index()
   @Column({ default: 'pending_approval' })
   status: string; // 'pending_approval' | 'pending_verification' | 'active'
 
@@ -47,6 +50,7 @@ export class Patient {
   @OneToMany(() => Token, (token) => token.patient)
   tokens: Token[];
 
+  @Index()
   @CreateDateColumn()
   createdAt: Date;
 }

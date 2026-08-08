@@ -292,20 +292,68 @@ export class PatientsService {
     }
   }
 
-  async searchPatients(query: string): Promise<Patient[]> {
-    if (!query) {
+  async searchPatients(
+    query?: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{ data: Patient[]; total: number; page: number; totalPages: number }> {
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, Number(limit) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    if (!query || query.trim() === '') {
+      const [data, total] = await this.patientRepository.findAndCount({
+        relations: ['user'],
+        order: { createdAt: 'DESC' },
+        skip,
+        take: limitNum,
+      });
+
+      return {
+        data,
+        total,
+        page: pageNum,
+        totalPages: Math.ceil(total / limitNum) || 1,
+      };
+    }
+
+    const trimmedQuery = query.trim();
+    const queryBuilder = this.patientRepository
+      .createQueryBuilder('patient')
+      .leftJoinAndSelect('patient.user', 'user')
+      .where('patient.fullName ILIKE :query', { query: `%${trimmedQuery}%` })
+      .orWhere('patient.patientId ILIKE :query', { query: `%${trimmedQuery}%` })
+      .orWhere('user.mobileNumber ILIKE :query', { query: `%${trimmedQuery}%` })
+      .orderBy('patient.createdAt', 'DESC')
+      .skip(skip)
+      .take(limitNum);
+
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    return {
+      data,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum) || 1,
+    };
+  }
+
+  async exportAllPatients(query?: string): Promise<Patient[]> {
+    if (!query || query.trim() === '') {
       return this.patientRepository.find({
         relations: ['user'],
-        order: { fullName: 'ASC' }
+        order: { createdAt: 'DESC' },
       });
     }
 
-    // Try finding matching mobile in user table, or match in patient table
-    return this.patientRepository.createQueryBuilder('patient')
+    const trimmedQuery = query.trim();
+    return this.patientRepository
+      .createQueryBuilder('patient')
       .leftJoinAndSelect('patient.user', 'user')
-      .where('patient.fullName ILIKE :query', { query: `%${query}%` })
-      .orWhere('patient.patientId ILIKE :query', { query: `%${query}%` })
-      .orWhere('user.mobileNumber ILIKE :query', { query: `%${query}%` })
+      .where('patient.fullName ILIKE :query', { query: `%${trimmedQuery}%` })
+      .orWhere('patient.patientId ILIKE :query', { query: `%${trimmedQuery}%` })
+      .orWhere('user.mobileNumber ILIKE :query', { query: `%${trimmedQuery}%` })
+      .orderBy('patient.createdAt', 'DESC')
       .getMany();
   }
 

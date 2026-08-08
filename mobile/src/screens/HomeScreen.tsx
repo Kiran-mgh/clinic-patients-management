@@ -240,19 +240,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
 
       {/* Account Info card */}
       <View style={styles.card}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <View>
-            <Text style={styles.cardLabel}>Patient ID</Text>
-            <Text style={styles.cardValue}>
-              {profile?.patientId || 'Pending Verification'}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={{ backgroundColor: '#f0fdf4', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#bbf7d0' }}
-            onPress={openEditModal}
-          >
-            <Text style={{ color: '#166534', fontWeight: '700', fontSize: 13 }}>✏️ EDIT PROFILE</Text>
-          </TouchableOpacity>
+        <View>
+          <Text style={styles.cardLabel}>Patient ID</Text>
+          <Text style={styles.cardValue}>
+            {profile?.patientId || 'Pending Verification'}
+          </Text>
         </View>
         <View style={styles.statusRow}>
           <Text style={styles.statusLabel}>Account Status:</Text>
@@ -460,10 +452,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       {/* Navigation Options */}
       <View style={{ width: '100%', gap: 12, marginTop: 12 }}>
         <TouchableOpacity style={styles.navBtn} onPress={onNavigateToProfile}>
-          <Text style={styles.navBtnText}>View My Profile Registry</Text>
+          <Text style={styles.navBtnText}>My profile</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={onNavigateToContact}>
-          <Text style={styles.navBtnText}>View Full Timings & Contact</Text>
+          <Text style={styles.navBtnText}>Clinic Details</Text>
         </TouchableOpacity>
       </View>
 

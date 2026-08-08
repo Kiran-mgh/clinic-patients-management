@@ -429,8 +429,31 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         </View>
         <View style={{ marginTop: 6, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#f0f0f0' }}>
           <Text style={{ fontSize: 11, fontWeight: '700', color: '#718096' }}>CLINIC ADDRESS:</Text>
-          <Text style={{ fontSize: 12, color: '#2d3748', marginTop: 2 }}># 2 & 4, 7th Cross, R.T. Street, Bengaluru - 560 053</Text>
-          <Text style={{ fontSize: 12, color: '#2b6cb0', fontWeight: '600', marginTop: 4 }}>Ph: 080 - 22268269, 41136539</Text>
+          <Text style={{ fontSize: 13, color: '#2d3748', fontWeight: '600', marginTop: 2 }}>#226/4, 7th Cross, R.T.Street, Bengaluru - 560053</Text>
+          <Text style={{ fontSize: 12, color: '#2b6cb0', fontWeight: '600', marginTop: 4 }}>Ph: 080 - 22268269, 080 - 41136539</Text>
+          <TouchableOpacity
+            onPress={() => {
+              Linking.openURL('https://maps.app.goo.gl/v6DAwnEmM3ofYDM88').catch((err) => console.error('Failed to open Google Maps', err));
+            }}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#f0fdf4',
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: '#86efac',
+              marginTop: 8,
+              gap: 6
+            }}
+          >
+            <Text style={{ fontSize: 15 }}>📍</Text>
+            <Text style={{ color: '#166534', fontWeight: '800', fontSize: 12, textDecorationLine: 'underline' }}>
+              Open in Google Maps ↗
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 

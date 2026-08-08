@@ -135,24 +135,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
 
             <View style={styles.inputContainer}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={[styles.inputLabel, { marginBottom: 0 }]}>Username</Text>
-                  <TouchableOpacity
-                    onPress={() => Alert.alert('Sign In Info ℹ️', 'You can sign in using your registered Mobile Number, Email Address, or Username.')}
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: 10,
-                      backgroundColor: 'rgba(33, 57, 50, 0.08)',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    activeOpacity={0.6}
-                  >
-                    <Text style={{ fontSize: 11, fontWeight: '900', color: '#213932' }}>ℹ️</Text>
-                  </TouchableOpacity>
-                </View>
-                <Text style={{ fontSize: 11, color: '#718096', fontWeight: '500' }}>
+                <Text style={[styles.inputLabel, { marginBottom: 0 }]}>Username</Text>
+                <Text style={{ fontSize: 11, color: '#718096', fontWeight: '600' }}>
                   (Mobile / Email / Username)
                 </Text>
               </View>

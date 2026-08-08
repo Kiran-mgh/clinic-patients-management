@@ -7,8 +7,7 @@ interface ContactScreenProps {
 
 export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
   const openGoogleMaps = () => {
-    const address = '2 & 4, 7th Cross, R.T. Street, Chickpet, Bengaluru, Karnataka 560053';
-    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    const url = 'https://maps.app.goo.gl/v6DAwnEmM3ofYDM88';
     Linking.openURL(url).catch((err) => console.error('Failed to open Google Maps', err));
   };
   return (

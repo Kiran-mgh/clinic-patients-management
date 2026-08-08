@@ -492,7 +492,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
             </p>
           </div>
           <a
-            href="https://www.google.com/maps/search/?api=1&query=2+%26+4,+7th+Cross,+R.T.+Street,+Chickpet,+Bengaluru,+Karnataka+560053"
+            href="https://maps.app.goo.gl/v6DAwnEmM3ofYDM88"
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary"

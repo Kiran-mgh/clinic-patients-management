@@ -445,9 +445,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         <TouchableOpacity
           style={[styles.navBtn, { backgroundColor: '#f0fdf4', borderColor: '#86efac' }]}
           onPress={() => {
-            const address = '2 & 4, 7th Cross, R.T. Street, Chickpet, Bengaluru, Karnataka 560053';
-            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-            Linking.openURL(url).catch((err) => console.error('Failed to open Google Maps', err));
+            Linking.openURL('https://maps.app.goo.gl/v6DAwnEmM3ofYDM88').catch((err) => console.error('Failed to open Google Maps', err));
           }}
         >
           <Text style={[styles.navBtnText, { color: '#166534', fontWeight: '800' }]}>📍 Open in Google Maps ↗</Text>

@@ -155,9 +155,11 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState('');
   const [isFormDirty, setIsFormDirty] = useState(false);
+  const isFormDirtyRef = React.useRef(false);
   const [loading, setLoading] = useState(true);
 
   const toggleMedicineDay = (day: number) => {
+    isFormDirtyRef.current = true;
     setIsFormDirty(true);
     setMedicineDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
@@ -165,6 +167,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
   };
 
   const toggleTreatmentDay = (day: number) => {
+    isFormDirtyRef.current = true;
     setIsFormDirty(true);
     setTreatmentDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
@@ -176,7 +179,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
       const data = await api.get('/settings/tokens', token);
       if (data) {
         // Prevent background polling from overwriting unsaved form inputs if user is actively editing
-        if (force || !isFormDirty) {
+        if (force || !isFormDirtyRef.current) {
           if (data.startTime) setStartTime(data.startTime);
           if (data.endTime) setEndTime(data.endTime);
           if (data.saturdayStartTime) setSaturdayStartTime(data.saturdayStartTime);
@@ -215,6 +218,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
         if (updated.medicineAllowedDays) setMedicineDays(updated.medicineAllowedDays);
         if (updated.treatmentAllowedDays) setTreatmentDays(updated.treatmentAllowedDays);
       }
+      isFormDirtyRef.current = false;
       setIsFormDirty(false);
       setSettingsMsg('Weekday & Saturday token timings updated successfully!');
       setTimeout(() => setSettingsMsg(''), 4000);
@@ -232,6 +236,8 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
       await api.put('/settings/tokens', {
         startTime,
         endTime,
+        saturdayStartTime,
+        saturdayEndTime,
         enabled: nextState,
       }, token);
       setSettingsMsg(`Token generation is now ${nextState ? 'ENABLED' : 'PAUSED'}.`);
@@ -256,17 +262,14 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
     });
 
     socket.on('queue_updated', () => {
-      console.log('[Socket] Received queue_updated, syncing settings...');
-      fetchTokenSettings();
+      // Only sync if user is not actively editing form
+      if (!isFormDirtyRef.current) {
+        fetchTokenSettings(false);
+      }
     });
-
-    const fallbackInterval = setInterval(() => {
-      fetchTokenSettings();
-    }, 15000);
 
     return () => {
       socket.disconnect();
-      clearInterval(fallbackInterval);
     };
   }, []);
 
@@ -371,6 +374,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                 value={startTime}
                 onChange={(val) => {
                   setStartTime(val);
+                  isFormDirtyRef.current = true;
                   setIsFormDirty(true);
                 }}
               />
@@ -380,6 +384,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                 value={endTime}
                 onChange={(val) => {
                   setEndTime(val);
+                  isFormDirtyRef.current = true;
                   setIsFormDirty(true);
                 }}
               />
@@ -406,6 +411,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                 value={saturdayStartTime}
                 onChange={(val) => {
                   setSaturdayStartTime(val);
+                  isFormDirtyRef.current = true;
                   setIsFormDirty(true);
                 }}
               />
@@ -415,6 +421,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                 value={saturdayEndTime}
                 onChange={(val) => {
                   setSaturdayEndTime(val);
+                  isFormDirtyRef.current = true;
                   setIsFormDirty(true);
                 }}
               />

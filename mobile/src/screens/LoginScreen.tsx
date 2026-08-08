@@ -28,7 +28,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
 
   const handleLogin = async () => {
     if (!identifier || !password) {
-      setError('Please enter your Identifier (Mobile / Email / Name) and Password.');
+      setError('Please enter your Username and Password.');
       return;
     }
 
@@ -136,10 +136,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Identifier (Mobile / Email / Username)</Text>
+              <Text style={styles.inputLabel}>Username</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Mobile / Email / Username"
+                placeholder="Enter your username"
                 placeholderTextColor="#999"
                 value={identifier}
                 onChangeText={setIdentifier}

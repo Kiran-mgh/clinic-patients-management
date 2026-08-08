@@ -134,12 +134,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
             <Text style={styles.cardHeader}>Sign In</Text>
 
             <View style={styles.inputContainer}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <Text style={[styles.inputLabel, { marginBottom: 0 }]}>Username</Text>
-                <Text style={{ fontSize: 11, color: '#718096', fontWeight: '600' }}>
-                  (Mobile / Email / Username)
-                </Text>
-              </View>
+              <Text style={styles.inputLabel}>Username</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Mobile number, Email, or Username"

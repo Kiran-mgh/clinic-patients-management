@@ -326,8 +326,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                   const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
                   const isGloballyEnabled = tokenConfig ? tokenConfig.enabled : true;
-                  const startTimeStr = tokenConfig?.startTime || '07:00';
-                  const endTimeStr = tokenConfig?.endTime || '15:30';
+                  const isSaturday = todayDay === 6;
+                  const startTimeStr = isSaturday
+                    ? (tokenConfig?.saturdayStartTime || '07:30')
+                    : (tokenConfig?.startTime || '07:00');
+                  const endTimeStr = isSaturday
+                    ? (tokenConfig?.saturdayEndTime || '13:00')
+                    : (tokenConfig?.endTime || '15:30');
 
                   const medAllowedDays = tokenConfig?.medicineAllowedDays || [1, 2, 3, 4, 5, 6];
                   const treatAllowedDays = tokenConfig?.treatmentAllowedDays || [2, 3, 4];

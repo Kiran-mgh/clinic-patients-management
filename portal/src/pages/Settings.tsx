@@ -481,26 +481,28 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
           <MapPin size={20} />
           Clinic Location & Directions
         </h3>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div>
-            <p style={{ fontWeight: 700, margin: '0 0 4px 0', fontSize: '1rem' }}>Amar Ayurveda Clinic</p>
+            <p style={{ fontWeight: 800, margin: '0 0 4px 0', fontSize: '1.05rem', color: 'hsl(var(--text-color))' }}>Amar Ayurveda Clinic</p>
             <p style={{ color: 'hsl(var(--text-muted))', margin: 0, fontSize: '0.9rem' }}>
-              # 2 & 4, 7th Cross, R.T. Street, Chickpet, Bengaluru, Karnataka - 560053
+              <strong>Address:</strong> #226/4, 7th Cross, R.T.Street, Bengaluru - 560053
             </p>
-            <p style={{ color: 'hsl(var(--text-muted))', margin: '4px 0 0 0', fontSize: '0.85rem' }}>
-              Phone: 080 - 22268269, 080 - 41136539 | WhatsApp: +91 98460 12345
+            <p style={{ color: 'hsl(var(--text-muted))', margin: '4px 0 0 0', fontSize: '0.88rem' }}>
+              <strong>Phone:</strong> 080 - 22268269, 080 - 41136539 &nbsp;|&nbsp; <strong>WhatsApp:</strong> +91 98460 12345
             </p>
           </div>
-          <a
-            href="https://maps.app.goo.gl/v6DAwnEmM3ofYDM88"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700 }}
-          >
-            <MapPin size={16} />
-            Open in Google Maps ↗
-          </a>
+          <div style={{ marginTop: '6px' }}>
+            <a
+              href="https://maps.app.goo.gl/v6DAwnEmM3ofYDM88"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem' }}
+            >
+              <MapPin size={15} />
+              Open in Google Maps ↗
+            </a>
+          </div>
         </div>
       </div>
     </div>

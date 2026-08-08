@@ -442,14 +442,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         <TouchableOpacity style={styles.navBtn} onPress={onNavigateToContact}>
           <Text style={styles.navBtnText}>View Full Timings & Contact</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.navBtn, { backgroundColor: '#f0fdf4', borderColor: '#86efac' }]}
-          onPress={() => {
-            Linking.openURL('https://maps.app.goo.gl/v6DAwnEmM3ofYDM88').catch((err) => console.error('Failed to open Google Maps', err));
-          }}
-        >
-          <Text style={[styles.navBtnText, { color: '#166534', fontWeight: '800' }]}>📍 Open in Google Maps ↗</Text>
-        </TouchableOpacity>
       </View>
 
 

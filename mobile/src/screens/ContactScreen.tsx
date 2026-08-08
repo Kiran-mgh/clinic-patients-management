@@ -99,18 +99,13 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
         </View>
         <View style={styles.contactItem}>
           <Text style={styles.contactLabel}>Address:</Text>
-          <Text style={styles.contactValue}># 2 & 4, 7th Cross, R.T. Street, Bengaluru - 560 053</Text>
+          <Text style={styles.contactValue}>#226/4, 7th Cross, R.T.Street, Bengaluru - 560053</Text>
         </View>
         <View style={styles.contactItem}>
           <Text style={styles.contactLabel}>Phone Numbers:</Text>
           <Text style={styles.contactValue}>080 - 22268269, 080 - 41136539</Text>
         </View>
         <View style={styles.contactItem}>
-          <Text style={styles.contactLabel}>Email:</Text>
-          <Text style={styles.contactValue}>dranitgoswami@gmail.com</Text>
-        </View>
-        <View style={[styles.contactItem, { marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#e5e7eb' }]}>
-          <Text style={styles.contactLabel}>Clinic Location:</Text>
           <TouchableOpacity
             onPress={openGoogleMaps}
             activeOpacity={0.7}
@@ -123,20 +118,20 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
               borderRadius: 10,
               borderWidth: 1,
               borderColor: '#86efac',
-              marginTop: 6,
+              marginTop: 2,
+              marginBottom: 4,
               gap: 8
             }}
           >
-            <Text style={{ fontSize: 18 }}>📍</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: '#166534', fontWeight: '800', fontSize: 14 }}>
-                Open in Google Maps ↗
-              </Text>
-              <Text style={{ color: '#4a5568', fontSize: 11, marginTop: 2 }}>
-                Get driving & walking directions directly
-              </Text>
-            </View>
+            <Text style={{ fontSize: 16 }}>📍</Text>
+            <Text style={{ color: '#166534', fontWeight: '800', fontSize: 13, textDecorationLine: 'underline' }}>
+              Open in Google Maps ↗
+            </Text>
           </TouchableOpacity>
+        </View>
+        <View style={styles.contactItem}>
+          <Text style={styles.contactLabel}>Email:</Text>
+          <Text style={styles.contactValue}>dranitgoswami@gmail.com</Text>
         </View>
       </View>
     </ScrollView>

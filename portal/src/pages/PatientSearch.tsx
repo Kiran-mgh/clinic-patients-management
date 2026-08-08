@@ -316,29 +316,51 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
       'Registration Date'
     ];
 
-    const rows = results.map((p) => [
-      `"${(p.patientId || 'Pending').replace(/"/g, '""')}"`,
-      `"${(p.fullName || '').replace(/"/g, '""')}"`,
-      `"${(p.user?.mobileNumber || '').replace(/"/g, '""')}"`,
-      `"${(p.user?.email || p.email || '').replace(/"/g, '""')}"`,
-      `"${(p.gender || '').replace(/"/g, '""')}"`,
-      `"${p.dateOfBirth ? formatToIndianDate(p.dateOfBirth) : ''}"`,
-      `"${(p.town || '').replace(/"/g, '""')}"`,
-      `"${(p.profession || '').replace(/"/g, '""')}"`,
-      `"${(p.bloodGroup || '').replace(/"/g, '""')}"`,
-      `"${(p.status || '').replace(/"/g, '""')}"`,
-      `"${p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN') : ''}"`
-    ]);
+    const escapeCsvField = (field: any) => {
+      if (field === null || field === undefined) return '""';
+      const stringValue = String(field);
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    };
 
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const rows = results.map((p) => {
+      const patientId = p.patientId || 'Pending';
+      const fullName = p.fullName || '';
+      const mobileNumber = p.user?.mobileNumber || '';
+      const email = p.user?.email || p.email || '';
+      const gender = p.gender || '';
+      const dob = p.dateOfBirth ? formatToIndianDate(p.dateOfBirth) : '';
+      const town = p.town || '';
+      const profession = p.profession || '';
+      const bloodGroup = p.bloodGroup || '';
+      const status = p.status || '';
+      const regDate = p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN') : '';
+
+      return [
+        escapeCsvField(patientId),
+        escapeCsvField(fullName),
+        escapeCsvField(mobileNumber),
+        escapeCsvField(email),
+        escapeCsvField(gender),
+        escapeCsvField(dob),
+        escapeCsvField(town),
+        escapeCsvField(profession),
+        escapeCsvField(bloodGroup),
+        escapeCsvField(status),
+        escapeCsvField(regDate)
+      ].join(',');
+    });
+
+    const csvData = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.href = url;
     const timestamp = new Date().toISOString().slice(0, 10);
     link.setAttribute('download', `Patients_Registry_${timestamp}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (

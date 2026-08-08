@@ -7,7 +7,7 @@ import { PatientSearch } from './pages/PatientSearch';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
-import { LayoutDashboard, UserCheck, Stethoscope, Search, LogOut, Activity, BarChart3, Settings as SettingsIcon, MapPin } from 'lucide-react';
+import { LayoutDashboard, UserCheck, Stethoscope, Search, LogOut, Activity, BarChart3, Settings as SettingsIcon } from 'lucide-react';
 
 function App() {
   if (typeof window !== 'undefined' && window.location.pathname === '/privacy-policy') {
@@ -112,27 +112,6 @@ function App() {
             <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Clinic Staff</div>
             <div style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))' }}>{user?.mobileNumber || '+919999999999'}</div>
           </div>
-          <a
-            href="https://maps.app.goo.gl/v6DAwnEmM3ofYDM88"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              color: 'hsl(var(--primary))',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              textDecoration: 'none',
-              padding: '6px 10px',
-              borderRadius: '8px',
-              backgroundColor: 'hsla(var(--primary) / 0.08)'
-            }}
-          >
-            <MapPin size={14} />
-            Clinic on Google Maps ↗
-          </a>
           <button
             onClick={handleLogout}
             className="btn btn-secondary"

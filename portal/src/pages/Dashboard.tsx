@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Stethoscope, Users, Clock, CheckCircle, XCircle, RefreshCw, UserCheck, Settings, Power } from 'lucide-react';
+import { Stethoscope, Users, Clock, CheckCircle, XCircle, RefreshCw, UserCheck, Settings as SettingsIcon, Power } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { formatTo12HourTime } from '../utils/dateUtils';
 
@@ -397,12 +397,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
             </div>
           </div>
 
-          {/* Dynamic Token Timing Settings Card */}
+          {/* Clinic Operating Hours & Token Controls Summary */}
           <div className="glass-card animate-fade-in" style={{ borderLeft: `4px solid ${tokenEnabled ? 'hsl(var(--primary))' : 'hsl(var(--danger))'}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                 <div style={{
-                  padding: '12px',
+                  padding: '14px',
                   background: tokenEnabled ? 'hsla(var(--primary) / 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
                   color: tokenEnabled ? 'hsl(var(--primary))' : 'hsl(var(--danger))',
                   borderRadius: '12px',
@@ -413,183 +413,62 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                   <Clock size={24} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'hsl(var(--text-color))' }}>
-                    Token Generation Rules & Timings
-                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
+                      Clinic Operating Hours & Token Rules
+                    </h3>
+                    <span style={{
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      fontSize: '0.75rem',
+                      fontWeight: 800,
+                      background: tokenEnabled ? 'hsla(150, 55%, 32%, 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
+                      color: tokenEnabled ? 'hsl(var(--success))' : 'hsl(var(--danger))'
+                    }}>
+                      {tokenEnabled ? '● ACTIVE' : '● PAUSED'}
+                    </span>
+                  </div>
                   <p style={{ fontSize: '0.85rem', color: 'hsl(var(--text-muted))', margin: '4px 0 0 0' }}>
-                    Configure clinic operating hours, allowed days per service, or temporarily pause token creation.
+                    Operating Window: <strong>{formatTo12HourTime(startTime)} – {formatTo12HourTime(endTime)}</strong> | Auto-expiry at 5:00 PM IST
                   </p>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleToggleEnabled}
-                className={`btn ${tokenEnabled ? 'btn-secondary' : 'btn-primary'}`}
-                style={{
-                  display: 'inline-flex',
-                  gap: '8px',
-                  alignItems: 'center',
-                  background: tokenEnabled ? 'hsla(150, 55%, 32%, 0.12)' : 'hsl(var(--danger))',
-                  color: tokenEnabled ? 'hsl(var(--success))' : '#ffffff',
-                  border: tokenEnabled ? '1px solid hsla(150, 55%, 32%, 0.3)' : '1px solid hsl(var(--danger))',
-                  fontWeight: 700,
-                  borderRadius: '10px',
-                  padding: '10px 18px'
-                }}
-              >
-                <Power size={18} />
-                {tokenEnabled ? 'Token Generation: ENABLED' : 'Token Generation: PAUSED'}
-              </button>
-            </div>
-
-            {settingsMsg && (
-              <div style={{
-                backgroundColor: 'hsla(150, 55%, 32%, 0.1)',
-                border: '1px solid hsla(150, 55%, 32%, 0.3)',
-                color: 'hsl(var(--success))',
-                padding: '12px 16px',
-                borderRadius: '10px',
-                marginBottom: '20px',
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <CheckCircle size={18} />
-                {settingsMsg}
-              </div>
-            )}
-
-            <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              {/* Timing Selection Row */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: '24px',
-                padding: '20px',
-                background: 'hsla(var(--primary) / 0.03)',
-                borderRadius: '14px',
-                border: '1px solid hsl(var(--border-color))'
-              }}>
-                <TimePicker12H
-                  label="Daily Start Time"
-                  value={startTime}
-                  onChange={(val) => {
-                    setStartTime(val);
-                    setIsFormDirty(true);
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={handleToggleEnabled}
+                  className={`btn ${tokenEnabled ? 'btn-secondary' : 'btn-primary'}`}
+                  style={{
+                    display: 'inline-flex',
+                    gap: '8px',
+                    alignItems: 'center',
+                    padding: '10px 18px',
+                    borderRadius: '10px',
+                    fontWeight: 700
                   }}
-                />
-
-                <TimePicker12H
-                  label="Daily End Time"
-                  value={endTime}
-                  onChange={(val) => {
-                    setEndTime(val);
-                    setIsFormDirty(true);
+                >
+                  <Power size={16} />
+                  {tokenEnabled ? 'Pause Tokens' : 'Resume Tokens'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('settings')}
+                  className="btn btn-primary"
+                  style={{
+                    display: 'inline-flex',
+                    gap: '8px',
+                    alignItems: 'center',
+                    padding: '10px 20px',
+                    borderRadius: '10px',
+                    fontWeight: 700
                   }}
-                />
-              </div>
-
-              {/* Medicine Allowed Days */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Medicine Consultation Allowed Days
-                </label>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {[
-                    { day: 0, label: 'Sun' },
-                    { day: 1, label: 'Mon' },
-                    { day: 2, label: 'Tue' },
-                    { day: 3, label: 'Wed' },
-                    { day: 4, label: 'Thu' },
-                    { day: 5, label: 'Fri' },
-                    { day: 6, label: 'Sat' },
-                  ].map(({ day, label }) => {
-                    const active = medicineDays.includes(day);
-                    return (
-                      <button
-                        key={day}
-                        type="button"
-                        onClick={() => toggleMedicineDay(day)}
-                        style={{
-                          padding: '8px 16px',
-                          borderRadius: '10px',
-                          border: active ? '1px solid hsl(var(--primary))' : '1px solid hsl(var(--border-color))',
-                          background: active ? 'hsla(var(--primary) / 0.12)' : '#ffffff',
-                          color: active ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
-                          fontWeight: 800,
-                          fontSize: '0.85rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          boxShadow: active ? '0 2px 6px hsla(var(--primary) / 0.15)' : 'none'
-                        }}
-                      >
-                        {active ? '✓ ' : ''}{label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Treatment Allowed Days */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Treatment / Dressing Allowed Days
-                </label>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  {[
-                    { day: 0, label: 'Sun' },
-                    { day: 1, label: 'Mon' },
-                    { day: 2, label: 'Tue' },
-                    { day: 3, label: 'Wed' },
-                    { day: 4, label: 'Thu' },
-                    { day: 5, label: 'Fri' },
-                    { day: 6, label: 'Sat' },
-                  ].map(({ day, label }) => {
-                    const active = treatmentDays.includes(day);
-                    return (
-                      <button
-                        key={day}
-                        type="button"
-                        onClick={() => toggleTreatmentDay(day)}
-                        style={{
-                          padding: '8px 16px',
-                          borderRadius: '10px',
-                          border: active ? '1px solid hsl(var(--primary))' : '1px solid hsl(var(--border-color))',
-                          background: active ? 'hsla(var(--primary) / 0.12)' : '#ffffff',
-                          color: active ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
-                          fontWeight: 800,
-                          fontSize: '0.85rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          boxShadow: active ? '0 2px 6px hsla(var(--primary) / 0.15)' : 'none'
-                        }}
-                      >
-                        {active ? '✓ ' : ''}{label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div style={{ paddingTop: '8px' }}>
-                <button type="submit" className="btn btn-primary" disabled={savingSettings} style={{ padding: '12px 32px', borderRadius: '10px', fontWeight: 800 }}>
-                  {savingSettings ? 'Saving Configuration...' : 'Save Configuration'}
+                >
+                  <SettingsIcon size={16} />
+                  Clinic Settings →
                 </button>
               </div>
-            </form>
-          </div>
-
-          {/* Guidelines and info */}
-          <div className="glass-card">
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', color: 'hsl(var(--primary))' }}>Service Timing Rules Reminder</h3>
-            <ul style={{ paddingLeft: '20px', color: 'hsl(var(--text-muted))', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li>Token generation timing is active strictly between <strong>{formatTo12HourTime(startTime)} and {formatTo12HourTime(endTime)}</strong>.</li>
-              <li>Treatment token services are enabled on <strong>Tuesdays</strong>, <strong>Wednesdays</strong>, and <strong>Thursdays</strong>.</li>
-              <li>At <strong>5:00 PM</strong>, all remaining active/waiting tokens are automatically expired by the daily cron system.</li>
-            </ul>
+            </div>
           </div>
         </>
       )}

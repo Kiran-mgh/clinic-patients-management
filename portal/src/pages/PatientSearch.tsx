@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../api';
-import { Search, User, Trash2, CheckCircle, XCircle, CreditCard, Download } from 'lucide-react';
+import { Search, User, Trash2, CheckCircle, XCircle, CreditCard, Upload } from 'lucide-react';
 import { formatToIndianDate, formatDobInput } from '../utils/dateUtils';
 
 interface PatientSearchProps {
@@ -312,6 +312,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
       'Town / Residence',
       'Profession',
       'Blood Group',
+      'Piles / Fistula / Fissures Surgery History',
       'Status',
       'Registration Date'
     ];
@@ -332,6 +333,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
       const town = p.town || '';
       const profession = p.profession || '';
       const bloodGroup = p.bloodGroup || '';
+      const surgeryHistory = p.previousSurgeryDetails || 'None Reported';
       const status = p.status || '';
       const regDate = p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN') : '';
 
@@ -345,6 +347,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
         escapeCsvField(town),
         escapeCsvField(profession),
         escapeCsvField(bloodGroup),
+        escapeCsvField(surgeryHistory),
         escapeCsvField(status),
         escapeCsvField(regDate)
       ].join(',');
@@ -690,7 +693,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
                 cursor: results.length === 0 ? 'not-allowed' : 'pointer'
               }}
             >
-              <Download size={15} /> Export CSV
+              <Upload size={15} /> Export CSV
             </button>
           </div>
 

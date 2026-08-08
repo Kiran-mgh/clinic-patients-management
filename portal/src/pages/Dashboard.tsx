@@ -153,6 +153,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
   // Token Timing & Days Settings State
   const [startTime, setStartTime] = useState('07:00');
   const [endTime, setEndTime] = useState('15:30');
+  const [saturdayStartTime, setSaturdayStartTime] = useState('07:30');
+  const [saturdayEndTime, setSaturdayEndTime] = useState('13:00');
   const [tokenEnabled, setTokenEnabled] = useState(true);
   const [medicineDays, setMedicineDays] = useState<number[]>([1, 2, 3, 4, 5, 6]);
   const [treatmentDays, setTreatmentDays] = useState<number[]>([2, 3, 4]);
@@ -194,6 +196,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
         if (force || !isFormDirty) {
           if (data.startTime) setStartTime(data.startTime);
           if (data.endTime) setEndTime(data.endTime);
+          if (data.saturdayStartTime) setSaturdayStartTime(data.saturdayStartTime);
+          if (data.saturdayEndTime) setSaturdayEndTime(data.saturdayEndTime);
           if (data.medicineAllowedDays) setMedicineDays(data.medicineAllowedDays);
           if (data.treatmentAllowedDays) setTreatmentDays(data.treatmentAllowedDays);
         }
@@ -429,7 +433,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                     </span>
                   </div>
                   <p style={{ fontSize: '0.85rem', color: 'hsl(var(--text-muted))', margin: '4px 0 0 0' }}>
-                    Operating Window: <strong>{formatTo12HourTime(startTime)} – {formatTo12HourTime(endTime)}</strong> | Auto-expiry at 5:00 PM IST
+                    Weekdays (Mon-Fri): <strong>{formatTo12HourTime(startTime)} – {formatTo12HourTime(endTime)}</strong> &nbsp;|&nbsp; Saturday: <strong>{formatTo12HourTime(saturdayStartTime)} – {formatTo12HourTime(saturdayEndTime)}</strong>
                   </p>
                 </div>
               </div>

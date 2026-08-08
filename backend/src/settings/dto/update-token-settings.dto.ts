@@ -19,6 +19,14 @@ export class UpdateTokenSettingsDto {
   medicineAllowedDays?: number[];
 
   @IsOptional()
+  @IsString()
+  saturdayStartTime?: string;
+
+  @IsOptional()
+  @IsString()
+  saturdayEndTime?: string;
+
+  @IsOptional()
   @IsArray()
   @IsNumber({}, { each: true })
   treatmentAllowedDays?: number[];

@@ -50,14 +50,14 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
 
       {/* Clinic Timings */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>📅 Clinic Timings</Text>
+        <Text style={styles.sectionTitle}>📅 Clinic Timings & Token Generation</Text>
         <View style={styles.timingRow}>
-          <Text style={styles.dayText}>Monday - Friday</Text>
-          <Text style={styles.timeText}>7:00 AM – 7:00 PM</Text>
+          <Text style={styles.dayText}>Monday - Friday (Token Window)</Text>
+          <Text style={styles.timeText}>7:00 AM – 3:30 PM</Text>
         </View>
         <View style={styles.timingRow}>
-          <Text style={styles.dayText}>Saturday</Text>
-          <Text style={styles.timeText}>7:00 AM – 11:00 AM</Text>
+          <Text style={styles.dayText}>Saturday (Special Token Window)</Text>
+          <Text style={styles.timeText}>7:30 AM – 1:00 PM</Text>
         </View>
         <View style={styles.timingRow}>
           <Text style={styles.dayText}>Sunday</Text>

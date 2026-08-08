@@ -147,6 +147,8 @@ const TimePicker12H: React.FC<TimePicker12HProps> = ({ value, onChange, label })
 export const Settings: React.FC<SettingsProps> = ({ token }) => {
   const [startTime, setStartTime] = useState('07:00');
   const [endTime, setEndTime] = useState('15:30');
+  const [saturdayStartTime, setSaturdayStartTime] = useState('07:30');
+  const [saturdayEndTime, setSaturdayEndTime] = useState('13:00');
   const [tokenEnabled, setTokenEnabled] = useState(true);
   const [medicineDays, setMedicineDays] = useState<number[]>([1, 2, 3, 4, 5, 6]);
   const [treatmentDays, setTreatmentDays] = useState<number[]>([2, 3, 4]);
@@ -177,6 +179,8 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
         if (force || !isFormDirty) {
           if (data.startTime) setStartTime(data.startTime);
           if (data.endTime) setEndTime(data.endTime);
+          if (data.saturdayStartTime) setSaturdayStartTime(data.saturdayStartTime);
+          if (data.saturdayEndTime) setSaturdayEndTime(data.saturdayEndTime);
           if (data.medicineAllowedDays) setMedicineDays(data.medicineAllowedDays);
           if (data.treatmentAllowedDays) setTreatmentDays(data.treatmentAllowedDays);
         }
@@ -197,6 +201,8 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
       const updated = await api.put('/settings/tokens', {
         startTime,
         endTime,
+        saturdayStartTime,
+        saturdayEndTime,
         enabled: tokenEnabled,
         medicineAllowedDays: medicineDays,
         treatmentAllowedDays: treatmentDays,
@@ -204,11 +210,13 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
       if (updated) {
         if (updated.startTime) setStartTime(updated.startTime);
         if (updated.endTime) setEndTime(updated.endTime);
+        if (updated.saturdayStartTime) setSaturdayStartTime(updated.saturdayStartTime);
+        if (updated.saturdayEndTime) setSaturdayEndTime(updated.saturdayEndTime);
         if (updated.medicineAllowedDays) setMedicineDays(updated.medicineAllowedDays);
         if (updated.treatmentAllowedDays) setTreatmentDays(updated.treatmentAllowedDays);
       }
       setIsFormDirty(false);
-      setSettingsMsg('Token generation rules & day configuration updated successfully!');
+      setSettingsMsg('Weekday & Saturday token timings updated successfully!');
       setTimeout(() => setSettingsMsg(''), 4000);
     } catch (err: any) {
       alert(err.message || 'Failed to update token settings');
@@ -343,33 +351,74 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
         )}
 
         <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Timing Selection Row */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '24px',
-            padding: '20px',
-            background: 'hsla(var(--primary) / 0.03)',
-            borderRadius: '14px',
-            border: '1px solid hsl(var(--border-color))'
-          }}>
-            <TimePicker12H
-              label="Daily Start Time"
-              value={startTime}
-              onChange={(val) => {
-                setStartTime(val);
-                setIsFormDirty(true);
-              }}
-            />
+          {/* Weekday Timing Selection Row */}
+          <div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'hsl(var(--primary))', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Clock size={16} />
+              WEEKDAY OPERATING WINDOW (MONDAY TO FRIDAY)
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '20px',
+              padding: '18px',
+              background: 'hsla(var(--primary) / 0.03)',
+              borderRadius: '14px',
+              border: '1px solid hsl(var(--border-color))'
+            }}>
+              <TimePicker12H
+                label="Weekday Start Time (Mon - Fri)"
+                value={startTime}
+                onChange={(val) => {
+                  setStartTime(val);
+                  setIsFormDirty(true);
+                }}
+              />
 
-            <TimePicker12H
-              label="Daily End Time"
-              value={endTime}
-              onChange={(val) => {
-                setEndTime(val);
-                setIsFormDirty(true);
-              }}
-            />
+              <TimePicker12H
+                label="Weekday End Time (Mon - Fri)"
+                value={endTime}
+                onChange={(val) => {
+                  setEndTime(val);
+                  setIsFormDirty(true);
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Saturday Special Timing Selection Row */}
+          <div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#b45309', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Calendar size={16} />
+              SATURDAY SPECIAL OPERATING WINDOW
+            </div>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '20px',
+              padding: '18px',
+              background: 'rgba(245, 158, 11, 0.04)',
+              borderRadius: '14px',
+              border: '1px solid rgba(245, 158, 11, 0.25)'
+            }}>
+              <TimePicker12H
+                label="Saturday Start Time"
+                value={saturdayStartTime}
+                onChange={(val) => {
+                  setSaturdayStartTime(val);
+                  setIsFormDirty(true);
+                }}
+              />
+
+              <TimePicker12H
+                label="Saturday End Time"
+                value={saturdayEndTime}
+                onChange={(val) => {
+                  setSaturdayEndTime(val);
+                  setIsFormDirty(true);
+                }}
+              />
+            </div>
           </div>
 
           {/* Medicine Allowed Days */}
@@ -469,7 +518,8 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
           Service Timing Rules Reminder
         </h3>
         <ul style={{ paddingLeft: '20px', color: 'hsl(var(--text-muted))', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <li>Token generation timing is active strictly between <strong>{formatTo12HourTime(startTime)} and {formatTo12HourTime(endTime)}</strong>.</li>
+          <li>Weekday token generation (Mon - Fri) is active strictly between <strong>{formatTo12HourTime(startTime)} and {formatTo12HourTime(endTime)}</strong>.</li>
+          <li>Saturday token generation is active strictly between <strong>{formatTo12HourTime(saturdayStartTime)} and {formatTo12HourTime(saturdayEndTime)}</strong>.</li>
           <li>Treatment token services are enabled on configured allowed days (Default: <strong>Tuesdays</strong>, <strong>Wednesdays</strong>, and <strong>Thursdays</strong>).</li>
           <li>At <strong>5:00 PM</strong>, all remaining active/waiting tokens are automatically expired by the daily cron system.</li>
         </ul>

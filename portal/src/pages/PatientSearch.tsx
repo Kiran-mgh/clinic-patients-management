@@ -116,6 +116,10 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [exporting, setExporting] = useState(false);
 
   const handlePatientClick = async (p: any) => {
     setSelectedPatient(p);
@@ -178,13 +182,23 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
     }
   };
 
-  // Load all patients on component mount
-  const fetchPatients = async (searchQuery: string) => {
+  // Load paginated patients from server
+  const fetchPatients = async (searchQuery: string, pageNum: number = 1) => {
     setLoading(true);
     setError('');
     try {
-      const data = await api.get(`/patients/search?query=${encodeURIComponent(searchQuery)}`, token);
-      setResults(data);
+      const res = await api.get(`/patients/search?query=${encodeURIComponent(searchQuery)}&page=${pageNum}&limit=20`, token);
+      if (res && res.data) {
+        setResults(res.data);
+        setTotalCount(res.total !== undefined ? res.total : res.data.length);
+        setCurrentPage(res.page || pageNum);
+        setTotalPages(res.totalPages || 1);
+      } else if (Array.isArray(res)) {
+        setResults(res);
+        setTotalCount(res.length);
+        setCurrentPage(1);
+        setTotalPages(1);
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch patients registry');
     } finally {
@@ -193,19 +207,19 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
   };
 
   useEffect(() => {
-    fetchPatients('');
-  }, []);
+    const debounceTimer = setTimeout(() => {
+      fetchPatients(query, 1);
+    }, 250);
+    return () => clearTimeout(debounceTimer);
+  }, [query]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchPatients(query);
+    fetchPatients(query, 1);
   };
 
   const handleQueryChange = (val: string) => {
     setQuery(val);
-    if (val.trim() === '') {
-      fetchPatients(''); // Restore full list when input is cleared
-    }
   };
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
@@ -299,71 +313,80 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
     }
   };
 
-  const handleExportCSV = () => {
-    if (!results || results.length === 0) return;
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const fullList = await api.get(`/patients/export?query=${encodeURIComponent(query)}`, token);
+      const dataToExport = Array.isArray(fullList) ? fullList : results;
+      if (!dataToExport || dataToExport.length === 0) return;
 
-    const headers = [
-      'Patient ID',
-      'Full Name',
-      'Mobile Number',
-      'Email',
-      'Gender',
-      'Date of Birth',
-      'Town / Residence',
-      'Profession',
-      'Blood Group',
-      'Piles / Fistula / Fissures Surgery History',
-      'Status',
-      'Registration Date'
-    ];
+      const headers = [
+        'Patient ID',
+        'Full Name',
+        'Mobile Number',
+        'Email',
+        'Gender',
+        'Date of Birth',
+        'Town / Residence',
+        'Profession',
+        'Blood Group',
+        'Piles / Fistula / Fissures Surgery History',
+        'Status',
+        'Registration Date'
+      ];
 
-    const escapeCsvField = (field: any) => {
-      if (field === null || field === undefined) return '""';
-      const stringValue = String(field);
-      return `"${stringValue.replace(/"/g, '""')}"`;
-    };
+      const escapeCsvField = (field: any) => {
+        if (field === null || field === undefined) return '""';
+        const stringValue = String(field);
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      };
 
-    const rows = results.map((p) => {
-      const patientId = p.patientId || 'Pending';
-      const fullName = p.fullName || '';
-      const mobileNumber = p.user?.mobileNumber || '';
-      const email = p.user?.email || p.email || '';
-      const gender = p.gender || '';
-      const dob = p.dateOfBirth ? formatToIndianDate(p.dateOfBirth) : '';
-      const town = p.town || '';
-      const profession = p.profession || '';
-      const bloodGroup = p.bloodGroup || '';
-      const surgeryHistory = p.previousSurgeryDetails || 'None Reported';
-      const status = p.status || '';
-      const regDate = p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN') : '';
+      const rows = dataToExport.map((p: any) => {
+        const patientId = p.patientId || 'Pending';
+        const fullName = p.fullName || '';
+        const mobileNumber = p.user?.mobileNumber || '';
+        const email = p.user?.email || p.email || '';
+        const gender = p.gender || '';
+        const dob = p.dateOfBirth ? formatToIndianDate(p.dateOfBirth) : '';
+        const town = p.town || '';
+        const profession = p.profession || '';
+        const bloodGroup = p.bloodGroup || '';
+        const surgeryHistory = p.previousSurgeryDetails || 'None Reported';
+        const status = p.status || '';
+        const regDate = p.createdAt ? new Date(p.createdAt).toLocaleDateString('en-IN') : '';
 
-      return [
-        escapeCsvField(patientId),
-        escapeCsvField(fullName),
-        escapeCsvField(mobileNumber),
-        escapeCsvField(email),
-        escapeCsvField(gender),
-        escapeCsvField(dob),
-        escapeCsvField(town),
-        escapeCsvField(profession),
-        escapeCsvField(bloodGroup),
-        escapeCsvField(surgeryHistory),
-        escapeCsvField(status),
-        escapeCsvField(regDate)
-      ].join(',');
-    });
+        return [
+          escapeCsvField(patientId),
+          escapeCsvField(fullName),
+          escapeCsvField(mobileNumber),
+          escapeCsvField(email),
+          escapeCsvField(gender),
+          escapeCsvField(dob),
+          escapeCsvField(town),
+          escapeCsvField(profession),
+          escapeCsvField(bloodGroup),
+          escapeCsvField(surgeryHistory),
+          escapeCsvField(status),
+          escapeCsvField(regDate)
+        ].join(',');
+      });
 
-    const csvData = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const timestamp = new Date().toISOString().slice(0, 10);
-    link.setAttribute('download', `Patients_Registry_${timestamp}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      const csvData = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const timestamp = new Date().toISOString().slice(0, 10);
+      link.setAttribute('download', `Patients_Registry_${timestamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert('Export failed: ' + (err.message || 'Error'));
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -677,11 +700,13 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
         {/* Left Side: Results */}
         <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Patients Registry ({results.length})</h3>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+              Patients Registry ({totalCount > 0 ? totalCount : results.length})
+            </h3>
             <button
               type="button"
               onClick={handleExportCSV}
-              disabled={results.length === 0}
+              disabled={results.length === 0 || exporting}
               className="btn btn-secondary"
               style={{
                 display: 'flex',
@@ -690,10 +715,10 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
                 fontSize: '0.825rem',
                 padding: '6px 14px',
                 borderRadius: '8px',
-                cursor: results.length === 0 ? 'not-allowed' : 'pointer'
+                cursor: results.length === 0 || exporting ? 'not-allowed' : 'pointer'
               }}
             >
-              <Upload size={15} /> Export CSV
+              <Upload size={15} /> {exporting ? 'Exporting CSV...' : 'Export CSV'}
             </button>
           </div>
 
@@ -702,33 +727,69 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
           ) : results.length === 0 ? (
             <p style={{ color: 'hsl(var(--text-muted))' }}>No matching patient profiles found in the registry.</p>
           ) : (
-            <div className="table-container" style={{ maxHeight: '520px', overflowY: 'auto' }}>
-              <table className="custom-table">
-                <thead style={{ position: 'sticky', top: 0, backgroundColor: 'hsl(var(--bg-secondary))', zIndex: 2 }}>
-                  <tr>
-                    <th>Patient ID</th>
-                    <th>Name</th>
-                    <th>Mobile</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.map((p) => (
-                    <tr key={p.id} style={{ cursor: 'pointer' }} onClick={() => handlePatientClick(p)}>
-                      <td>
-                        <strong style={{ color: 'hsl(var(--primary))', fontFamily: 'Outfit' }}>{p.patientId || 'Pending'}</strong>
-                      </td>
-                      <td>{p.fullName}</td>
-                      <td>{p.user?.mobileNumber}</td>
-                      <td>
-                        <span className={`badge badge-${p.status}`}>
-                          {p.status}
-                        </span>
-                      </td>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="table-container" style={{ maxHeight: '520px', overflowY: 'auto' }}>
+                <table className="custom-table">
+                  <thead style={{ position: 'sticky', top: 0, backgroundColor: 'hsl(var(--bg-secondary))', zIndex: 2 }}>
+                    <tr>
+                      <th>Patient ID</th>
+                      <th>Name</th>
+                      <th>Mobile</th>
+                      <th>Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {results.map((p) => (
+                      <tr key={p.id} style={{ cursor: 'pointer' }} onClick={() => handlePatientClick(p)}>
+                        <td>
+                          <strong style={{ color: 'hsl(var(--primary))', fontFamily: 'Outfit' }}>{p.patientId || 'Pending'}</strong>
+                        </td>
+                        <td>{p.fullName}</td>
+                        <td>{p.user?.mobileNumber}</td>
+                        <td>
+                          <span className={`badge badge-${p.status}`}>
+                            {p.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {totalPages > 1 && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: '8px',
+                  borderTop: '1px solid hsl(var(--border-color))'
+                }}>
+                  <span style={{ fontSize: '0.8rem', color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
+                    Page {currentPage} of {totalPages} ({totalCount} patients)
+                  </span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      disabled={currentPage <= 1 || loading}
+                      onClick={() => fetchPatients(query, currentPage - 1)}
+                      className="btn btn-secondary"
+                      style={{ padding: '5px 12px', fontSize: '0.8rem', borderRadius: '6px' }}
+                    >
+                      ‹ Previous
+                    </button>
+                    <button
+                      type="button"
+                      disabled={currentPage >= totalPages || loading}
+                      onClick={() => fetchPatients(query, currentPage + 1)}
+                      className="btn btn-secondary"
+                      style={{ padding: '5px 12px', fontSize: '0.8rem', borderRadius: '6px' }}
+                    >
+                      Next ›
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

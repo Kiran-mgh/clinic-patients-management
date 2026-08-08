@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne, Index } from 'typeorm';
 import { Patient } from './patient.entity';
 
 @Entity('users')
@@ -6,6 +6,7 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ unique: true, nullable: true })
   mobileNumber: string;
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image, Modal, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image, Modal, TextInput, Linking } from 'react-native';
 import { api } from '../api';
 import { io } from 'socket.io-client';
 
@@ -441,6 +441,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         </TouchableOpacity>
         <TouchableOpacity style={styles.navBtn} onPress={onNavigateToContact}>
           <Text style={styles.navBtnText}>View Full Timings & Contact</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.navBtn, { backgroundColor: '#f0fdf4', borderColor: '#86efac' }]}
+          onPress={() => {
+            const address = '2 & 4, 7th Cross, R.T. Street, Chickpet, Bengaluru, Karnataka 560053';
+            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+            Linking.openURL(url).catch((err) => console.error('Failed to open Google Maps', err));
+          }}
+        >
+          <Text style={[styles.navBtnText, { color: '#166534', fontWeight: '800' }]}>📍 Open in Google Maps ↗</Text>
         </TouchableOpacity>
       </View>
 

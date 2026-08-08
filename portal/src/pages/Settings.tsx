@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Clock, CheckCircle, Settings as SettingsIcon, Power, ShieldAlert, Calendar } from 'lucide-react';
+import { Clock, CheckCircle, Settings as SettingsIcon, Power, ShieldAlert, Calendar, MapPin } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { formatTo12HourTime } from '../utils/dateUtils';
 
@@ -473,6 +473,35 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
           <li>Treatment token services are enabled on configured allowed days (Default: <strong>Tuesdays</strong>, <strong>Wednesdays</strong>, and <strong>Thursdays</strong>).</li>
           <li>At <strong>5:00 PM</strong>, all remaining active/waiting tokens are automatically expired by the daily cron system.</li>
         </ul>
+      </div>
+
+      {/* Clinic Location & Google Maps Card */}
+      <div className="glass-card">
+        <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <MapPin size={20} />
+          Clinic Location & Directions
+        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <p style={{ fontWeight: 700, margin: '0 0 4px 0', fontSize: '1rem' }}>Amar Ayurveda Clinic</p>
+            <p style={{ color: 'hsl(var(--text-muted))', margin: 0, fontSize: '0.9rem' }}>
+              # 2 & 4, 7th Cross, R.T. Street, Chickpet, Bengaluru, Karnataka - 560053
+            </p>
+            <p style={{ color: 'hsl(var(--text-muted))', margin: '4px 0 0 0', fontSize: '0.85rem' }}>
+              Phone: 080 - 22268269, 080 - 41136539 | WhatsApp: +91 98460 12345
+            </p>
+          </div>
+          <a
+            href="https://www.google.com/maps/search/?api=1&query=2+%26+4,+7th+Cross,+R.T.+Street,+Chickpet,+Bengaluru,+Karnataka+560053"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 700 }}
+          >
+            <MapPin size={16} />
+            Open in Google Maps ↗
+          </a>
+        </div>
       </div>
     </div>
   );

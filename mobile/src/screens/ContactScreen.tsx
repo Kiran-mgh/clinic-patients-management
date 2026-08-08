@@ -1,11 +1,16 @@
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Linking } from 'react-native';
 
 interface ContactScreenProps {
   onGoBack: () => void;
 }
 
 export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
+  const openGoogleMaps = () => {
+    const address = '2 & 4, 7th Cross, R.T. Street, Chickpet, Bengaluru, Karnataka 560053';
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    Linking.openURL(url).catch((err) => console.error('Failed to open Google Maps', err));
+  };
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <View style={styles.header}>
@@ -104,6 +109,35 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
         <View style={styles.contactItem}>
           <Text style={styles.contactLabel}>Email:</Text>
           <Text style={styles.contactValue}>dranitgoswami@gmail.com</Text>
+        </View>
+        <View style={[styles.contactItem, { marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#e5e7eb' }]}>
+          <Text style={styles.contactLabel}>Clinic Location:</Text>
+          <TouchableOpacity
+            onPress={openGoogleMaps}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: '#f0fdf4',
+              paddingVertical: 10,
+              paddingHorizontal: 14,
+              borderRadius: 10,
+              borderWidth: 1,
+              borderColor: '#86efac',
+              marginTop: 6,
+              gap: 8
+            }}
+          >
+            <Text style={{ fontSize: 18 }}>📍</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#166534', fontWeight: '800', fontSize: 14 }}>
+                Open in Google Maps ↗
+              </Text>
+              <Text style={{ color: '#4a5568', fontSize: 11, marginTop: 2 }}>
+                Get driving & walking directions directly
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>

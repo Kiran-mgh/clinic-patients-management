@@ -293,15 +293,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
 
               <View style={styles.grid}>
                 <View style={styles.gridItem}>
-                  <Text style={styles.gridLabel}>Serving</Text>
+                  <Text style={styles.gridLabel}>SERVING</Text>
                   <Text style={styles.gridValue}>{todayToken.currentServing}</Text>
                 </View>
                 <View style={styles.gridItem}>
-                  <Text style={styles.gridLabel}>Total Tokens Today</Text>
+                  <Text style={styles.gridLabel}>TOTAL TOKENS</Text>
                   <Text style={styles.gridValue}>{todayToken.lastTokenNumber || '1'}</Text>
                 </View>
                 <View style={styles.gridItem}>
-                  <Text style={styles.gridLabel}>Ahead / Wait</Text>
+                  <Text style={styles.gridLabel}>AHEAD / WAIT</Text>
                   <Text style={styles.gridValue}>{todayToken.isMissed ? 'After Last' : `${todayToken.patientsAhead} Patients`}</Text>
                 </View>
               </View>
@@ -817,32 +817,34 @@ const styles = StyleSheet.create({
   },
   gridLabel: {
     color: '#718096',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   gridValue: {
     color: '#1a202c',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '900',
     marginTop: 4,
   },
   statusFooter: {
     flexDirection: 'row',
     marginTop: 20,
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
   footerLabel: {
-    color: '#718096',
-    fontSize: 13,
+    color: '#213932',
+    fontSize: 15,
+    fontWeight: '800',
   },
   badge: {
     borderRadius: 12,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    fontSize: 11,
-    fontWeight: '700',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    fontSize: 13,
+    fontWeight: '800',
     borderWidth: 1,
   },
   badge_waiting: { backgroundColor: 'rgba(33, 57, 50, 0.05)', borderColor: 'rgba(33, 57, 50, 0.1)', color: '#213932' },

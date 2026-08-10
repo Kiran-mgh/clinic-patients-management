@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { api } from '../api';
 
 interface ProfileScreenProps {
@@ -184,26 +185,37 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ token, onGoBack, o
         <>
           {/* Card containing user details */}
           <View style={styles.card}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={styles.avatarRow}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 150 }}>
                 <View style={styles.avatarCircle}>
                   <Text style={styles.avatarLetter}>
                     {profile.fullName?.charAt(0).toUpperCase() || 'P'}
                   </Text>
                 </View>
-                <View>
-                  <Text style={styles.profileName}>{profile.fullName}</Text>
-                  <Text style={styles.profileIdLabel}>
+                <View style={{ flex: 1, marginRight: 4 }}>
+                  <Text style={styles.profileName} numberOfLines={1}>{profile.fullName}</Text>
+                  <Text style={styles.profileIdLabel} numberOfLines={1}>
                     ID: <Text style={{ color: '#213932', fontWeight: '800' }}>{profile.patientId || 'Unassigned'}</Text>
                   </Text>
                 </View>
               </View>
 
               <TouchableOpacity
-                style={{ backgroundColor: '#f0fdf4', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#bbf7d0' }}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
+                  backgroundColor: '#f0fdf4',
+                  borderWidth: 1,
+                  borderColor: '#bbf7d0',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
                 onPress={openEditModal}
+                activeOpacity={0.7}
               >
-                <Text style={{ color: '#166534', fontWeight: '700', fontSize: 13 }}>✏️ Edit Profile</Text>
+                <Ionicons name="pencil" size={18} color="#166534" />
               </TouchableOpacity>
             </View>
 

@@ -1,11 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import { api } from '../api';
 
 interface ContactScreenProps {
+  token?: string | null;
   onGoBack: () => void;
 }
 
-export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
+export const ContactScreen: React.FC<ContactScreenProps> = ({ token, onGoBack }) => {
+  const [tokenSettings, setTokenSettings] = useState<any>(null);
+
+  const format12H = (tStr?: string | null, fallback: string = '') => {
+    if (!tStr) return fallback;
+    if (/am|pm/i.test(tStr)) return tStr;
+    const [hStr, mStr] = tStr.split(':');
+    let h = parseInt(hStr, 10);
+    const m = mStr || '00';
+    if (isNaN(h)) return fallback;
+    const p = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    if (h === 0) h = 12;
+    return `${h}:${m} ${p}`;
+  };
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const data = await api.get('/settings/tokens', token || undefined);
+        if (data) setTokenSettings(data);
+      } catch (err) {
+        console.log('Failed to fetch token settings on ContactScreen', err);
+      }
+    };
+    fetchSettings();
+  }, [token]);
+
   const openGoogleMaps = () => {
     const url = 'https://maps.app.goo.gl/v6DAwnEmM3ofYDM88';
     Linking.openURL(url).catch((err) => console.error('Failed to open Google Maps', err));
@@ -53,11 +82,15 @@ export const ContactScreen: React.FC<ContactScreenProps> = ({ onGoBack }) => {
         <Text style={styles.sectionTitle}>📅 Clinic Timings & Token Generation</Text>
         <View style={styles.timingRow}>
           <Text style={styles.dayText}>Monday - Friday (Token Window)</Text>
-          <Text style={styles.timeText}>7:00 AM – 3:30 PM</Text>
+          <Text style={styles.timeText}>
+            {format12H(tokenSettings?.startTime, '7:00 AM')} – {format12H(tokenSettings?.endTime, '3:30 PM')}
+          </Text>
         </View>
         <View style={styles.timingRow}>
           <Text style={styles.dayText}>Saturday (Special Token Window)</Text>
-          <Text style={styles.timeText}>7:30 AM – 1:00 PM</Text>
+          <Text style={styles.timeText}>
+            {format12H(tokenSettings?.saturdayStartTime, '7:30 AM')} – {format12H(tokenSettings?.saturdayEndTime, '1:00 PM')}
+          </Text>
         </View>
         <View style={styles.timingRow}>
           <Text style={styles.dayText}>Sunday</Text>
@@ -193,18 +226,23 @@ const styles = StyleSheet.create({
   timingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
   dayText: {
-    color: '#718096',
-    fontSize: 14,
+    color: '#4a5568',
+    fontSize: 13.5,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   timeText: {
     color: '#1a202c',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13.5,
+    fontWeight: '700',
   },
   bulletRow: {
     flexDirection: 'row',

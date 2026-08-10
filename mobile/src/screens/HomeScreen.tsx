@@ -223,14 +223,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, marginRight: 8 }}>
           <Image
             source={require('../../assets/logo.png')}
-            style={{ width: 48, height: 48, resizeMode: 'contain', borderRadius: 8 }}
+            style={{ width: 44, height: 44, resizeMode: 'contain', borderRadius: 8 }}
           />
-          <View>
-            <Text style={styles.welcomeText}>Welcome,</Text>
-            <Text style={styles.nameText}>{profile?.fullName || 'Patient'}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.welcomeText} numberOfLines={1}>Welcome,</Text>
+            <Text style={styles.nameText} numberOfLines={1}>{profile?.fullName || 'Patient'}</Text>
           </View>
         </View>
         <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
@@ -294,15 +294,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
               <View style={styles.grid}>
                 <View style={styles.gridItem}>
                   <Text style={styles.gridLabel}>SERVING</Text>
-                  <Text style={styles.gridValue}>{todayToken.currentServing}</Text>
+                  <Text style={styles.gridValue}>
+                    {todayToken.currentServing?.replace('Last Served: ', 'Last: ') || 'None'}
+                  </Text>
                 </View>
                 <View style={styles.gridItem}>
                   <Text style={styles.gridLabel}>TOTAL TOKENS</Text>
-                  <Text style={styles.gridValue}>{todayToken.lastTokenNumber || '1'}</Text>
+                  <Text style={styles.gridValue}>
+                    {todayToken.lastTokenNumber || '1'}
+                  </Text>
                 </View>
                 <View style={styles.gridItem}>
                   <Text style={styles.gridLabel}>AHEAD / WAIT</Text>
-                  <Text style={styles.gridValue}>{todayToken.isMissed ? 'After Last' : `${todayToken.patientsAhead} Patients`}</Text>
+                  <Text style={styles.gridValue}>
+                    {todayToken.isMissed ? 'After Last' : `${todayToken.patientsAhead} Patients`}
+                  </Text>
                 </View>
               </View>
 
@@ -706,11 +712,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f43f5e',
     borderRadius: 6,
+    flexShrink: 0,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   logoutText: {
     color: '#f43f5e',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   card: {
     backgroundColor: '#ffffff',
@@ -730,7 +740,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 1,
   },
   cardValue: {
     color: '#213932',
@@ -740,8 +749,10 @@ const styles = StyleSheet.create({
   },
   statusRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     marginTop: 12,
     alignItems: 'center',
+    gap: 4,
   },
   statusLabel: {
     color: '#718096',
@@ -750,7 +761,7 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 13,
     fontWeight: '700',
-    marginLeft: 6,
+    marginLeft: 2,
   },
   statusActive: {
     color: '#10b981',
@@ -792,14 +803,13 @@ const styles = StyleSheet.create({
     color: '#b45309',
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
   },
   tokenNumber: {
-    fontSize: 48,
+    fontSize: 42,
     fontWeight: '900',
     color: '#92400e',
-    marginVertical: 12,
-    letterSpacing: 2,
+    marginVertical: 10,
   },
   divider: {
     height: 1,
@@ -810,40 +820,51 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     width: '100%',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   gridItem: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 4,
   },
   gridLabel: {
     color: '#718096',
-    fontSize: 13,
+    fontSize: 11.5,
     fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    textAlign: 'center',
+    lineHeight: 16,
+    width: '100%',
   },
   gridValue: {
     color: '#1a202c',
-    fontSize: 18,
+    fontSize: 15.5,
     fontWeight: '900',
-    marginTop: 4,
+    marginTop: 6,
+    textAlign: 'center',
+    lineHeight: 20,
+    width: '100%',
   },
   statusFooter: {
     flexDirection: 'row',
-    marginTop: 20,
+    flexWrap: 'wrap',
+    marginTop: 18,
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'center',
+    gap: 8,
   },
   footerLabel: {
     color: '#213932',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
   },
   badge: {
     borderRadius: 12,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    fontSize: 13,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+    fontSize: 12.5,
     fontWeight: '800',
     borderWidth: 1,
   },

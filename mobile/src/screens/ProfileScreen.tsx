@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { api } from '../api';
 
 interface ProfileScreenProps {
@@ -201,17 +202,20 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ token, onGoBack, o
 
               <TouchableOpacity
                 style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
                   backgroundColor: '#f0fdf4',
-                  paddingHorizontal: 12,
-                  paddingVertical: 7,
-                  borderRadius: 8,
                   borderWidth: 1,
                   borderColor: '#bbf7d0',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   flexShrink: 0,
                 }}
                 onPress={openEditModal}
+                activeOpacity={0.7}
               >
-                <Text style={{ color: '#166534', fontWeight: '700', fontSize: 12.5 }}>✏️ Edit Profile</Text>
+                <Ionicons name="pencil" size={18} color="#166534" />
               </TouchableOpacity>
             </View>
 

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Play, Check, X, RefreshCw, Search, Edit } from 'lucide-react';
+import { Play, Check, X, RefreshCw, Search, Edit, CreditCard } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { createPortal } from 'react-dom';
+import { TreatmentLedgerView } from '../components/TreatmentLedgerView';
 
 interface QueueManagementProps {
   token: string | null;
@@ -29,9 +30,11 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
   const [editPayNotes, setEditPayNotes] = useState('');
   const [savingPayment, setSavingPayment] = useState(false);
   const [paymentModalError, setPaymentModalError] = useState('');
+  const [queueDetailTab, setQueueDetailTab] = useState<'ledger' | 'profile'>('ledger');
 
-  const handlePatientClick = async (patientId: string) => {
+  const handlePatientClick = async (patientId: string, initialTab: 'ledger' | 'profile' = 'profile') => {
     if (!patientId) return;
+    setQueueDetailTab(initialTab);
     setDetailLoading(true);
     setDetailError('');
     try {
@@ -330,7 +333,28 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                       )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        {t.patientId && (
+                          <button
+                            className="btn"
+                            style={{
+                              padding: '6px 10px',
+                              background: 'hsla(var(--primary) / 0.08)',
+                              color: 'hsl(var(--primary))',
+                              border: '1px solid hsla(var(--primary) / 0.2)',
+                              fontSize: '0.8rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                            onClick={() => handlePatientClick(t.patientId, 'ledger')}
+                            title="Open Patient Treatment & Billing Ledger"
+                          >
+                            <CreditCard size={13} /> Ledger
+                          </button>
+                        )}
                         {t.status === 'waiting' && (
                           <button 
                             className="btn btn-secondary" 
@@ -431,95 +455,152 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                   </p>
                 </div>
 
+                {/* Tab Navigation */}
                 <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '16px',
-                  padding: '20px',
-                  background: 'hsl(var(--bg-primary))',
-                  borderRadius: '12px',
-                  fontSize: '0.9rem'
+                  display: 'flex',
+                  gap: '8px',
+                  borderBottom: '1px solid hsl(var(--border-color))',
+                  paddingBottom: '4px',
                 }}>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Mobile</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.user?.mobileNumber || 'N/A'}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Gender</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.gender}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Date of Birth</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.dateOfBirth}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Blood Group</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.bloodGroup || 'Not Specified'}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Profession</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.profession}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Town/Residence</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.town}</strong>
-                  </div>
-                  {selectedPatientDetail.email && (
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Email</span>
-                      <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.email}</strong>
-                    </div>
-                  )}
+                  <button
+                    onClick={() => setQueueDetailTab('ledger')}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px 8px 0 0',
+                      border: 'none',
+                      borderBottom: queueDetailTab === 'ledger' ? '2.5px solid hsl(var(--primary))' : '2.5px solid transparent',
+                      background: queueDetailTab === 'ledger' ? 'hsla(var(--primary) / 0.1)' : 'transparent',
+                      color: queueDetailTab === 'ledger' ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <CreditCard size={16} />
+                    Treatment & Billing Ledger
+                  </button>
+
+                  <button
+                    onClick={() => setQueueDetailTab('profile')}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px 8px 0 0',
+                      border: 'none',
+                      borderBottom: queueDetailTab === 'profile' ? '2.5px solid hsl(var(--primary))' : '2.5px solid transparent',
+                      background: queueDetailTab === 'profile' ? 'hsla(var(--primary) / 0.1)' : 'transparent',
+                      color: queueDetailTab === 'profile' ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Profile & Visit History
+                  </button>
                 </div>
 
-                <div>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px' }}>Visit History & Last Visited Details</h4>
-                  {selectedPatientDetail.tokens && selectedPatientDetail.tokens.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
-                      {selectedPatientDetail.tokens.map((t: any, index: number) => {
-                        const dateStr = new Date(t.generatedAt).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        });
-                        return (
-                          <div key={t.id} style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '12px',
-                            background: index === 0 ? 'hsla(150, 55%, 32%, 0.05)' : 'hsl(var(--bg-primary))',
-                            border: index === 0 ? '1px solid hsla(150, 55%, 32%, 0.15)' : '1px solid hsl(var(--border-color))',
-                            borderRadius: '8px'
-                          }}>
-                            <div>
-                              <div style={{ fontWeight: 700, color: 'hsl(var(--primary))' }}>
-                                Token {t.tokenNumber} {index === 0 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'hsl(var(--success))', background: 'hsla(150, 55%, 32%, 0.1)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px' }}>LATEST VISIT</span>}
-                              </div>
-                              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', marginTop: '2px' }}>
-                                {dateStr}
-                              </div>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, marginRight: '8px', color: 'hsl(var(--text-muted))' }}>
-                                {t.serviceType}
-                              </span>
-                              <span className={`badge badge-${t.status}`} style={{ fontSize: '0.75rem' }}>
-                                {t.status}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                {queueDetailTab === 'ledger' ? (
+                  <TreatmentLedgerView
+                    patientId={selectedPatientDetail.id}
+                    token={token}
+                    patientName={selectedPatientDetail.fullName}
+                    patientCode={selectedPatientDetail.patientId}
+                  />
+                ) : (
+                  <>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '16px',
+                      padding: '20px',
+                      background: 'hsl(var(--bg-primary))',
+                      borderRadius: '12px',
+                      fontSize: '0.9rem'
+                    }}>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Mobile</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.user?.mobileNumber || 'N/A'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Gender</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.gender}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Date of Birth</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.dateOfBirth}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Blood Group</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.bloodGroup || 'Not Specified'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Profession</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.profession}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Town/Residence</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.town}</strong>
+                      </div>
+                      {selectedPatientDetail.email && (
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Email</span>
+                          <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.email}</strong>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.9rem', fontStyle: 'italic' }}>
-                      No previous clinic visits recorded in the system.
-                    </p>
-                  )}
-                </div>
+
+                    <div>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px' }}>Visit History & Last Visited Details</h4>
+                      {selectedPatientDetail.tokens && selectedPatientDetail.tokens.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+                          {selectedPatientDetail.tokens.map((t: any, index: number) => {
+                            const dateStr = new Date(t.generatedAt).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            });
+                            return (
+                              <div key={t.id} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '12px',
+                                background: index === 0 ? 'hsla(150, 55%, 32%, 0.05)' : 'hsl(var(--bg-primary))',
+                                border: index === 0 ? '1px solid hsla(150, 55%, 32%, 0.15)' : '1px solid hsl(var(--border-color))',
+                                borderRadius: '8px'
+                              }}>
+                                <div>
+                                  <div style={{ fontWeight: 700, color: 'hsl(var(--primary))' }}>
+                                    Token {t.tokenNumber} {index === 0 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'hsl(var(--success))', background: 'hsla(150, 55%, 32%, 0.1)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px' }}>LATEST VISIT</span>}
+                                  </div>
+                                  <div style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', marginTop: '2px' }}>
+                                    {dateStr}
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, marginRight: '8px', color: 'hsl(var(--text-muted))' }}>
+                                    {t.serviceType}
+                                  </span>
+                                  <span className={`badge badge-${t.status}`} style={{ fontSize: '0.75rem' }}>
+                                    {t.status}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                          No previous clinic visits recorded in the system.
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
                   <button className="btn btn-primary" onClick={() => setSelectedPatientDetail(null)} style={{ padding: '10px 24px', borderRadius: '8px' }}>

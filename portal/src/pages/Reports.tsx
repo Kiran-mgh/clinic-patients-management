@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
-import { Calendar, Users, BarChart3, TrendingUp, AlertCircle, Loader2, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
+import { Calendar, Users, BarChart3, TrendingUp, AlertCircle, Loader2, ChevronLeft, ChevronRight, Edit, CreditCard, DollarSign } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 interface ReportsProps {
@@ -366,6 +366,11 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
   const [newPatientsPage, setNewPatientsPage] = useState(1);
   const [newPatientsRowsPerPage, setNewPatientsRowsPerPage] = useState(10);
 
+  // Collections Ledger pagination states
+  const [collectionsData, setCollectionsData] = useState<any>(null);
+  const [collectionsPage, setCollectionsPage] = useState(1);
+  const [collectionsRowsPerPage, setCollectionsRowsPerPage] = useState(10);
+
   // Edit Payment State
   const [editingPaymentToken, setEditingPaymentToken] = useState<any>(null);
   const [editPayStatus, setEditPayStatus] = useState<'Unpaid' | 'Paid'>('Unpaid');
@@ -399,7 +404,8 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
   useEffect(() => {
     setVisitsPage(1);
     setNewPatientsPage(1);
-  }, [reportData]);
+    setCollectionsPage(1);
+  }, [reportData, collectionsData]);
 
   // CSV Export helper
   const exportToCSV = (data: any[], filename: string, headers: string[], keys: string[]) => {
@@ -409,7 +415,7 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
     for (const row of data) {
       const values = keys.map(key => {
         let val = row[key];
-        if (key === 'date' || key === 'createdAt') {
+        if (key === 'date' || key === 'createdAt' || key === 'paidAt') {
           val = formatFriendlyDate(val);
         }
         const strVal = val !== undefined && val !== null ? '' + val : '';
@@ -418,11 +424,11 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
       csvRows.push(values.join(','));
     }
 
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + csvRows.join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `${filename}.csv`);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -499,8 +505,12 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get(`/queue/reports?startDate=${start}&endDate=${end}`, token);
+      const [res, colRes] = await Promise.all([
+        api.get(`/queue/reports?startDate=${start}&endDate=${end}`, token),
+        api.get(`/billing/reports/collections?startDate=${start}&endDate=${end}`, token).catch(() => null),
+      ]);
       setReportData(res);
+      setCollectionsData(colRes);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch operational reports.');
     } finally {
@@ -702,6 +712,26 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                 Profiles registered in selected range
               </span>
             </div>
+
+            {collectionsData && (
+              <div className="metric-card success" style={{ borderLeft: '4px solid hsl(var(--success))' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--success))', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CreditCard size={14} /> Total Collections (₹)
+                </span>
+                <div className="metric-value" style={{ color: 'hsl(var(--success))' }}>
+                  ₹{(collectionsData.totalCollections || 0).toLocaleString('en-IN')}
+                </div>
+                <div style={{ display: 'flex', gap: '8px', fontSize: '0.75rem', marginTop: '4px', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#2563eb', fontWeight: 700 }}>
+                    UPI: ₹{(collectionsData.modeBreakdown?.UPI || 0).toLocaleString('en-IN')}
+                  </span>
+                  <span style={{ color: 'hsl(var(--text-muted))' }}>•</span>
+                  <span style={{ color: 'hsl(var(--success))', fontWeight: 700 }}>
+                    Cash: ₹{(collectionsData.modeBreakdown?.Cash || 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Monthly Breakdown Table */}
@@ -1049,6 +1079,171 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
               </div>
             )}
           </div>
+
+          {/* Financial & Collections Ledger Table */}
+          {collectionsData && (
+            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CreditCard size={20} color="hsl(var(--primary))" />
+                    Financial Collections & Treatment Installments Ledger
+                  </h3>
+                  <span style={{ fontSize: '0.8rem', color: 'hsl(var(--text-muted))' }}>
+                    All treatment package installments, advance fees, and payments collected in selected period ({collectionsData.transactions?.length || 0} transactions • Total: ₹{(collectionsData.totalCollections || 0).toLocaleString('en-IN')})
+                  </span>
+                </div>
+                
+                {collectionsData.transactions && collectionsData.transactions.length > 0 && (
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      className="btn btn-secondary" 
+                      style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                      onClick={() => exportToCSV(
+                        collectionsData.transactions, 
+                        'financial_collections_report', 
+                        ['Date', 'Patient Name', 'Patient ID', 'Treatment Course', 'Amount (INR)', 'Payment Mode', 'Transaction Notes', 'Staff'],
+                        ['paidAt', 'patientName', 'patientId', 'courseTitle', 'amount', 'paymentMode', 'transactionNotes', 'recordedBy']
+                      )}
+                    >
+                      Export Collections CSV
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="table-container">
+                <table className="reports-table">
+                  <thead>
+                    <tr>
+                      <th>Payment Date</th>
+                      <th>Patient Name</th>
+                      <th>Patient ID</th>
+                      <th>Treatment Package / Course</th>
+                      <th>Amount (₹)</th>
+                      <th>Payment Mode</th>
+                      <th>Reference / Notes</th>
+                      <th>Staff</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!collectionsData.transactions || collectionsData.transactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '32px', color: 'hsl(var(--text-muted))' }}>
+                          No financial transactions recorded in the selected date range.
+                        </td>
+                      </tr>
+                    ) : (
+                      collectionsData.transactions
+                        .slice((collectionsPage - 1) * collectionsRowsPerPage, collectionsPage * collectionsRowsPerPage)
+                        .map((tx: any, idx: number) => {
+                          const isUPI = tx.paymentMode === 'UPI';
+                          return (
+                            <tr key={tx.id || idx}>
+                              <td style={{ fontWeight: 600 }}>
+                                {formatFriendlyDate(tx.paidAt)}
+                              </td>
+                              <td style={{ fontWeight: 700, color: 'hsl(var(--text-main))' }}>
+                                {tx.patientName}
+                              </td>
+                              <td>
+                                <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'hsl(var(--primary))' }}>
+                                  {tx.patientId}
+                                </span>
+                              </td>
+                              <td style={{ color: 'hsl(var(--text-main))' }}>
+                                {tx.courseTitle}
+                              </td>
+                              <td style={{ fontWeight: 800, color: 'hsl(var(--success))' }}>
+                                ₹{Number(tx.amount).toLocaleString('en-IN')}
+                              </td>
+                              <td>
+                                <span style={{
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  background: isUPI ? 'hsla(210, 80%, 50%, 0.12)' : 'hsla(150, 55%, 32%, 0.12)',
+                                  color: isUPI ? '#2563eb' : 'hsl(var(--success))',
+                                  border: `1px solid ${isUPI ? 'hsla(210, 80%, 50%, 0.25)' : 'hsla(150, 55%, 32%, 0.25)'}`,
+                                }}>
+                                  {tx.paymentMode || 'Cash'}
+                                </span>
+                              </td>
+                              <td style={{ color: tx.transactionNotes ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))', fontStyle: tx.transactionNotes ? 'normal' : 'italic' }}>
+                                {tx.transactionNotes || '—'}
+                              </td>
+                              <td style={{ color: 'hsl(var(--text-muted))' }}>
+                                {tx.recordedBy || 'Staff'}
+                              </td>
+                            </tr>
+                          );
+                        })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Collections Pagination Controls */}
+              {collectionsData.transactions && collectionsData.transactions.length > 0 && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  paddingTop: '16px',
+                  borderTop: '1px solid hsl(var(--border-color))',
+                  fontSize: '0.85rem',
+                  color: 'hsl(var(--text-muted))',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>Rows per page:</span>
+                    <select
+                      value={collectionsRowsPerPage}
+                      onChange={(e) => {
+                        setCollectionsRowsPerPage(Number(e.target.value));
+                        setCollectionsPage(1);
+                      }}
+                      className="form-input"
+                      style={{
+                        padding: '4px 8px',
+                        fontSize: '0.85rem',
+                        width: 'auto',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {[5, 10, 25, 50, 100].map(size => (
+                        <option key={size} value={size}>{size}</option>
+                      ))}
+                    </select>
+                    <span>
+                      Showing {Math.min(collectionsData.transactions.length, (collectionsPage - 1) * collectionsRowsPerPage + 1)}–
+                      {Math.min(collectionsData.transactions.length, collectionsPage * collectionsRowsPerPage)} of {collectionsData.transactions.length}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      className="btn btn-secondary"
+                      disabled={collectionsPage === 1}
+                      onClick={() => setCollectionsPage(p => Math.max(1, p - 1))}
+                      style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <ChevronLeft size={16} /> Prev
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      disabled={collectionsPage >= Math.ceil(collectionsData.transactions.length / collectionsRowsPerPage)}
+                      onClick={() => setCollectionsPage(p => Math.min(Math.ceil(collectionsData.transactions.length / collectionsRowsPerPage), p + 1))}
+                      style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      Next <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
         </div>
       )}

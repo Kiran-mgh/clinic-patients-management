@@ -75,7 +75,7 @@ export default function App() {
         />
       )}
       {screen === 'contact' && (
-        <ContactScreen onGoBack={() => setScreen('home')} />
+        <ContactScreen token={token} onGoBack={() => setScreen('home')} />
       )}
       {screen === 'profile' && (
         <ProfileScreen

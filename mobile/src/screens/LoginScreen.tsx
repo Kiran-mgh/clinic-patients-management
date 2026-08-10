@@ -114,7 +114,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
     >
       <View style={styles.overlay}>
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 24, width: '100%' }}
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -127,9 +128,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
               <View style={styles.logoRow}>
                 <Image
                   source={require('../../assets/logo.png')}
-                  style={{ width: 56, height: 56, resizeMode: 'contain', marginRight: 12, borderRadius: 10, backgroundColor: '#ffffff', padding: 4 }}
+                  style={{ width: 48, height: 48, resizeMode: 'contain', marginRight: 10, borderRadius: 10, backgroundColor: '#ffffff', padding: 4 }}
                 />
-                <Text style={styles.logoText}>Amar Ayurveda</Text>
+                <Text style={styles.logoText} numberOfLines={1}>Amar Ayurveda</Text>
               </View>
               <Text style={styles.subTitle}>Ayurvedic Healthcare Patient Console</Text>
             </View>
@@ -333,9 +334,18 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 30, 15, 0.65)',
+  },
+  scroll: {
+    flex: 1,
+    width: '100%',
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    paddingVertical: 24,
+    width: '100%',
   },
   container: {
     width: '100%',

@@ -294,15 +294,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
               <View style={styles.grid}>
                 <View style={styles.gridItem}>
                   <Text style={styles.gridLabel}>SERVING</Text>
-                  <Text style={styles.gridValue}>{todayToken.currentServing}</Text>
+                  <Text style={styles.gridValue}>
+                    {todayToken.currentServing?.replace('Last Served: ', 'Last: ') || 'None'}
+                  </Text>
                 </View>
                 <View style={styles.gridItem}>
                   <Text style={styles.gridLabel}>TOTAL TOKENS</Text>
-                  <Text style={styles.gridValue}>{todayToken.lastTokenNumber || '1'}</Text>
+                  <Text style={styles.gridValue}>
+                    {todayToken.lastTokenNumber || '1'}
+                  </Text>
                 </View>
                 <View style={styles.gridItem}>
                   <Text style={styles.gridLabel}>AHEAD / WAIT</Text>
-                  <Text style={styles.gridValue}>{todayToken.isMissed ? 'After Last' : `${todayToken.patientsAhead} Patients`}</Text>
+                  <Text style={styles.gridValue}>
+                    {todayToken.isMissed ? 'After Last' : `${todayToken.patientsAhead} Patients`}
+                  </Text>
                 </View>
               </View>
 
@@ -815,11 +821,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   gridItem: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 2,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 4,
   },
   gridLabel: {
     color: '#718096',
@@ -827,13 +835,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textTransform: 'uppercase',
     textAlign: 'center',
+    lineHeight: 16,
+    width: '100%',
   },
   gridValue: {
     color: '#1a202c',
-    fontSize: 16,
+    fontSize: 15.5,
     fontWeight: '900',
-    marginTop: 4,
+    marginTop: 6,
     textAlign: 'center',
+    lineHeight: 20,
+    width: '100%',
   },
   statusFooter: {
     flexDirection: 'row',

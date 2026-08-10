@@ -193,18 +193,23 @@ const styles = StyleSheet.create({
   timingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
   },
   dayText: {
-    color: '#718096',
-    fontSize: 14,
+    color: '#4a5568',
+    fontSize: 13.5,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   timeText: {
     color: '#1a202c',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13.5,
+    fontWeight: '700',
   },
   bulletRow: {
     flexDirection: 'row',

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { SafeAreaView, StyleSheet, Platform, StatusBar as RNStatusBar, Text, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
@@ -8,6 +8,13 @@ import { ContactScreen } from './src/screens/ContactScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 
 import registerRootComponent from 'expo/build/launch/registerRootComponent';
+
+// Set a safe maximum font scaling ceiling to prevent display size/large font overflows
+if ((Text as any).defaultProps == null) (Text as any).defaultProps = {};
+(Text as any).defaultProps.maxFontSizeMultiplier = 1.18;
+
+if ((TextInput as any).defaultProps == null) (TextInput as any).defaultProps = {};
+(TextInput as any).defaultProps.maxFontSizeMultiplier = 1.18;
 
 export default function App() {
   const [token, setToken] = useState<string | null>(null);

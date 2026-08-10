@@ -113,87 +113,95 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onNavi
       resizeMode="cover"
     >
       <View style={styles.overlay}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.container}
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 24, width: '100%' }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* Header section */}
-          <View style={styles.heroSection}>
-            <View style={styles.logoRow}>
-              <Image
-                source={require('../../assets/logo.png')}
-                style={{ width: 56, height: 56, resizeMode: 'contain', marginRight: 12, borderRadius: 10, backgroundColor: '#ffffff', padding: 4 }}
-              />
-              <Text style={styles.logoText}>Amar Ayurveda</Text>
-            </View>
-            <Text style={styles.subTitle}>Ayurvedic Healthcare Patient Console</Text>
-          </View>
-
-          {/* Form card */}
-          <View style={styles.card}>
-            <Text style={styles.cardHeader}>Sign In</Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Username</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Mobile number, Email, or Username"
-                placeholderTextColor="#999"
-                value={identifier}
-                onChangeText={setIdentifier}
-                autoCapitalize="none"
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <View style={styles.passwordRow}>
-                <Text style={styles.inputLabel}>Password</Text>
-                <TouchableOpacity onPress={() => setShowForgotModal(true)}>
-                  <Text style={styles.forgotLink}>Forgot Password?</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.passwordWrapper}>
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="Enter your password"
-                  placeholderTextColor="#999"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.container}
+          >
+            {/* Header section */}
+            <View style={styles.heroSection}>
+              <View style={styles.logoRow}>
+                <Image
+                  source={require('../../assets/logo.png')}
+                  style={{ width: 56, height: 56, resizeMode: 'contain', marginRight: 12, borderRadius: 10, backgroundColor: '#ffffff', padding: 4 }}
                 />
-                <TouchableOpacity
-                  style={styles.eyeBtn}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color="#718096"
+                <Text style={styles.logoText}>Amar Ayurveda</Text>
+              </View>
+              <Text style={styles.subTitle}>Ayurvedic Healthcare Patient Console</Text>
+            </View>
+
+            {/* Form card */}
+            <View style={styles.card}>
+              <Text style={styles.cardHeader}>Sign In</Text>
+
+              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Username</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mobile, Email, or Username"
+                  placeholderTextColor="#999"
+                  value={identifier}
+                  onChangeText={setIdentifier}
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <View style={styles.passwordRow}>
+                  <Text style={styles.inputLabel}>Password</Text>
+                  <TouchableOpacity onPress={() => setShowForgotModal(true)}>
+                    <Text style={styles.forgotLink}>Forgot Password?</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.passwordWrapper}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    placeholder="Enter your password"
+                    placeholderTextColor="#999"
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={setPassword}
                   />
+                  <TouchableOpacity
+                    style={styles.eyeBtn}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color="#718096"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={handleLogin}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Log In</Text>
+                )}
+              </TouchableOpacity>
+
+              <View style={styles.registerRow}>
+                <Text style={styles.registerText}>Don't have an account? </Text>
+                <TouchableOpacity onPress={onNavigateRegister}>
+                  <Text style={styles.registerLink}>Register Account</Text>
                 </TouchableOpacity>
               </View>
             </View>
-
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={handleLogin}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Log In</Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.registerRow}>
-              <Text style={styles.registerText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={onNavigateRegister}>
-                <Text style={styles.registerLink}>Register Account</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </ScrollView>
 
         {/* Forgot Password Modal */}
         <Modal
@@ -360,7 +368,10 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 20,
-    padding: 24,
+    paddingHorizontal: 22,
+    paddingTop: 22,
+    paddingBottom: 28,
+    width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
@@ -371,7 +382,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: '#1a365d',
-    marginBottom: 20,
+    marginBottom: 18,
     textAlign: 'center',
   },
   errorText: {
@@ -383,7 +394,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputContainer: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   inputLabel: {
     fontSize: 13,
@@ -408,8 +419,8 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     borderRadius: 10,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
+    paddingVertical: 10,
+    fontSize: 14,
     color: '#2d3748',
   },
   passwordWrapper: {
@@ -420,13 +431,13 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     borderRadius: 10,
     paddingRight: 12,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   passwordInput: {
     flex: 1,
     paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
+    paddingVertical: 10,
+    fontSize: 14,
     color: '#2d3748',
   },
   eyeBtn: {
@@ -440,27 +451,29 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: '#1a4d36',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 13,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
   },
   primaryButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
   },
   registerRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 18,
+    gap: 4,
   },
   registerText: {
-    fontSize: 14,
+    fontSize: 13.5,
     color: '#718096',
   },
   registerLink: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
     color: '#1a4d36',
   },

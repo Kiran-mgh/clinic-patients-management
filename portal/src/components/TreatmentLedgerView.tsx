@@ -917,7 +917,7 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
 
       {/* Modal 1: Add New Treatment Package */}
       {showAddCourseModal && createPortal(
-        <div className="modal-overlay" onClick={() => setShowAddCourseModal(false)}>
+        <div className="modal-overlay" onClick={() => setShowAddCourseModal(false)} style={{ zIndex: 10050 }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
             <div className="modal-header">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -981,7 +981,7 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
 
       {/* Modal 2: Record Payment / Installment */}
       {showAddPaymentModal && createPortal(
-        <div className="modal-overlay" onClick={() => setShowAddPaymentModal(false)}>
+        <div className="modal-overlay" onClick={() => setShowAddPaymentModal(false)} style={{ zIndex: 10050 }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
             <div className="modal-header">
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1077,7 +1077,7 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
 
       {/* Custom In-App Confirmation Modal (replaces browser window.confirm) */}
       {confirmModal && confirmModal.isOpen && createPortal(
-        <div className="modal-overlay" onClick={() => !confirmLoading && setConfirmModal(null)}>
+        <div className="modal-overlay" onClick={() => !confirmLoading && setConfirmModal(null)} style={{ zIndex: 10060 }}>
           <div
             className="modal-content animate-fade-in"
             onClick={(e) => e.stopPropagation()}

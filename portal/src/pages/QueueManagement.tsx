@@ -409,7 +409,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
             className="glass-card animate-fade-in" 
             style={{
               width: '100%',
-              maxWidth: '550px',
+              maxWidth: '700px',
               background: 'hsl(var(--bg-secondary))',
               maxHeight: '85vh',
               overflowY: 'auto',

@@ -1,28 +1,28 @@
 version: '3.8'
 
 services:
-  postgres:
+  staging-postgres:
     image: postgres:15-alpine
-    container_name: amar-db
+    container_name: staging-amar-db
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - "5433:5433"
     volumes:
-      - /home/ubuntu/postgres-data:/var/lib/postgresql/data
+      - /home/ubuntu/staging-postgres-data:/var/lib/postgresql/data
     restart: always
 
-  backend:
+  staging-backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: amar-backend
+    container_name: staging-amar-backend
     ports:
-      - "3000:3000"
+      - "3001:3001"
     env_file:
       - .env
     depends_on:
-      - postgres
+      - staging-postgres
     restart: always

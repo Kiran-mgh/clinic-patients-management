@@ -226,9 +226,169 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
     setShowAddPaymentModal(true);
   };
 
-  const handleOpenPrint = (course?: any) => {
-    setSelectedCourseForPrint(course || null);
-    setShowPrintModal(true);
+  const handlePrintStatement = (course?: any) => {
+    const printWin = window.open('', '_blank');
+    if (!printWin) {
+      alert('Pop-up blocker is enabled. Please allow pop-ups to print receipt statements.');
+      return;
+    }
+
+    const patientDisplayName = patientName || ledgerData?.patient?.fullName || 'Patient';
+    const patientDisplayId = patientCode || ledgerData?.patient?.patientId || 'Unassigned';
+    const patientTown = ledgerData?.patient?.town || 'Bengaluru';
+    const currentDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    let tableHtml = '';
+    if (course) {
+      const rows = (course.payments || []).map((p: any) => `
+        <tr>
+          <td>${new Date(p.paidAt).toLocaleDateString('en-IN')}</td>
+          <td>${p.paymentMode}</td>
+          <td>${p.transactionNotes || '—'}</td>
+          <td>${p.recordedBy || 'Staff'}</td>
+          <td style="text-align: right; font-weight: bold; color: #166534;">₹${Number(p.amount).toLocaleString('en-IN')}</td>
+        </tr>
+      `).join('');
+
+      tableHtml = `
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: #166534; margin: 0 0 6px 0;">${course.title}</h3>
+          <p style="margin: 0 0 12px 0; font-size: 13px; color: #4b5563;">Agreed Package Fee: <strong>₹${Number(course.totalFee).toLocaleString('en-IN')}</strong></p>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Payment Mode</th>
+                <th>Reference / Notes</th>
+                <th>Staff</th>
+                <th style="text-align: right;">Amount Paid</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows || '<tr><td colspan="5" style="text-align:center;">No payment installments recorded yet.</td></tr>'}
+            </tbody>
+            <tfoot>
+              <tr style="border-top: 2px solid #166534; font-weight: bold;">
+                <td colspan="4" style="text-align: right; padding: 10px 8px;">Total Paid:</td>
+                <td style="text-align: right; color: #166534; padding: 10px 8px;">₹${Number(course.totalPaid).toLocaleString('en-IN')}</td>
+              </tr>
+              <tr style="font-weight: bold;">
+                <td colspan="4" style="text-align: right; padding: 4px 8px; color: ${course.balanceDue > 0 ? '#b45309' : '#166534'};">
+                  ${course.balanceDue > 0 ? 'Remaining Balance Due:' : 'Status:'}
+                </td>
+                <td style="text-align: right; padding: 4px 8px; color: ${course.balanceDue > 0 ? '#b45309' : '#166534'};">
+                  ${course.balanceDue > 0 ? `₹${Number(course.balanceDue).toLocaleString('en-IN')}` : 'PAID IN FULL ✓'}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      `;
+    } else {
+      const rows = (courses || []).map((c: any) => `
+        <tr>
+          <td style="font-weight: 600;">${c.title}</td>
+          <td>₹${Number(c.totalFee).toLocaleString('en-IN')}</td>
+          <td style="color: #166534; font-weight: bold;">₹${Number(c.totalPaid).toLocaleString('en-IN')}</td>
+          <td style="text-align: right; font-weight: bold; color: ${c.balanceDue > 0 ? '#b45309' : '#166534'};">
+            ${c.balanceDue > 0 ? `₹${Number(c.balanceDue).toLocaleString('en-IN')}` : '✓ Paid'}
+          </td>
+        </tr>
+      `).join('');
+
+      tableHtml = `
+        <div style="margin-bottom: 20px;">
+          <h3 style="color: #166534; margin: 0 0 12px 0;">Summary of All Treatment Packages & Payments</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Package / Description</th>
+                <th>Total Fee</th>
+                <th>Total Paid</th>
+                <th style="text-align: right;">Balance Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows || '<tr><td colspan="4" style="text-align:center;">No treatment packages recorded.</td></tr>'}
+            </tbody>
+            <tfoot>
+              <tr style="border-top: 2px solid #166534; font-weight: bold;">
+                <td>GRAND TOTAL</td>
+                <td>₹${Number(summary.totalCoursesFee).toLocaleString('en-IN')}</td>
+                <td style="color: #166534;">₹${Number(summary.totalPaid).toLocaleString('en-IN')}</td>
+                <td style="text-align: right; color: ${summary.totalBalanceDue > 0 ? '#b45309' : '#166534'};">
+                  ${summary.totalBalanceDue > 0 ? `₹${Number(summary.totalBalanceDue).toLocaleString('en-IN')}` : '✓ FULLY PAID'}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      `;
+    }
+
+    const content = `
+      <html>
+        <head>
+          <title>Amar Ayurveda Clinic - Treatment Statement</title>
+          <style>
+            body { font-family: 'Segoe UI', Arial, sans-serif; color: #111827; padding: 30px; line-height: 1.5; font-size: 13px; }
+            .header { border-bottom: 2px solid #166534; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+            h1 { font-size: 22px; margin: 0; color: #166534; font-weight: 800; }
+            .badge { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #166534; background: #f0fdf4; padding: 4px 8px; border-radius: 4px; border: 1px solid #bbf7d0; display: inline-block; }
+            .patient-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #e5e7eb; padding: 8px 10px; text-align: left; }
+            th { background: #f3f4f6; color: #374151; font-weight: 700; text-transform: uppercase; font-size: 11px; }
+            .footer { margin-top: 40px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; color: #6b7280; }
+            .seal-box { text-align: center; border-top: 1px solid #9ca3af; width: 180px; padding-top: 6px; }
+            @media print { body { padding: 0; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <h1>AMAR AYURVEDA CLINIC</h1>
+              <p style="margin: 3px 0 0 0; color: #4b5563;">#226/4, 7th Cross, R.T.Street, Bengaluru - 560053</p>
+              <p style="margin: 2px 0 0 0; color: #4b5563;">Specialist in Piles, Fistula, Fissures & Ayurvedic Medicine</p>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge">Patient Statement</span>
+              <p style="margin: 6px 0 0 0; color: #4b5563;">Date: ${currentDate}</p>
+            </div>
+          </div>
+
+          <div class="patient-box">
+            <div><strong>Patient Name:</strong> ${patientDisplayName}</div>
+            <div><strong>Patient ID:</strong> ${patientDisplayId}</div>
+            <div><strong>Residence:</strong> ${patientTown}</div>
+            <div><strong>Statement:</strong> Lifetime Treatment Ledger</div>
+          </div>
+
+          ${tableHtml}
+
+          <div class="footer">
+            <div>
+              <p style="margin: 0;">This is a computer-generated official statement of accounts.</p>
+              <p style="margin: 2px 0 0 0;">Amar Ayurveda Clinic Management System</p>
+            </div>
+            <div class="seal-box">
+              Authorized Signature / Seal
+            </div>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWin.document.open();
+    printWin.document.write(content);
+    printWin.document.close();
   };
 
   if (loading) {
@@ -381,7 +541,7 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
         </div>
 
         <button
-          onClick={() => handleOpenPrint()}
+          onClick={() => handlePrintStatement()}
           className="btn"
           style={{
             background: 'hsl(var(--bg-primary))',
@@ -542,7 +702,7 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
 
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button
-                          onClick={() => handleOpenPrint(course)}
+                          onClick={() => handlePrintStatement(course)}
                           className="btn"
                           style={{
                             fontSize: '0.78rem',

@@ -447,7 +447,7 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
     const htmlRows = data.map((row: any) => {
       return `<tr>${keys.map(key => {
         let val = row[key];
-        if (key === 'date' || key === 'createdAt') {
+        if (key === 'date' || key === 'createdAt' || key === 'paidAt') {
           val = formatFriendlyDate(val);
         }
         return `<td>${val !== undefined && val !== null ? val : '-'}</td>`;
@@ -1094,26 +1094,36 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                   </span>
                 </div>
                 
-                {collectionsData.transactions && collectionsData.transactions.length > 0 && (
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
-                      className="btn btn-secondary" 
-                      style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-                      onClick={() => exportToCSV(
-                        collectionsData.transactions, 
-                        'financial_collections_report', 
-                        ['Date', 'Patient Name', 'Patient ID', 'Treatment Course', 'Amount (INR)', 'Payment Mode', 'Transaction Notes', 'Staff'],
-                        ['paidAt', 'patientName', 'patientId', 'courseTitle', 'amount', 'paymentMode', 'transactionNotes', 'recordedBy']
-                      )}
-                    >
-                      Export Collections CSV
-                    </button>
-                  </div>
-                )}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => exportToCSV(
+                      collectionsData.transactions || [], 
+                      'financial_collections_report', 
+                      ['Payment Date', 'Patient Name', 'Patient ID', 'Treatment Course', 'Amount (INR)', 'Payment Mode', 'Transaction Notes', 'Staff'],
+                      ['paidAt', 'patientName', 'patientId', 'courseTitle', 'amount', 'paymentMode', 'transactionNotes', 'recordedBy']
+                    )}
+                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                  >
+                    Export CSV (Excel)
+                  </button>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => exportToPDF(
+                      'Financial Collections & Installments Report', 
+                      ['Payment Date', 'Patient Name', 'Patient ID', 'Treatment Course', 'Amount (₹)', 'Payment Mode', 'Transaction Notes', 'Staff'],
+                      collectionsData.transactions || [],
+                      ['paidAt', 'patientName', 'patientId', 'courseTitle', 'amount', 'paymentMode', 'transactionNotes', 'recordedBy']
+                    )}
+                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                  >
+                    Export PDF
+                  </button>
+                </div>
               </div>
 
               <div className="table-container">
-                <table className="reports-table">
+                <table className="custom-table">
                   <thead>
                     <tr>
                       <th>Payment Date</th>

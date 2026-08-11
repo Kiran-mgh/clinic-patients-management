@@ -57,9 +57,16 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
   const [newPayNotes, setNewPayNotes] = useState('');
   const [submittingPayment, setSubmittingPayment] = useState(false);
 
-  // Print modal state
-  const [showPrintModal, setShowPrintModal] = useState(false);
-  const [selectedCourseForPrint, setSelectedCourseForPrint] = useState<any>(null);
+  // Custom confirmation modal state (replacing window.confirm)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    onConfirm: () => Promise<void> | void;
+    isDanger?: boolean;
+  } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const showNotification = (text: string, type: 'success' | 'error' = 'success') => {
     setActionMsg({ text, type });
@@ -187,28 +194,52 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
     }
   };
 
-  const handleDeletePayment = async (paymentId: string) => {
-    if (!window.confirm('Are you sure you want to remove this payment transaction?')) return;
-    try {
-      await api.delete(`/billing/payments/${paymentId}`, token);
-      showNotification('Payment entry removed successfully');
-      await fetchLedger();
-      if (onUpdate) onUpdate();
-    } catch (err: any) {
-      showNotification(err.message || 'Failed to delete payment entry', 'error');
-    }
+  const promptDeletePayment = (paymentId: string, amount: number) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Remove Payment Transaction',
+      message: `Are you sure you want to remove this installment payment of ₹${Number(amount).toLocaleString('en-IN')}? This will immediately recalculate the patient's balance.`,
+      confirmText: 'Remove Payment',
+      isDanger: true,
+      onConfirm: async () => {
+        setConfirmLoading(true);
+        try {
+          await api.delete(`/billing/payments/${paymentId}`, token);
+          showNotification('Payment entry removed successfully');
+          setConfirmModal(null);
+          await fetchLedger();
+          if (onUpdate) onUpdate();
+        } catch (err: any) {
+          showNotification(err.message || 'Failed to delete payment entry', 'error');
+        } finally {
+          setConfirmLoading(false);
+        }
+      },
+    });
   };
 
-  const handleDeleteCourse = async (courseId: string, courseTitle: string) => {
-    if (!window.confirm(`Are you sure you want to delete course "${courseTitle}" and all its payments?`)) return;
-    try {
-      await api.delete(`/billing/courses/${courseId}`, token);
-      showNotification(`Course "${courseTitle}" deleted successfully`);
-      await fetchLedger();
-      if (onUpdate) onUpdate();
-    } catch (err: any) {
-      showNotification(err.message || 'Failed to delete course', 'error');
-    }
+  const promptDeleteCourse = (courseId: string, courseTitle: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Delete Treatment Package',
+      message: `Are you sure you want to delete package "${courseTitle}" and all its linked payment installment history?`,
+      confirmText: 'Delete Package',
+      isDanger: true,
+      onConfirm: async () => {
+        setConfirmLoading(true);
+        try {
+          await api.delete(`/billing/courses/${courseId}`, token);
+          showNotification(`Package "${courseTitle}" deleted successfully`);
+          setConfirmModal(null);
+          await fetchLedger();
+          if (onUpdate) onUpdate();
+        } catch (err: any) {
+          showNotification(err.message || 'Failed to delete course', 'error');
+        } finally {
+          setConfirmLoading(false);
+        }
+      },
+    });
   };
 
   const handleOpenPaymentModal = (courseId?: string) => {
@@ -720,7 +751,7 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
                         </button>
 
                         <button
-                          onClick={() => handleDeleteCourse(course.id, course.title)}
+                          onClick={() => promptDeleteCourse(course.id, course.title)}
                           className="btn"
                           style={{
                             fontSize: '0.78rem',
@@ -802,7 +833,7 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
                                     <td style={{ padding: '10px 6px', color: 'hsl(var(--text-muted))' }}>{p.recordedBy || 'Staff'}</td>
                                     <td style={{ padding: '10px 6px', textAlign: 'center' }}>
                                       <button
-                                        onClick={() => handleDeletePayment(p.id)}
+                                        onClick={() => promptDeletePayment(p.id, p.amount)}
                                         style={{
                                           background: 'transparent',
                                           border: 'none',
@@ -870,7 +901,7 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
                     <td style={{ padding: '8px 6px' }}>{p.recordedBy || 'Staff'}</td>
                     <td style={{ padding: '8px 6px', textAlign: 'center' }}>
                       <button
-                        onClick={() => handleDeletePayment(p.id)}
+                        onClick={() => promptDeletePayment(p.id, p.amount)}
                         style={{ background: 'transparent', border: 'none', color: 'hsl(var(--danger))', cursor: 'pointer', opacity: 0.7 }}
                       >
                         <Trash2 size={14} />
@@ -1044,142 +1075,78 @@ export const TreatmentLedgerView: React.FC<TreatmentLedgerViewProps> = ({
         document.body
       )}
 
-      {/* Modal 3: Official Printable Receipt Statement */}
-      {showPrintModal && createPortal(
-        <div className="modal-overlay" onClick={() => setShowPrintModal(false)}>
+      {/* Custom In-App Confirmation Modal (replaces browser window.confirm) */}
+      {confirmModal && confirmModal.isOpen && createPortal(
+        <div className="modal-overlay" onClick={() => !confirmLoading && setConfirmModal(null)}>
           <div
-            className="modal-content print-receipt-content"
+            className="modal-content animate-fade-in"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '650px', background: '#ffffff', color: '#111827', padding: '32px' }}
+            style={{ maxWidth: '420px', padding: '24px' }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #166534', paddingBottom: '16px' }}>
-              <div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#166534', margin: 0 }}>AMAR AYURVEDA CLINIC</h2>
-                <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#4b5563' }}>#226/4, 7th Cross, R.T.Street, Bengaluru - 560053</p>
-                <p style={{ margin: '2px 0 0 0', fontSize: '0.85rem', color: '#4b5563' }}>Specialist in Piles, Fistula, Fissures & Ayurvedic Medicine</p>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+              <div style={{
+                padding: '10px',
+                borderRadius: '10px',
+                background: 'hsla(350, 65%, 44%, 0.12)',
+                color: 'hsl(var(--danger))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <AlertCircle size={24} />
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: '#166534', background: '#f0fdf4', padding: '4px 8px', borderRadius: '4px', border: '1px solid #bbf7d0' }}>
-                  Patient Statement
-                </span>
-                <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: '#4b5563' }}>
-                  Date: {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'hsl(var(--text-main))' }}>
+                  {confirmModal.title}
+                </h3>
+                <p style={{ fontSize: '0.88rem', color: 'hsl(var(--text-muted))', margin: 0, lineHeight: 1.5 }}>
+                  {confirmModal.message}
                 </p>
               </div>
             </div>
 
-            {/* Patient Header */}
-            <div style={{ margin: '20px 0', background: '#f9fafb', padding: '14px', borderRadius: '8px', border: '1px solid #e5e7eb', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '0.88rem' }}>
-              <div><strong>Patient Name:</strong> {patientName || ledgerData.patient?.fullName}</div>
-              <div><strong>Patient ID:</strong> {patientCode || ledgerData.patient?.patientId || 'Unassigned'}</div>
-              <div><strong>Residence:</strong> {ledgerData.patient?.town || 'Bengaluru'}</div>
-              <div><strong>Statement Period:</strong> Lifetime Ledger</div>
-            </div>
-
-            {/* Selected Course or All Courses Itemization */}
-            {selectedCourseForPrint ? (
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#166534' }}>{selectedCourseForPrint.title}</h4>
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>Total Fee: ₹{selectedCourseForPrint.totalFee.toLocaleString('en-IN')}</span>
-                </div>
-
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', marginTop: '8px' }}>
-                  <thead>
-                    <tr style={{ background: '#f3f4f6', borderBottom: '1.5px solid #d1d5db', textAlign: 'left' }}>
-                      <th style={{ padding: '8px' }}>Date</th>
-                      <th style={{ padding: '8px' }}>Payment Mode</th>
-                      <th style={{ padding: '8px' }}>Reference / Notes</th>
-                      <th style={{ padding: '8px', textAlign: 'right' }}>Amount Paid</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(selectedCourseForPrint.payments || []).map((p: any) => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '8px' }}>{new Date(p.paidAt).toLocaleDateString('en-IN')}</td>
-                        <td style={{ padding: '8px' }}>{p.paymentMode}</td>
-                        <td style={{ padding: '8px', color: '#4b5563' }}>{p.transactionNotes || '—'}</td>
-                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: '#166534' }}>₹{p.amount.toLocaleString('en-IN')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr style={{ borderTop: '2px solid #166534', fontWeight: 800 }}>
-                      <td colSpan={3} style={{ padding: '10px 8px', textAlign: 'right' }}>Total Paid:</td>
-                      <td style={{ padding: '10px 8px', textAlign: 'right', color: '#166534' }}>₹{selectedCourseForPrint.totalPaid.toLocaleString('en-IN')}</td>
-                    </tr>
-                    <tr style={{ fontWeight: 800 }}>
-                      <td colSpan={3} style={{ padding: '4px 8px', textAlign: 'right', color: selectedCourseForPrint.balanceDue > 0 ? '#b45309' : '#166534' }}>
-                        {selectedCourseForPrint.balanceDue > 0 ? 'Remaining Balance Due:' : 'Status:'}
-                      </td>
-                      <td style={{ padding: '4px 8px', textAlign: 'right', color: selectedCourseForPrint.balanceDue > 0 ? '#b45309' : '#166534' }}>
-                        {selectedCourseForPrint.balanceDue > 0 ? `₹${selectedCourseForPrint.balanceDue.toLocaleString('en-IN')}` : 'PAID IN FULL ✓'}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            ) : (
-              <div style={{ marginBottom: '20px' }}>
-                <h4 style={{ margin: '0 0 10px 0', fontSize: '1rem', color: '#166534' }}>Summary of All Treatment Courses & Payments</h4>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                  <thead>
-                    <tr style={{ background: '#f3f4f6', borderBottom: '1.5px solid #d1d5db', textAlign: 'left' }}>
-                      <th style={{ padding: '8px' }}>Course / Description</th>
-                      <th style={{ padding: '8px' }}>Total Package Fee</th>
-                      <th style={{ padding: '8px' }}>Total Paid</th>
-                      <th style={{ padding: '8px', textAlign: 'right' }}>Balance Due</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {courses.map((c: any) => (
-                      <tr key={c.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '8px', fontWeight: 600 }}>{c.title}</td>
-                        <td style={{ padding: '8px' }}>₹{c.totalFee.toLocaleString('en-IN')}</td>
-                        <td style={{ padding: '8px', color: '#166534', fontWeight: 700 }}>₹{c.totalPaid.toLocaleString('en-IN')}</td>
-                        <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: c.balanceDue > 0 ? '#b45309' : '#166534' }}>
-                          {c.balanceDue > 0 ? `₹${c.balanceDue.toLocaleString('en-IN')}` : '✓ Paid'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr style={{ borderTop: '2px solid #166534', fontWeight: 800, fontSize: '0.92rem' }}>
-                      <td style={{ padding: '10px 8px' }}>GRAND TOTAL</td>
-                      <td style={{ padding: '10px 8px' }}>₹{summary.totalCoursesFee.toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '10px 8px', color: '#166534' }}>₹{summary.totalPaid.toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '10px 8px', textAlign: 'right', color: summary.totalBalanceDue > 0 ? '#b45309' : '#166534' }}>
-                        {summary.totalBalanceDue > 0 ? `₹${summary.totalBalanceDue.toLocaleString('en-IN')}` : '✓ FULLY PAID'}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            )}
-
-            {/* Receipt Footer */}
-            <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', fontSize: '0.82rem', color: '#4b5563' }}>
-              <div>
-                <p style={{ margin: 0 }}>This is a computer-generated statement of accounts.</p>
-                <p style={{ margin: '2px 0 0 0' }}>Amar Ayurveda Clinic Management System</p>
-              </div>
-              <div style={{ textAlign: 'center', borderTop: '1px solid #9ca3af', width: '180px', paddingTop: '6px' }}>
-                Authorized Signature / Seal
-              </div>
-            </div>
-
-            {/* Print & Close Toolbar */}
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '24px', borderTop: '1px solid #e5e7eb', paddingTop: '16px' }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setShowPrintModal(false)}>
-                Close
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '12px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={confirmLoading}
+                onClick={() => setConfirmModal(null)}
+                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+              >
+                Cancel
               </button>
               <button
                 type="button"
-                className="btn btn-primary"
-                onClick={() => window.print()}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                className="btn"
+                disabled={confirmLoading}
+                onClick={() => confirmModal.onConfirm()}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '0.85rem',
+                  background: 'hsl(var(--danger))',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 700,
+                  cursor: confirmLoading ? 'not-allowed' : 'pointer',
+                  opacity: confirmLoading ? 0.7 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
               >
-                <Printer size={16} /> Print / Save PDF
+                {confirmLoading ? (
+                  <>
+                    <Clock size={14} className="spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} />
+                    {confirmModal.confirmText || 'Confirm'}
+                  </>
+                )}
               </button>
             </div>
           </div>

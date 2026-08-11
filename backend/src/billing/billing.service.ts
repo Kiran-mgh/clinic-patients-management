@@ -300,4 +300,74 @@ export class BillingService {
       transactions: formattedList,
     };
   }
+
+  async getClinicFinancialSummary() {
+    const patients = await this.patientRepository.find({
+      relations: ['treatmentCourses', 'payments', 'user'],
+      order: { createdAt: 'DESC' },
+    });
+
+    let clinicTotalTreatmentValue = 0;
+    let clinicTotalCollected = 0;
+    let clinicTotalOutstandingDue = 0;
+    let patientsWithDuesCount = 0;
+
+    const patientSummaries = patients
+      .filter((p) => (p.treatmentCourses && p.treatmentCourses.length > 0) || (p.payments && p.payments.length > 0))
+      .map((p) => {
+        const totalCoursesFee = (p.treatmentCourses || []).reduce(
+          (sum, c) => sum + (Number(c.totalFee) || 0),
+          0,
+        );
+        const totalPaid = (p.payments || []).reduce(
+          (sum, pay) => sum + (Number(pay.amount) || 0),
+          0,
+        );
+        const balanceDue = Math.max(0, totalCoursesFee - totalPaid);
+
+        clinicTotalTreatmentValue += totalCoursesFee;
+        clinicTotalCollected += totalPaid;
+        clinicTotalOutstandingDue += balanceDue;
+
+        if (balanceDue > 0) {
+          patientsWithDuesCount += 1;
+        }
+
+        const activeCourses = (p.treatmentCourses || []).filter((c) => c.status === 'active');
+        const courseTitles = (p.treatmentCourses || []).map((c) => `${c.title} (₹${Number(c.totalFee).toLocaleString('en-IN')})`).join(', ');
+
+        return {
+          id: p.id,
+          patientId: p.patientId || 'Unassigned',
+          fullName: p.fullName,
+          mobileNumber: p.user?.mobileNumber || 'N/A',
+          town: p.town || 'N/A',
+          totalCoursesFee,
+          totalPaid,
+          balanceDue,
+          activeCoursesCount: activeCourses.length,
+          totalCoursesCount: (p.treatmentCourses || []).length,
+          courseTitles: courseTitles || 'Standalone Visits',
+          status: p.status,
+          hasDues: balanceDue > 0,
+        };
+      });
+
+    // Sort: Patients with highest outstanding dues first
+    patientSummaries.sort((a, b) => b.balanceDue - a.balanceDue);
+
+    return {
+      summary: {
+        clinicTotalTreatmentValue,
+        clinicTotalCollected,
+        clinicTotalOutstandingDue,
+        totalBillingPatients: patientSummaries.length,
+        patientsWithDuesCount,
+        collectionRate: clinicTotalTreatmentValue > 0
+          ? Math.round((clinicTotalCollected / clinicTotalTreatmentValue) * 100)
+          : 100,
+      },
+      patients: patientSummaries,
+    };
+  }
 }

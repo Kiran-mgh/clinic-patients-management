@@ -1,7 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
-import { Calendar, Users, BarChart3, TrendingUp, AlertCircle, Loader2, ChevronLeft, ChevronRight, Edit, CreditCard, DollarSign } from 'lucide-react';
+import {
+  Calendar,
+  Users,
+  BarChart3,
+  TrendingUp,
+  AlertCircle,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Edit,
+  CreditCard,
+  DollarSign,
+  Search,
+  CheckCircle2,
+  Clock,
+  Package,
+  Layers,
+  X,
+  FileSpreadsheet
+} from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { TreatmentLedgerView } from '../components/TreatmentLedgerView';
 
 interface ReportsProps {
   token: string | null;
@@ -358,6 +378,17 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
   const [error, setError] = useState('');
   const [reportData, setReportData] = useState<any>(null);
 
+  // Active Tab Switcher: Finance Hub vs Operational Logs
+  const [activeReportTab, setActiveReportTab] = useState<'finance' | 'operations'>('finance');
+
+  // Clinic Finance & Patient Dues states
+  const [clinicFinance, setClinicFinance] = useState<any>(null);
+  const [duesFilter, setDuesFilter] = useState<'all' | 'pending' | 'cleared'>('all');
+  const [duesSearch, setDuesSearch] = useState('');
+  const [patientDuesPage, setPatientDuesPage] = useState(1);
+  const [patientDuesRowsPerPage, setPatientDuesRowsPerPage] = useState(10);
+  const [selectedLedgerPatient, setSelectedLedgerPatient] = useState<any>(null);
+
   // Visited Patients pagination states
   const [visitsPage, setVisitsPage] = useState(1);
   const [visitsRowsPerPage, setVisitsRowsPerPage] = useState(10);
@@ -405,7 +436,8 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
     setVisitsPage(1);
     setNewPatientsPage(1);
     setCollectionsPage(1);
-  }, [reportData, collectionsData]);
+    setPatientDuesPage(1);
+  }, [reportData, collectionsData, clinicFinance, duesFilter, duesSearch]);
 
   // CSV Export helper
   const exportToCSV = (data: any[], filename: string, headers: string[], keys: string[]) => {
@@ -505,12 +537,14 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
     setLoading(true);
     setError('');
     try {
-      const [res, colRes] = await Promise.all([
+      const [res, colRes, finRes] = await Promise.all([
         api.get(`/queue/reports?startDate=${start}&endDate=${end}`, token),
         api.get(`/billing/reports/collections?startDate=${start}&endDate=${end}`, token).catch(() => null),
+        api.get(`/billing/reports/clinic-summary`, token).catch(() => null),
       ]);
       setReportData(res);
       setCollectionsData(colRes);
+      setClinicFinance(finRes);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch operational reports.');
     } finally {
@@ -551,97 +585,100 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
     });
   };
 
+  // Filtered patients for financial dues register
+  const filteredDuesPatients = (clinicFinance?.patients || []).filter((p: any) => {
+    const q = duesSearch.trim().toLowerCase();
+    const matchesSearch = q === '' ||
+      (p.fullName && p.fullName.toLowerCase().includes(q)) ||
+      (p.patientId && p.patientId.toLowerCase().includes(q)) ||
+      (p.mobileNumber && p.mobileNumber.includes(duesSearch.trim())) ||
+      (p.town && p.town.toLowerCase().includes(q)) ||
+      (p.courseTitles && p.courseTitles.toLowerCase().includes(q));
+
+    if (!matchesSearch) return false;
+
+    if (duesFilter === 'pending') return p.hasDues;
+    if (duesFilter === 'cleared') return !p.hasDues;
+    return true;
+  });
+
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
       
       {/* Title Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.5px' }}>Reports & Operations Analytics</h1>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.5px' }}>Reports & Financial Accounts Hub</h1>
           <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.9rem', marginTop: '4px' }}>
-            View completed patient visits, service type distributions, and operational volume.
+            Comprehensive overview of clinic-wide revenue, pending dues, patient-wise installment balances, and daily patient visit logs.
           </p>
         </div>
       </div>
 
-      {/* Filter Controls Panel */}
-      <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Calendar size={16} /> Filter Operations by Date Range
-        </h3>
+      {/* Top Tab Navigation Switcher: Financial Accounts vs Operations */}
+      <div style={{
+        display: 'flex',
+        gap: '12px',
+        borderBottom: '2px solid hsl(var(--border-color))',
+        paddingBottom: '2px',
+      }}>
+        <button
+          type="button"
+          onClick={() => setActiveReportTab('finance')}
+          style={{
+            padding: '12px 20px',
+            borderRadius: '10px 10px 0 0',
+            border: 'none',
+            borderBottom: activeReportTab === 'finance' ? '3px solid hsl(var(--primary))' : '3px solid transparent',
+            background: activeReportTab === 'finance' ? 'hsla(var(--primary) / 0.12)' : 'transparent',
+            color: activeReportTab === 'finance' ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+            fontWeight: 800,
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <CreditCard size={18} />
+          Clinic Revenue & Patient Dues Hub
+          {clinicFinance?.summary?.patientsWithDuesCount > 0 && (
+            <span style={{
+              background: '#d97706',
+              color: '#ffffff',
+              fontSize: '0.72rem',
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              fontWeight: 800,
+            }}>
+              {clinicFinance.summary.patientsWithDuesCount} with dues
+            </span>
+          )}
+        </button>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-end' }}>
-          
-          {/* Preset Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(var(--text-muted))' }}>Quick Presets</label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                className={`btn ${activePreset === 'this-month' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => handlePresetChange('this-month')}
-                style={{ padding: '8px 16px', fontSize: '0.875rem' }}
-              >
-                This Month
-              </button>
-              <button
-                className={`btn ${activePreset === 'last-30' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => handlePresetChange('last-30')}
-                style={{ padding: '8px 16px', fontSize: '0.875rem' }}
-              >
-                Last 30 Days
-              </button>
-              <button
-                className={`btn ${activePreset === 'last-90' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => handlePresetChange('last-90')}
-                style={{ padding: '8px 16px', fontSize: '0.875rem' }}
-              >
-                Last 90 Days
-              </button>
-              <button
-                className={`btn ${activePreset === 'custom' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => handlePresetChange('custom')}
-                style={{ padding: '8px 16px', fontSize: '0.875rem' }}
-              >
-                Custom Range
-              </button>
-            </div>
-          </div>
-
-          {/* Date Picker Form */}
-          <div style={{ display: 'flex', gap: '16px', flexGrow: 1, flexWrap: 'wrap' }}>
-            <CustomDatePicker
-              label="Start Date"
-              value={startDate}
-              onChange={(val) => {
-                setStartDate(val);
-                setActivePreset('custom');
-              }}
-              maxDate={endDate}
-              disabled={activePreset !== 'custom'}
-            />
-            <CustomDatePicker
-              label="End Date"
-              value={endDate}
-              onChange={(val) => {
-                setEndDate(val);
-                setActivePreset('custom');
-              }}
-              maxDate={getTodayDateString()}
-              disabled={activePreset !== 'custom'}
-            />
-          </div>
-
-          {/* Manual Refresh Button */}
-          <button
-            className="btn btn-secondary"
-            onClick={() => fetchReport(startDate, endDate)}
-            disabled={loading}
-            style={{ height: '40px', display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            {loading ? <Loader2 className="animate-spin" size={16} /> : 'Refresh'}
-          </button>
-
-        </div>
+        <button
+          type="button"
+          onClick={() => setActiveReportTab('operations')}
+          style={{
+            padding: '12px 20px',
+            borderRadius: '10px 10px 0 0',
+            border: 'none',
+            borderBottom: activeReportTab === 'operations' ? '3px solid hsl(var(--primary))' : '3px solid transparent',
+            background: activeReportTab === 'operations' ? 'hsla(var(--primary) / 0.12)' : 'transparent',
+            color: activeReportTab === 'operations' ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+            fontWeight: 800,
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <BarChart3 size={18} />
+          Operational Visits & Daily Logs
+        </button>
       </div>
 
       {/* Error Alert */}
@@ -661,234 +698,309 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
         </div>
       )}
 
-      {/* Main Report Dashboard Content */}
-      {reportData && !loading && (
+      {/* ========================================================================= */}
+      {/* TAB 1: CLINIC FINANCIAL DUES & PATIENT-WISE ACCOUNTS REGISTER            */}
+      {/* ========================================================================= */}
+      {activeReportTab === 'finance' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
           
-          {/* Summary Cards */}
-          <div className="metrics-grid">
-            <div className="metric-card primary">
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Users size={14} /> Total Visited Patients
-              </span>
-              <div className="metric-value">{reportData.summary.totalCount}</div>
-              <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))' }}>
-                Completed sessions in selected range
-              </span>
-            </div>
-
-            <div className="metric-card success">
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <BarChart3 size={14} /> Medicine Consultations
-              </span>
-              <div className="metric-value">{reportData.summary.medicineCount}</div>
-              <span style={{ fontSize: '0.75rem', color: 'hsl(var(--success))', fontWeight: 600 }}>
-                {reportData.summary.totalCount > 0 
-                  ? `${Math.round((reportData.summary.medicineCount / reportData.summary.totalCount) * 100)}% of total visits`
-                  : '0% of total visits'
-                }
+          {/* Section 1: Clinic-Wide Global Financial KPIs */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                <DollarSign size={22} color="hsl(var(--primary))" />
+                Clinic-Wide Financial Summary
+              </h2>
+              <span style={{ fontSize: '0.82rem', color: 'hsl(var(--text-muted))' }}>
+                All treatment packages & payments recorded in clinic system
               </span>
             </div>
 
-            <div className="metric-card warning">
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <TrendingUp size={14} /> Treatment & Dressings
-              </span>
-              <div className="metric-value">{reportData.summary.treatmentCount}</div>
-              <span style={{ fontSize: '0.75rem', color: 'hsl(var(--warning))', fontWeight: 600 }}>
-                {reportData.summary.totalCount > 0 
-                  ? `${Math.round((reportData.summary.treatmentCount / reportData.summary.totalCount) * 100)}% of total visits`
-                  : '0% of total visits'
-                }
-              </span>
-            </div>
+            <div className="metrics-grid">
+              {/* Total Package Value */}
+              <div className="metric-card primary" style={{ borderLeft: '4px solid hsl(var(--primary))' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Package size={14} /> Total Treatment Packages Value
+                </span>
+                <div className="metric-value" style={{ color: 'hsl(var(--primary))' }}>
+                  ₹{(clinicFinance?.summary?.clinicTotalTreatmentValue || 0).toLocaleString('en-IN')}
+                </div>
+                <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))' }}>
+                  Total billed across {clinicFinance?.summary?.totalBillingPatients || 0} patients
+                </span>
+              </div>
 
-            <div className="metric-card primary" style={{ borderLeft: '4px solid hsl(var(--primary))' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Users size={14} /> New Registrations
-              </span>
-              <div className="metric-value">{reportData.summary.newPatientsCount || 0}</div>
-              <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))' }}>
-                Profiles registered in selected range
-              </span>
-            </div>
-
-            {collectionsData && (
+              {/* Total Revenue Collected */}
               <div className="metric-card success" style={{ borderLeft: '4px solid hsl(var(--success))' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--success))', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CreditCard size={14} /> Total Collections (₹)
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <TrendingUp size={14} /> Total Revenue Collected
                 </span>
                 <div className="metric-value" style={{ color: 'hsl(var(--success))' }}>
-                  ₹{(collectionsData.totalCollections || 0).toLocaleString('en-IN')}
+                  ₹{(clinicFinance?.summary?.clinicTotalCollected || 0).toLocaleString('en-IN')}
                 </div>
-                <div style={{ display: 'flex', gap: '8px', fontSize: '0.75rem', marginTop: '4px', flexWrap: 'wrap' }}>
-                  <span style={{ color: '#2563eb', fontWeight: 700 }}>
-                    UPI: ₹{(collectionsData.modeBreakdown?.UPI || 0).toLocaleString('en-IN')}
-                  </span>
-                  <span style={{ color: 'hsl(var(--text-muted))' }}>•</span>
-                  <span style={{ color: 'hsl(var(--success))', fontWeight: 700 }}>
-                    Cash: ₹{(collectionsData.modeBreakdown?.Cash || 0).toLocaleString('en-IN')}
-                  </span>
-                </div>
+                <span style={{ fontSize: '0.75rem', color: 'hsl(var(--success))', fontWeight: 700 }}>
+                  {clinicFinance?.summary?.collectionRate || 0}% Overall Collection Rate
+                </span>
               </div>
-            )}
-          </div>
 
-          {/* Monthly Breakdown Table */}
-          <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Monthly Volume Breakdown</h3>
-            <div className="table-container">
-              <table className="custom-table">
-                <thead>
-                  <tr>
-                    <th>Month</th>
-                    <th>Medicine Consultations</th>
-                    <th>Treatment / Dressings</th>
-                    <th>Total Completed Visits</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reportData.monthlyBreakdown.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} style={{ textAlign: 'center', color: 'hsl(var(--text-muted))', padding: '32px 0' }}>
-                        No monthly records found for the selected range.
-                      </td>
-                    </tr>
-                  ) : (
-                    reportData.monthlyBreakdown.map((row: any, idx: number) => (
-                      <tr key={idx}>
-                        <td style={{ fontWeight: 600 }}>{row.month}</td>
-                        <td>{row.medicine}</td>
-                        <td>{row.treatment}</td>
-                        <td style={{ fontWeight: 700, color: 'hsl(var(--primary))' }}>{row.total}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+              {/* Outstanding Pending Balance */}
+              <div className="metric-card warning" style={{
+                borderLeft: '4px solid #d97706',
+                background: (clinicFinance?.summary?.clinicTotalOutstandingDue || 0) > 0 ? 'hsla(38, 92%, 50%, 0.05)' : undefined
+              }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#b45309', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Clock size={14} /> Total Outstanding Pending Dues
+                </span>
+                <div className="metric-value" style={{ color: '#d97706' }}>
+                  ₹{(clinicFinance?.summary?.clinicTotalOutstandingDue || 0).toLocaleString('en-IN')}
+                </div>
+                <span style={{ fontSize: '0.75rem', color: '#b45309', fontWeight: 700 }}>
+                  Pending installments to be collected
+                </span>
+              </div>
+
+              {/* Patients with Dues */}
+              <div className="metric-card" style={{ borderLeft: '4px solid #8b5cf6' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Users size={14} /> Patients With Pending Dues
+                </span>
+                <div className="metric-value" style={{ color: '#8b5cf6' }}>
+                  {clinicFinance?.summary?.patientsWithDuesCount || 0}
+                </div>
+                <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))' }}>
+                  out of {clinicFinance?.summary?.totalBillingPatients || 0} total billing patients
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Visited Patient Details Table */}
+          {/* Section 2: Patient-Wise Dues & Installments Register Table */}
           <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Visited Patient Details Log</h3>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  className="btn btn-secondary" 
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                  <Users size={20} color="hsl(var(--primary))" />
+                  Patient-Wise Outstanding Dues & Accounts Register
+                </h3>
+                <span style={{ fontSize: '0.82rem', color: 'hsl(var(--text-muted))', marginTop: '2px', display: 'block' }}>
+                  Patient-by-patient breakdown showing total treatment fees, amount paid to date, and pending dues with 1-click ledger access.
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-secondary"
                   onClick={() => exportToCSV(
-                    reportData.visits, 
-                    'visited_patients_report', 
-                    ['Date / Time of Visit', 'Patient ID', 'Patient Name', 'Token Number', 'Service Type', 'Payment Status', 'Status', 'Clinical Notes'],
-                    ['date', 'patientCustomId', 'patientName', 'tokenNumber', 'serviceType', 'paymentDisplay', 'status', 'notes']
+                    filteredDuesPatients,
+                    'patient_dues_ledger',
+                    ['Patient ID', 'Patient Name', 'Mobile', 'Town / City', 'Treatment Packages', 'Total Fees (INR)', 'Total Paid (INR)', 'Balance Due (INR)', 'Has Dues'],
+                    ['patientId', 'fullName', 'mobileNumber', 'town', 'courseTitles', 'totalCoursesFee', 'totalPaid', 'balanceDue', 'hasDues']
                   )}
-                  style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                  style={{ padding: '6px 14px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  Export CSV (Excel)
+                  <FileSpreadsheet size={14} /> Export CSV (Excel)
                 </button>
-                <button 
-                  className="btn btn-secondary" 
+                <button
+                  className="btn btn-secondary"
                   onClick={() => exportToPDF(
-                    'Visited Patients Operational Report', 
-                    ['Date / Time of Visit', 'Patient ID', 'Patient Name', 'Token Number', 'Service Type', 'Payment Status', 'Status', 'Clinical Notes'],
-                    reportData.visits,
-                    ['date', 'patientCustomId', 'patientName', 'tokenNumber', 'serviceType', 'paymentDisplay', 'status', 'notes']
+                    'Patient-Wise Financial & Outstanding Balance Register',
+                    ['Patient ID', 'Patient Name', 'Mobile', 'Packages', 'Total Fees (₹)', 'Paid (₹)', 'Due (₹)'],
+                    filteredDuesPatients,
+                    ['patientId', 'fullName', 'mobileNumber', 'courseTitles', 'totalCoursesFee', 'totalPaid', 'balanceDue']
                   )}
-                  style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                  style={{ padding: '6px 14px', fontSize: '0.8rem' }}
                 >
                   Export PDF
                 </button>
               </div>
             </div>
-            
+
+            {/* Filter and Live Search Controls */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+              padding: '12px 16px',
+              background: 'hsla(var(--bg-secondary) / 0.5)',
+              borderRadius: '10px',
+              border: '1px solid hsl(var(--border-color))'
+            }}>
+              {/* Search Bar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 1 280px', maxWidth: '400px', position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: '10px', color: 'hsl(var(--text-muted))' }} />
+                <input
+                  type="text"
+                  placeholder="Search by Patient Name, ID, Mobile, Town..."
+                  value={duesSearch}
+                  onChange={(e) => setDuesSearch(e.target.value)}
+                  className="form-input"
+                  style={{ paddingLeft: '34px', fontSize: '0.85rem', width: '100%' }}
+                />
+                {duesSearch && (
+                  <button
+                    onClick={() => setDuesSearch('')}
+                    style={{ position: 'absolute', right: '10px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'hsl(var(--text-muted))' }}
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Dues Status Filter Pills */}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  className={`btn ${duesFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setDuesFilter('all')}
+                  style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '8px' }}
+                >
+                  All Patients ({clinicFinance?.patients?.length || 0})
+                </button>
+                <button
+                  className={`btn ${duesFilter === 'pending' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setDuesFilter('pending')}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.8rem',
+                    borderRadius: '8px',
+                    color: duesFilter === 'pending' ? '#ffffff' : '#d97706',
+                    borderColor: duesFilter === 'pending' ? undefined : 'hsla(38, 92%, 50%, 0.4)',
+                    background: duesFilter === 'pending' ? '#d97706' : 'hsla(38, 92%, 50%, 0.08)'
+                  }}
+                >
+                  ⏳ Pending Dues Only ({clinicFinance?.summary?.patientsWithDuesCount || 0})
+                </button>
+                <button
+                  className={`btn ${duesFilter === 'cleared' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setDuesFilter('cleared')}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '0.8rem',
+                    borderRadius: '8px',
+                    color: duesFilter === 'cleared' ? '#ffffff' : 'hsl(var(--success))',
+                    borderColor: duesFilter === 'cleared' ? undefined : 'hsla(150, 55%, 32%, 0.4)',
+                    background: duesFilter === 'cleared' ? 'hsl(var(--success))' : 'hsla(150, 55%, 32%, 0.08)'
+                  }}
+                >
+                  ✓ Fully Paid ({((clinicFinance?.patients?.length || 0) - (clinicFinance?.summary?.patientsWithDuesCount || 0))})
+                </button>
+              </div>
+            </div>
+
+            {/* Patient Dues Table */}
             <div className="table-container">
               <table className="custom-table">
                 <thead>
                   <tr>
-                    <th>Date / Time of Visit</th>
                     <th>Patient ID</th>
-                    <th>Patient Name</th>
-                    <th>Token Number</th>
-                    <th>Service Type</th>
-                    <th>Payment Status</th>
-                    <th>Status</th>
-                    <th>Clinical Notes</th>
+                    <th>Patient Name & City</th>
+                    <th>Mobile</th>
+                    <th>Treatment Packages</th>
+                    <th>Total Package Fee</th>
+                    <th>Total Paid</th>
+                    <th>Outstanding Balance Due</th>
+                    <th style={{ textAlign: 'center' }}>Ledger Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {reportData.visits.length === 0 ? (
+                  {filteredDuesPatients.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ textAlign: 'center', color: 'hsl(var(--text-muted))', padding: '32px 0' }}>
-                        No patient visits recorded in this range.
+                      <td colSpan={8} style={{ textAlign: 'center', padding: '36px', color: 'hsl(var(--text-muted))' }}>
+                        No patient financial accounts match the current search / filter criteria.
                       </td>
                     </tr>
                   ) : (
-                    reportData.visits
-                      .slice((visitsPage - 1) * visitsRowsPerPage, visitsPage * visitsRowsPerPage)
-                      .map((visit: any, idx: number) => (
-                        <tr key={idx}>
-                          <td>{formatFriendlyDate(visit.date)}</td>
-                          <td style={{ fontWeight: 600, color: 'hsl(var(--primary))' }}>{visit.patientCustomId || 'Pending'}</td>
-                          <td style={{ fontWeight: 500 }}>{visit.patientName}</td>
-                          <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{visit.tokenNumber}</td>
-                          <td>
-                            <span className={`badge ${visit.serviceType === 'medicine' ? 'badge-waiting' : 'badge-pending'}`} style={{ fontSize: '0.7rem' }}>
-                              {visit.serviceType}
-                            </span>
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                              <span style={{
-                                display: 'inline-block',
-                                padding: '3px 8px',
-                                borderRadius: '6px',
-                                fontSize: '0.7rem',
-                                fontWeight: 800,
-                                background: visit.paymentStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
-                                color: visit.paymentStatus === 'Paid' ? 'hsl(var(--success))' : 'hsl(var(--danger))',
-                                border: visit.paymentStatus === 'Paid' ? '1px solid hsla(150, 55%, 32%, 0.25)' : '1px solid hsla(350, 65%, 44%, 0.25)'
-                              }}>
-                                {visit.paymentStatus === 'Paid' ? '✓ Paid' : '⏳ Unpaid'}
-                                {visit.paymentNotes ? ` (${visit.paymentNotes})` : ''}
+                    filteredDuesPatients
+                      .slice((patientDuesPage - 1) * patientDuesRowsPerPage, patientDuesPage * patientDuesRowsPerPage)
+                      .map((p: any) => {
+                        const hasDues = p.balanceDue > 0;
+                        return (
+                          <tr key={p.id} style={{ background: hasDues ? 'hsla(38, 92%, 50%, 0.02)' : undefined }}>
+                            <td>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'hsl(var(--primary))' }}>
+                                {p.patientId}
                               </span>
-                              <button
-                                onClick={() => openEditPaymentModal(visit)}
-                                title="Update Payment Status"
-                                style={{
-                                  background: 'none',
-                                  border: '1px solid hsl(var(--border-color))',
-                                  borderRadius: '4px',
-                                  padding: '2px 5px',
-                                  fontSize: '0.7rem',
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                                  color: 'hsl(var(--primary))',
-                                  display: 'flex',
+                            </td>
+                            <td>
+                              <div style={{ fontWeight: 700, color: 'hsl(var(--text-main))' }}>{p.fullName}</div>
+                              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))' }}>{p.town || 'Bengaluru'}</div>
+                            </td>
+                            <td style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                              {p.mobileNumber}
+                            </td>
+                            <td>
+                              <div style={{ fontSize: '0.82rem', maxWidth: '240px', color: 'hsl(var(--text-main))' }}>
+                                {p.courseTitles}
+                              </div>
+                            </td>
+                            <td style={{ fontWeight: 700 }}>
+                              ₹{Number(p.totalCoursesFee).toLocaleString('en-IN')}
+                            </td>
+                            <td style={{ fontWeight: 700, color: 'hsl(var(--success))' }}>
+                              ₹{Number(p.totalPaid).toLocaleString('en-IN')}
+                            </td>
+                            <td>
+                              {hasDues ? (
+                                <span style={{
+                                  display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: '2px'
+                                  gap: '4px',
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.82rem',
+                                  fontWeight: 800,
+                                  background: 'hsla(38, 92%, 50%, 0.12)',
+                                  color: '#b45309',
+                                  border: '1px solid hsla(38, 92%, 50%, 0.3)',
+                                }}>
+                                  ⏳ Due: ₹{Number(p.balanceDue).toLocaleString('en-IN')}
+                                </span>
+                              ) : (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.82rem',
+                                  fontWeight: 700,
+                                  background: 'hsla(150, 55%, 32%, 0.1)',
+                                  color: 'hsl(var(--success))',
+                                  border: '1px solid hsla(150, 55%, 32%, 0.25)',
+                                }}>
+                                  <CheckCircle2 size={13} /> Fully Paid
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={() => setSelectedLedgerPatient(p)}
+                                style={{
+                                  padding: '5px 12px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 700,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  borderRadius: '6px',
                                 }}
                               >
-                                <Edit size={11} /> Edit
+                                <CreditCard size={13} /> View / Collect
                               </button>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="badge badge-active" style={{ fontSize: '0.7rem' }}>
-                              {visit.status}
-                            </span>
-                          </td>
-                          <td style={{ fontSize: '0.85rem', color: 'hsl(var(--text-muted))', maxWidth: '220px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={visit.notes}>
-                            {visit.notes || '-'}
-                          </td>
-                        </tr>
-                      ))
+                            </td>
+                          </tr>
+                        );
+                      })
                   )}
                 </tbody>
               </table>
             </div>
 
-            {/* Visited Patients Pagination */}
-            {reportData.visits.length > 0 && (
+            {/* Patient Dues Table Pagination */}
+            {filteredDuesPatients.length > 0 && (
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -896,47 +1008,43 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                 flexWrap: 'wrap',
                 gap: '12px',
                 paddingTop: '16px',
-                borderTop: '1px solid hsl(var(--border) / 0.1)'
+                borderTop: '1px solid hsl(var(--border-color))',
+                fontSize: '0.85rem',
+                color: 'hsl(var(--text-muted))'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'hsl(var(--text-muted))' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span>Rows per page:</span>
                   <select
-                    value={visitsRowsPerPage}
+                    value={patientDuesRowsPerPage}
                     onChange={(e) => {
-                      setVisitsRowsPerPage(Number(e.target.value));
-                      setVisitsPage(1);
+                      setPatientDuesRowsPerPage(Number(e.target.value));
+                      setPatientDuesPage(1);
                     }}
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      background: 'hsl(var(--bg-primary))',
-                      border: '1px solid hsl(var(--border) / 0.3)',
-                      color: 'hsl(var(--text-primary))',
-                      outline: 'none'
-                    }}
+                    className="form-input"
+                    style={{ padding: '4px 8px', fontSize: '0.85rem', width: 'auto', cursor: 'pointer' }}
                   >
                     {[5, 10, 25, 50, 100].map(size => (
                       <option key={size} value={size}>{size}</option>
                     ))}
                   </select>
                   <span>
-                    Showing {Math.min(reportData.visits.length, (visitsPage - 1) * visitsRowsPerPage + 1)}–
-                    {Math.min(reportData.visits.length, visitsPage * visitsRowsPerPage)} of {reportData.visits.length}
+                    Showing {Math.min(filteredDuesPatients.length, (patientDuesPage - 1) * patientDuesRowsPerPage + 1)}–
+                    {Math.min(filteredDuesPatients.length, patientDuesPage * patientDuesRowsPerPage)} of {filteredDuesPatients.length} patients
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button
                     className="btn btn-secondary"
-                    disabled={visitsPage === 1}
-                    onClick={() => setVisitsPage(p => Math.max(1, p - 1))}
+                    disabled={patientDuesPage === 1}
+                    onClick={() => setPatientDuesPage(p => Math.max(1, p - 1))}
                     style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <ChevronLeft size={16} /> Prev
                   </button>
                   <button
                     className="btn btn-secondary"
-                    disabled={visitsPage >= Math.ceil(reportData.visits.length / visitsRowsPerPage)}
-                    onClick={() => setVisitsPage(p => Math.min(Math.ceil(reportData.visits.length / visitsRowsPerPage), p + 1))}
+                    disabled={patientDuesPage >= Math.ceil(filteredDuesPatients.length / patientDuesRowsPerPage)}
+                    onClick={() => setPatientDuesPage(p => Math.min(Math.ceil(filteredDuesPatients.length / patientDuesRowsPerPage), p + 1))}
                     style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     Next <ChevronRight size={16} />
@@ -946,30 +1054,40 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
             )}
           </div>
 
-          {/* Newly Registered Patients Table */}
+          {/* Section 3: Period-wise Financial Collections & Installments Register */}
           <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Newly Registered Patients Log</h3>
+            {/* Filter Date Controls */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                  <TrendingUp size={20} color="hsl(var(--success))" />
+                  Period-Wise Collections & Payment Transactions Register
+                </h3>
+                <span style={{ fontSize: '0.82rem', color: 'hsl(var(--text-muted))', marginTop: '2px', display: 'block' }}>
+                  Itemized receipts collected within selected date range ({collectionsData?.transactions?.length || 0} transactions • Total: ₹{(collectionsData?.totalCollections || 0).toLocaleString('en-IN')})
+                </span>
+              </div>
+
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button 
                   className="btn btn-secondary" 
                   onClick={() => exportToCSV(
-                    reportData.newPatients, 
-                    'new_registrations_report', 
-                    ['Registration Date / Time', 'Patient ID', 'Patient Name', 'Gender', 'Date of Birth', 'Town / Residence', 'Status'],
-                    ['createdAt', 'patientId', 'fullName', 'gender', 'dateOfBirth', 'town', 'status']
+                    collectionsData?.transactions || [], 
+                    'financial_collections_report', 
+                    ['Payment Date', 'Patient Name', 'Patient ID', 'Treatment Course', 'Amount (INR)', 'Payment Mode', 'Transaction Notes', 'Staff'],
+                    ['paidAt', 'patientName', 'patientId', 'courseTitle', 'amount', 'paymentMode', 'transactionNotes', 'recordedBy']
                   )}
                   style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                 >
-                  Export CSV (Excel)
+                  <FileSpreadsheet size={14} /> Export CSV
                 </button>
                 <button 
                   className="btn btn-secondary" 
                   onClick={() => exportToPDF(
-                    'New Patient Registrations Operational Report', 
-                    ['Registration Date / Time', 'Patient ID', 'Patient Name', 'Gender', 'Date of Birth', 'Town / Residence', 'Status'],
-                    reportData.newPatients,
-                    ['createdAt', 'patientId', 'fullName', 'gender', 'dateOfBirth', 'town', 'status']
+                    'Financial Collections & Installments Report', 
+                    ['Payment Date', 'Patient Name', 'Patient ID', 'Treatment Course', 'Amount (₹)', 'Payment Mode', 'Transaction Notes', 'Staff'],
+                    collectionsData?.transactions || [],
+                    ['paidAt', 'patientName', 'patientId', 'courseTitle', 'amount', 'paymentMode', 'transactionNotes', 'recordedBy']
                   )}
                   style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                 >
@@ -978,99 +1096,185 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
               </div>
             </div>
 
+            {/* Quick Date Presets & Datepicker */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', background: 'hsla(var(--bg-secondary) / 0.5)', padding: '12px 16px', borderRadius: '10px', border: '1px solid hsl(var(--border-color))' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  className={`btn ${activePreset === 'this-month' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => handlePresetChange('this-month')}
+                  style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                >
+                  This Month
+                </button>
+                <button
+                  className={`btn ${activePreset === 'last-30' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => handlePresetChange('last-30')}
+                  style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                >
+                  Last 30 Days
+                </button>
+                <button
+                  className={`btn ${activePreset === 'last-90' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => handlePresetChange('last-90')}
+                  style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                >
+                  Last 90 Days
+                </button>
+                <button
+                  className={`btn ${activePreset === 'custom' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => handlePresetChange('custom')}
+                  style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                >
+                  Custom
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', flexGrow: 1, flexWrap: 'wrap' }}>
+                <CustomDatePicker
+                  label="Start Date"
+                  value={startDate}
+                  onChange={(val) => { setStartDate(val); setActivePreset('custom'); }}
+                  maxDate={endDate}
+                  disabled={activePreset !== 'custom'}
+                />
+                <CustomDatePicker
+                  label="End Date"
+                  value={endDate}
+                  onChange={(val) => { setEndDate(val); setActivePreset('custom'); }}
+                  maxDate={getTodayDateString()}
+                  disabled={activePreset !== 'custom'}
+                />
+              </div>
+
+              <button
+                className="btn btn-secondary"
+                onClick={() => fetchReport(startDate, endDate)}
+                disabled={loading}
+                style={{ height: '36px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}
+              >
+                {loading ? <Loader2 className="animate-spin" size={14} /> : 'Refresh'}
+              </button>
+            </div>
+
+            {/* Transactions Table */}
             <div className="table-container">
               <table className="custom-table">
                 <thead>
                   <tr>
-                    <th>Registration Date / Time</th>
-                    <th>Patient ID</th>
+                    <th>Payment Date</th>
                     <th>Patient Name</th>
-                    <th>Gender</th>
-                    <th>Date of Birth</th>
-                    <th>Town / Residence</th>
-                    <th>Status</th>
+                    <th>Patient ID</th>
+                    <th>Treatment Package / Course</th>
+                    <th>Amount (₹)</th>
+                    <th>Payment Mode</th>
+                    <th>Reference / Notes</th>
+                    <th>Staff</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {!reportData.newPatients || reportData.newPatients.length === 0 ? (
+                  {!collectionsData?.transactions || collectionsData.transactions.length === 0 ? (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', color: 'hsl(var(--text-muted))', padding: '32px 0' }}>
-                        No new patient registrations in this range.
+                      <td colSpan={8} style={{ textAlign: 'center', padding: '32px', color: 'hsl(var(--text-muted))' }}>
+                        No financial transactions recorded in the selected date range.
                       </td>
                     </tr>
                   ) : (
-                    reportData.newPatients
-                      .slice((newPatientsPage - 1) * newPatientsRowsPerPage, newPatientsPage * newPatientsRowsPerPage)
-                      .map((patient: any, idx: number) => (
-                        <tr key={idx}>
-                          <td>{formatFriendlyDate(patient.createdAt)}</td>
-                          <td style={{ fontWeight: 600, color: 'hsl(var(--primary))' }}>{patient.patientId}</td>
-                          <td style={{ fontWeight: 500 }}>{patient.fullName}</td>
-                          <td style={{ textTransform: 'capitalize' }}>{patient.gender}</td>
-                          <td>{patient.dateOfBirth}</td>
-                          <td>{patient.town}</td>
-                          <td>
-                            <span className={`badge badge-${patient.status === 'active' ? 'served' : 'waiting'}`} style={{ fontSize: '0.7rem' }}>
-                              {patient.status === 'active' ? 'Active' : 'Pending Approval'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
+                    collectionsData.transactions
+                      .slice((collectionsPage - 1) * collectionsRowsPerPage, collectionsPage * collectionsRowsPerPage)
+                      .map((tx: any, idx: number) => {
+                        const isUPI = tx.paymentMode === 'UPI';
+                        return (
+                          <tr key={tx.id || idx}>
+                            <td style={{ fontWeight: 600 }}>
+                              {formatFriendlyDate(tx.paidAt)}
+                            </td>
+                            <td style={{ fontWeight: 700, color: 'hsl(var(--text-main))' }}>
+                              {tx.patientName}
+                            </td>
+                            <td>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'hsl(var(--primary))' }}>
+                                {tx.patientId}
+                              </span>
+                            </td>
+                            <td style={{ color: 'hsl(var(--text-main))' }}>
+                              {tx.courseTitle}
+                            </td>
+                            <td style={{ fontWeight: 800, color: 'hsl(var(--success))' }}>
+                              ₹{Number(tx.amount).toLocaleString('en-IN')}
+                            </td>
+                            <td>
+                              <span style={{
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                background: isUPI ? 'hsla(210, 80%, 50%, 0.12)' : 'hsla(150, 55%, 32%, 0.12)',
+                                color: isUPI ? '#2563eb' : 'hsl(var(--success))',
+                                border: `1px solid ${isUPI ? 'hsla(210, 80%, 50%, 0.25)' : 'hsla(150, 55%, 32%, 0.25)'}`,
+                              }}>
+                                {tx.paymentMode || 'Cash'}
+                              </span>
+                            </td>
+                            <td style={{ color: tx.transactionNotes ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))', fontStyle: tx.transactionNotes ? 'normal' : 'italic' }}>
+                              {tx.transactionNotes || '—'}
+                            </td>
+                            <td style={{ color: 'hsl(var(--text-muted))' }}>
+                              {tx.recordedBy || 'Staff'}
+                            </td>
+                          </tr>
+                        );
+                      })
                   )}
                 </tbody>
               </table>
             </div>
 
-            {/* Newly Registered Patients Pagination */}
-            {reportData.newPatients && reportData.newPatients.length > 0 && (
+            {/* Collections Pagination Controls */}
+            {collectionsData?.transactions && collectionsData.transactions.length > 0 && (
               <div style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '12px',
                 paddingTop: '16px',
-                borderTop: '1px solid hsl(var(--border) / 0.1)'
+                borderTop: '1px solid hsl(var(--border-color))',
+                fontSize: '0.85rem',
+                color: 'hsl(var(--text-muted))',
+                flexWrap: 'wrap',
+                gap: '12px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'hsl(var(--text-muted))' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span>Rows per page:</span>
                   <select
-                    value={newPatientsRowsPerPage}
+                    value={collectionsRowsPerPage}
                     onChange={(e) => {
-                      setNewPatientsRowsPerPage(Number(e.target.value));
-                      setNewPatientsPage(1);
+                      setCollectionsRowsPerPage(Number(e.target.value));
+                      setCollectionsPage(1);
                     }}
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      background: 'hsl(var(--bg-primary))',
-                      border: '1px solid hsl(var(--border) / 0.3)',
-                      color: 'hsl(var(--text-primary))',
-                      outline: 'none'
-                    }}
+                    className="form-input"
+                    style={{ padding: '4px 8px', fontSize: '0.85rem', width: 'auto', cursor: 'pointer' }}
                   >
                     {[5, 10, 25, 50, 100].map(size => (
                       <option key={size} value={size}>{size}</option>
                     ))}
                   </select>
                   <span>
-                    Showing {Math.min(reportData.newPatients.length, (newPatientsPage - 1) * newPatientsRowsPerPage + 1)}–
-                    {Math.min(reportData.newPatients.length, newPatientsPage * newPatientsRowsPerPage)} of {reportData.newPatients.length}
+                    Showing {Math.min(collectionsData.transactions.length, (collectionsPage - 1) * collectionsRowsPerPage + 1)}–
+                    {Math.min(collectionsData.transactions.length, collectionsPage * collectionsRowsPerPage)} of {collectionsData.transactions.length}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <button
                     className="btn btn-secondary"
-                    disabled={newPatientsPage === 1}
-                    onClick={() => setNewPatientsPage(p => Math.max(1, p - 1))}
+                    disabled={collectionsPage === 1}
+                    onClick={() => setCollectionsPage(p => Math.max(1, p - 1))}
                     style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <ChevronLeft size={16} /> Prev
                   </button>
                   <button
                     className="btn btn-secondary"
-                    disabled={newPatientsPage >= Math.ceil(reportData.newPatients.length / newPatientsRowsPerPage)}
-                    onClick={() => setNewPatientsPage(p => Math.min(Math.ceil(reportData.newPatients.length / newPatientsRowsPerPage), p + 1))}
+                    disabled={collectionsPage >= Math.ceil(collectionsData.transactions.length / collectionsRowsPerPage)}
+                    onClick={() => setCollectionsPage(p => Math.min(Math.ceil(collectionsData.transactions.length / collectionsRowsPerPage), p + 1))}
                     style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     Next <ChevronRight size={16} />
@@ -1079,182 +1283,530 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
               </div>
             )}
           </div>
+        </div>
+      )}
 
-          {/* Financial & Collections Ledger Table */}
-          {collectionsData && (
-            <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                <div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <CreditCard size={20} color="hsl(var(--primary))" />
-                    Financial Collections & Treatment Installments Ledger
-                  </h3>
-                  <span style={{ fontSize: '0.8rem', color: 'hsl(var(--text-muted))' }}>
-                    All treatment package installments, advance fees, and payments collected in selected period ({collectionsData.transactions?.length || 0} transactions • Total: ₹{(collectionsData.totalCollections || 0).toLocaleString('en-IN')})
+      {/* ========================================================================= */}
+      {/* TAB 2: OPERATIONAL VISITS, DISTRIBUTION & REGISTRATIONS LOG               */}
+      {/* ========================================================================= */}
+      {activeReportTab === 'operations' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          {/* Filter Controls Panel */}
+          <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Calendar size={16} /> Filter Operations by Date Range
+            </h3>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-end' }}>
+              {/* Preset Buttons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'hsl(var(--text-muted))' }}>Quick Presets</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    className={`btn ${activePreset === 'this-month' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => handlePresetChange('this-month')}
+                    style={{ padding: '8px 16px', fontSize: '0.875rem' }}
+                  >
+                    This Month
+                  </button>
+                  <button
+                    className={`btn ${activePreset === 'last-30' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => handlePresetChange('last-30')}
+                    style={{ padding: '8px 16px', fontSize: '0.875rem' }}
+                  >
+                    Last 30 Days
+                  </button>
+                  <button
+                    className={`btn ${activePreset === 'last-90' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => handlePresetChange('last-90')}
+                    style={{ padding: '8px 16px', fontSize: '0.875rem' }}
+                  >
+                    Last 90 Days
+                  </button>
+                  <button
+                    className={`btn ${activePreset === 'custom' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => handlePresetChange('custom')}
+                    style={{ padding: '8px 16px', fontSize: '0.875rem' }}
+                  >
+                    Custom Range
+                  </button>
+                </div>
+              </div>
+
+              {/* Date Picker Form */}
+              <div style={{ display: 'flex', gap: '16px', flexGrow: 1, flexWrap: 'wrap' }}>
+                <CustomDatePicker
+                  label="Start Date"
+                  value={startDate}
+                  onChange={(val) => {
+                    setStartDate(val);
+                    setActivePreset('custom');
+                  }}
+                  maxDate={endDate}
+                  disabled={activePreset !== 'custom'}
+                />
+                <CustomDatePicker
+                  label="End Date"
+                  value={endDate}
+                  onChange={(val) => {
+                    setEndDate(val);
+                    setActivePreset('custom');
+                  }}
+                  maxDate={getTodayDateString()}
+                  disabled={activePreset !== 'custom'}
+                />
+              </div>
+
+              {/* Manual Refresh Button */}
+              <button
+                className="btn btn-secondary"
+                onClick={() => fetchReport(startDate, endDate)}
+                disabled={loading}
+                style={{ height: '40px', display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                {loading ? <Loader2 className="animate-spin" size={16} /> : 'Refresh'}
+              </button>
+            </div>
+          </div>
+
+          {/* Operational Summary Cards */}
+          {reportData && !loading && (
+            <>
+              <div className="metrics-grid">
+                <div className="metric-card primary">
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Users size={14} /> Total Visited Patients
+                  </span>
+                  <div className="metric-value">{reportData.summary.totalCount}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))' }}>
+                    Completed sessions in selected range
                   </span>
                 </div>
-                
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button 
-                    className="btn btn-secondary" 
-                    onClick={() => exportToCSV(
-                      collectionsData.transactions || [], 
-                      'financial_collections_report', 
-                      ['Payment Date', 'Patient Name', 'Patient ID', 'Treatment Course', 'Amount (INR)', 'Payment Mode', 'Transaction Notes', 'Staff'],
-                      ['paidAt', 'patientName', 'patientId', 'courseTitle', 'amount', 'paymentMode', 'transactionNotes', 'recordedBy']
-                    )}
-                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                  >
-                    Export CSV (Excel)
-                  </button>
-                  <button 
-                    className="btn btn-secondary" 
-                    onClick={() => exportToPDF(
-                      'Financial Collections & Installments Report', 
-                      ['Payment Date', 'Patient Name', 'Patient ID', 'Treatment Course', 'Amount (₹)', 'Payment Mode', 'Transaction Notes', 'Staff'],
-                      collectionsData.transactions || [],
-                      ['paidAt', 'patientName', 'patientId', 'courseTitle', 'amount', 'paymentMode', 'transactionNotes', 'recordedBy']
-                    )}
-                    style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                  >
-                    Export PDF
-                  </button>
+
+                <div className="metric-card success">
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <BarChart3 size={14} /> Medicine Consultations
+                  </span>
+                  <div className="metric-value">{reportData.summary.medicineCount}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'hsl(var(--success))', fontWeight: 600 }}>
+                    {reportData.summary.totalCount > 0 
+                      ? `${Math.round((reportData.summary.medicineCount / reportData.summary.totalCount) * 100)}% of total visits`
+                      : '0% of total visits'
+                    }
+                  </span>
+                </div>
+
+                <div className="metric-card warning">
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <TrendingUp size={14} /> Treatment & Dressings
+                  </span>
+                  <div className="metric-value">{reportData.summary.treatmentCount}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'hsl(var(--warning))', fontWeight: 600 }}>
+                    {reportData.summary.totalCount > 0 
+                      ? `${Math.round((reportData.summary.treatmentCount / reportData.summary.totalCount) * 100)}% of total visits`
+                      : '0% of total visits'
+                    }
+                  </span>
+                </div>
+
+                <div className="metric-card">
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'hsl(var(--text-muted))', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Users size={14} /> Newly Registered Patients
+                  </span>
+                  <div className="metric-value">{reportData.summary.newPatientsCount}</div>
+                  <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))' }}>
+                    New patient registrations
+                  </span>
                 </div>
               </div>
 
-              <div className="table-container">
-                <table className="custom-table">
-                  <thead>
-                    <tr>
-                      <th>Payment Date</th>
-                      <th>Patient Name</th>
-                      <th>Patient ID</th>
-                      <th>Treatment Package / Course</th>
-                      <th>Amount (₹)</th>
-                      <th>Payment Mode</th>
-                      <th>Reference / Notes</th>
-                      <th>Staff</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {!collectionsData.transactions || collectionsData.transactions.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} style={{ textAlign: 'center', padding: '32px', color: 'hsl(var(--text-muted))' }}>
-                          No financial transactions recorded in the selected date range.
-                        </td>
-                      </tr>
-                    ) : (
-                      collectionsData.transactions
-                        .slice((collectionsPage - 1) * collectionsRowsPerPage, collectionsPage * collectionsRowsPerPage)
-                        .map((tx: any, idx: number) => {
-                          const isUPI = tx.paymentMode === 'UPI';
-                          return (
-                            <tr key={tx.id || idx}>
-                              <td style={{ fontWeight: 600 }}>
-                                {formatFriendlyDate(tx.paidAt)}
-                              </td>
-                              <td style={{ fontWeight: 700, color: 'hsl(var(--text-main))' }}>
-                                {tx.patientName}
-                              </td>
-                              <td>
-                                <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'hsl(var(--primary))' }}>
-                                  {tx.patientId}
-                                </span>
-                              </td>
-                              <td style={{ color: 'hsl(var(--text-main))' }}>
-                                {tx.courseTitle}
-                              </td>
-                              <td style={{ fontWeight: 800, color: 'hsl(var(--success))' }}>
-                                ₹{Number(tx.amount).toLocaleString('en-IN')}
-                              </td>
-                              <td>
-                                <span style={{
-                                  padding: '3px 8px',
-                                  borderRadius: '6px',
-                                  fontSize: '0.75rem',
-                                  fontWeight: 700,
-                                  background: isUPI ? 'hsla(210, 80%, 50%, 0.12)' : 'hsla(150, 55%, 32%, 0.12)',
-                                  color: isUPI ? '#2563eb' : 'hsl(var(--success))',
-                                  border: `1px solid ${isUPI ? 'hsla(210, 80%, 50%, 0.25)' : 'hsla(150, 55%, 32%, 0.25)'}`,
-                                }}>
-                                  {tx.paymentMode || 'Cash'}
-                                </span>
-                              </td>
-                              <td style={{ color: tx.transactionNotes ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))', fontStyle: tx.transactionNotes ? 'normal' : 'italic' }}>
-                                {tx.transactionNotes || '—'}
-                              </td>
-                              <td style={{ color: 'hsl(var(--text-muted))' }}>
-                                {tx.recordedBy || 'Staff'}
-                              </td>
-                            </tr>
-                          );
-                        })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Collections Pagination Controls */}
-              {collectionsData.transactions && collectionsData.transactions.length > 0 && (
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  paddingTop: '16px',
-                  borderTop: '1px solid hsl(var(--border-color))',
-                  fontSize: '0.85rem',
-                  color: 'hsl(var(--text-muted))',
-                  flexWrap: 'wrap',
-                  gap: '12px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>Rows per page:</span>
-                    <select
-                      value={collectionsRowsPerPage}
-                      onChange={(e) => {
-                        setCollectionsRowsPerPage(Number(e.target.value));
-                        setCollectionsPage(1);
-                      }}
-                      className="form-input"
-                      style={{
-                        padding: '4px 8px',
-                        fontSize: '0.85rem',
-                        width: 'auto',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {[5, 10, 25, 50, 100].map(size => (
-                        <option key={size} value={size}>{size}</option>
-                      ))}
-                    </select>
-                    <span>
-                      Showing {Math.min(collectionsData.transactions.length, (collectionsPage - 1) * collectionsRowsPerPage + 1)}–
-                      {Math.min(collectionsData.transactions.length, collectionsPage * collectionsRowsPerPage)} of {collectionsData.transactions.length}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button
-                      className="btn btn-secondary"
-                      disabled={collectionsPage === 1}
-                      onClick={() => setCollectionsPage(p => Math.max(1, p - 1))}
-                      style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      <ChevronLeft size={16} /> Prev
-                    </button>
-                    <button
-                      className="btn btn-secondary"
-                      disabled={collectionsPage >= Math.ceil(collectionsData.transactions.length / collectionsRowsPerPage)}
-                      onClick={() => setCollectionsPage(p => Math.min(Math.ceil(collectionsData.transactions.length / collectionsRowsPerPage), p + 1))}
-                      style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                      Next <ChevronRight size={16} />
-                    </button>
+              {/* Monthly Breakdown Table */}
+              {reportData.monthlyBreakdown && reportData.monthlyBreakdown.length > 0 && (
+                <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <BarChart3 size={20} color="hsl(var(--primary))" />
+                    Monthly Volume Breakdown
+                  </h3>
+                  <div className="table-container">
+                    <table className="custom-table">
+                      <thead>
+                        <tr>
+                          <th>Month</th>
+                          <th>Total Visits</th>
+                          <th>Medicine Visits</th>
+                          <th>Treatment Visits</th>
+                          <th>New Registrations</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reportData.monthlyBreakdown.map((m: any) => (
+                          <tr key={m.month}>
+                            <td style={{ fontWeight: 600 }}>{m.monthName}</td>
+                            <td style={{ fontWeight: 700 }}>{m.total}</td>
+                            <td>{m.medicine}</td>
+                            <td>{m.treatment}</td>
+                            <td>{m.newPatients}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
-            </div>
-          )}
 
+              {/* Visited Patient Details Table */}
+              <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Users size={20} color="hsl(var(--primary))" />
+                      Visited Patient Details Log
+                    </h3>
+                    <span style={{ fontSize: '0.8rem', color: 'hsl(var(--text-muted))' }}>
+                      Showing individual records for completed visits ({reportData.visits?.length || 0} records)
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={() => exportToCSV(
+                        reportData.visits || [], 
+                        'visited_patients_report', 
+                        ['Date', 'Token Number', 'Service Type', 'Patient ID', 'Patient Name', 'Phone', 'Payment Status', 'Payment Notes', 'Staff Notes'],
+                        ['date', 'tokenNumber', 'serviceType', 'patientId', 'patientName', 'patientPhone', 'paymentStatus', 'paymentNotes', 'servingNotes']
+                      )}
+                      style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                    >
+                      Export CSV (Excel)
+                    </button>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={() => exportToPDF(
+                        'Visited Patients Log', 
+                        ['Date', 'Token', 'Type', 'Patient ID', 'Patient Name', 'Phone', 'Payment Status', 'Payment Notes'],
+                        reportData.visits || [],
+                        ['date', 'tokenNumber', 'serviceType', 'patientId', 'patientName', 'patientPhone', 'paymentStatus', 'paymentNotes']
+                      )}
+                      style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                    >
+                      Export PDF
+                    </button>
+                  </div>
+                </div>
+
+                <div className="table-container">
+                  <table className="custom-table">
+                    <thead>
+                      <tr>
+                        <th>Date & Time</th>
+                        <th>Token</th>
+                        <th>Service Type</th>
+                        <th>Patient ID</th>
+                        <th>Patient Name</th>
+                        <th>Contact</th>
+                        <th>Payment Status</th>
+                        <th>Payment Notes</th>
+                        <th>Clinical Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!reportData.visits || reportData.visits.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} style={{ textAlign: 'center', padding: '32px', color: 'hsl(var(--text-muted))' }}>
+                            No patient visits found for the selected date range.
+                          </td>
+                        </tr>
+                      ) : (
+                        reportData.visits
+                          .slice((visitsPage - 1) * visitsRowsPerPage, visitsPage * visitsRowsPerPage)
+                          .map((visit: any, idx: number) => {
+                            const isMedicine = visit.serviceType === 'medicine';
+                            const isPaid = visit.paymentStatus === 'Paid';
+                            return (
+                              <tr key={visit.id || idx}>
+                                <td style={{ fontWeight: 500 }}>
+                                  {formatFriendlyDate(visit.date)}
+                                </td>
+                                <td>
+                                  <span style={{ 
+                                    padding: '4px 8px', 
+                                    borderRadius: '6px', 
+                                    fontSize: '0.75rem', 
+                                    fontWeight: 700,
+                                    background: isMedicine ? 'hsla(var(--primary) / 0.1)' : 'hsla(var(--warning) / 0.1)',
+                                    color: isMedicine ? 'hsl(var(--primary))' : 'hsl(var(--warning))',
+                                    border: `1px solid ${isMedicine ? 'hsla(var(--primary) / 0.2)' : 'hsla(var(--warning) / 0.2)'}`
+                                  }}>
+                                    {visit.tokenNumber}
+                                  </span>
+                                </td>
+                                <td style={{ textTransform: 'capitalize' }}>
+                                  {visit.serviceType}
+                                </td>
+                                <td>
+                                  <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'hsl(var(--primary))' }}>
+                                    {visit.patientId || '-'}
+                                  </span>
+                                </td>
+                                <td style={{ fontWeight: 600, color: 'hsl(var(--text-main))' }}>
+                                  {visit.patientName}
+                                </td>
+                                <td style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem' }}>
+                                  {visit.patientPhone || '-'}
+                                </td>
+                                <td>
+                                  <button
+                                    onClick={() => openEditPaymentModal(visit)}
+                                    style={{
+                                      border: 'none',
+                                      background: 'transparent',
+                                      cursor: 'pointer',
+                                      padding: 0,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                    title="Click to change payment status"
+                                  >
+                                    <span style={{
+                                      padding: '3px 8px',
+                                      borderRadius: '6px',
+                                      fontSize: '0.75rem',
+                                      fontWeight: 700,
+                                      background: isPaid ? 'hsla(150, 55%, 32%, 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
+                                      color: isPaid ? '#15803d' : '#b91c1c',
+                                      border: `1px solid ${isPaid ? 'hsla(150, 55%, 32%, 0.25)' : 'hsla(350, 65%, 44%, 0.25)'}`,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}>
+                                      {isPaid ? '✓ Paid' : '⏳ Unpaid'}
+                                      <Edit size={11} style={{ opacity: 0.6 }} />
+                                    </span>
+                                  </button>
+                                </td>
+                                <td style={{ color: visit.paymentNotes ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))', fontStyle: visit.paymentNotes ? 'normal' : 'italic' }}>
+                                  {visit.paymentNotes || '—'}
+                                </td>
+                                <td style={{ color: visit.servingNotes ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))', fontStyle: visit.servingNotes ? 'normal' : 'italic' }}>
+                                  {visit.servingNotes || '—'}
+                                </td>
+                              </tr>
+                            );
+                          })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Visited Pagination Controls */}
+                {reportData.visits && reportData.visits.length > 0 && (
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingTop: '16px',
+                    borderTop: '1px solid hsl(var(--border-color))',
+                    fontSize: '0.85rem',
+                    color: 'hsl(var(--text-muted))',
+                    flexWrap: 'wrap',
+                    gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>Rows per page:</span>
+                      <select
+                        value={visitsRowsPerPage}
+                        onChange={(e) => {
+                          setVisitsRowsPerPage(Number(e.target.value));
+                          setVisitsPage(1);
+                        }}
+                        className="form-input"
+                        style={{ padding: '4px 8px', fontSize: '0.85rem', width: 'auto', cursor: 'pointer' }}
+                      >
+                        {[5, 10, 25, 50, 100].map(size => (
+                          <option key={size} value={size}>{size}</option>
+                        ))}
+                      </select>
+                      <span>
+                        Showing {Math.min(reportData.visits.length, (visitsPage - 1) * visitsRowsPerPage + 1)}–
+                        {Math.min(reportData.visits.length, visitsPage * visitsRowsPerPage)} of {reportData.visits.length}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        className="btn btn-secondary"
+                        disabled={visitsPage === 1}
+                        onClick={() => setVisitsPage(p => Math.max(1, p - 1))}
+                        style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <ChevronLeft size={16} /> Prev
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        disabled={visitsPage >= Math.ceil(reportData.visits.length / visitsRowsPerPage)}
+                        onClick={() => setVisitsPage(p => Math.min(Math.ceil(reportData.visits.length / visitsRowsPerPage), p + 1))}
+                        style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        Next <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Newly Registered Patients Table */}
+              <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Users size={20} color="hsl(var(--primary))" />
+                      Newly Registered Patients Log
+                    </h3>
+                    <span style={{ fontSize: '0.8rem', color: 'hsl(var(--text-muted))' }}>
+                      Patients registered for the first time in selected date range ({reportData.newPatients?.length || 0} records)
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={() => exportToCSV(
+                        reportData.newPatients || [], 
+                        'newly_registered_patients_report', 
+                        ['Registration Date', 'Patient ID', 'Full Name', 'Phone', 'Age', 'Gender', 'Town / City'],
+                        ['createdAt', 'patientId', 'fullName', 'mobileNumber', 'age', 'gender', 'town']
+                      )}
+                      style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                    >
+                      Export CSV (Excel)
+                    </button>
+                    <button 
+                      className="btn btn-secondary" 
+                      onClick={() => exportToPDF(
+                        'Newly Registered Patients Report', 
+                        ['Registration Date', 'Patient ID', 'Full Name', 'Phone', 'Age', 'Gender', 'Town'],
+                        reportData.newPatients || [],
+                        ['createdAt', 'patientId', 'fullName', 'mobileNumber', 'age', 'gender', 'town']
+                      )}
+                      style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                    >
+                      Export PDF
+                    </button>
+                  </div>
+                </div>
+
+                <div className="table-container">
+                  <table className="custom-table">
+                    <thead>
+                      <tr>
+                        <th>Registration Date</th>
+                        <th>Patient ID</th>
+                        <th>Patient Name</th>
+                        <th>Phone</th>
+                        <th>Age / Gender</th>
+                        <th>Town / City</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!reportData.newPatients || reportData.newPatients.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: 'hsl(var(--text-muted))' }}>
+                            No new patient registrations in the selected date range.
+                          </td>
+                        </tr>
+                      ) : (
+                        reportData.newPatients
+                          .slice((newPatientsPage - 1) * newPatientsRowsPerPage, newPatientsPage * newPatientsRowsPerPage)
+                          .map((p: any, idx: number) => (
+                            <tr key={p.id || idx}>
+                              <td style={{ fontWeight: 500 }}>
+                                {formatFriendlyDate(p.createdAt)}
+                              </td>
+                              <td>
+                                <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'hsl(var(--primary))' }}>
+                                  {p.patientId}
+                                </span>
+                              </td>
+                              <td style={{ fontWeight: 600, color: 'hsl(var(--text-main))' }}>
+                                {p.fullName}
+                              </td>
+                              <td style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem' }}>
+                                {p.mobileNumber || '-'}
+                              </td>
+                              <td>
+                                {p.age ? `${p.age} yrs` : '-'} / {p.gender || '-'}
+                              </td>
+                              <td>
+                                {p.town || '-'}
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Newly Registered Patients Pagination */}
+                {reportData.newPatients && reportData.newPatients.length > 0 && (
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                    paddingTop: '16px',
+                    borderTop: '1px solid hsl(var(--border) / 0.1)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'hsl(var(--text-muted))' }}>
+                      <span>Rows per page:</span>
+                      <select
+                        value={newPatientsRowsPerPage}
+                        onChange={(e) => {
+                          setNewPatientsRowsPerPage(Number(e.target.value));
+                          setNewPatientsPage(1);
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          background: 'hsl(var(--bg-primary))',
+                          border: '1px solid hsl(var(--border) / 0.3)',
+                          color: 'hsl(var(--text-primary))',
+                          outline: 'none'
+                        }}
+                      >
+                        {[5, 10, 25, 50, 100].map(size => (
+                          <option key={size} value={size}>{size}</option>
+                        ))}
+                      </select>
+                      <span>
+                        Showing {Math.min(reportData.newPatients.length, (newPatientsPage - 1) * newPatientsRowsPerPage + 1)}–
+                        {Math.min(reportData.newPatients.length, newPatientsPage * newPatientsRowsPerPage)} of {reportData.newPatients.length}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        className="btn btn-secondary"
+                        disabled={newPatientsPage === 1}
+                        onClick={() => setNewPatientsPage(p => Math.max(1, p - 1))}
+                        style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <ChevronLeft size={16} /> Prev
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        disabled={newPatientsPage >= Math.ceil(reportData.newPatients.length / newPatientsRowsPerPage)}
+                        onClick={() => setNewPatientsPage(p => Math.min(Math.ceil(reportData.newPatients.length / newPatientsRowsPerPage), p + 1))}
+                        style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        Next <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -1262,7 +1814,7 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
       {loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', opacity: 0.6 }}>
           <div className="metrics-grid">
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="metric-card" style={{ height: '120px', justifyContent: 'center', alignItems: 'center' }}>
                 <Loader2 className="animate-spin" style={{ color: 'hsl(var(--text-muted))' }} size={24} />
               </div>
@@ -1383,6 +1935,45 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                 {savingPayment ? 'Saving...' : 'Save Payment Status'}
               </button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Interactive Patient Treatment & Billing Ledger Modal */}
+      {selectedLedgerPatient && createPortal(
+        <div
+          className="modal-overlay"
+          onClick={() => setSelectedLedgerPatient(null)}
+          style={{ zIndex: 9999 }}
+        >
+          <div
+            className="modal-content animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '780px', width: '92vw', padding: '24px' }}
+          >
+            <div className="modal-header" style={{ marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, fontSize: '1.25rem' }}>
+                  <CreditCard size={22} color="hsl(var(--primary))" />
+                  {selectedLedgerPatient.fullName} — Treatment & Billing Ledger
+                </h3>
+                <span style={{ fontSize: '0.82rem', color: 'hsl(var(--text-muted))' }}>
+                  Patient ID: <strong style={{ fontFamily: 'monospace', color: 'hsl(var(--primary))' }}>{selectedLedgerPatient.patientId}</strong> • Mobile: {selectedLedgerPatient.mobileNumber}
+                </span>
+              </div>
+              <button className="close-btn" onClick={() => setSelectedLedgerPatient(null)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <TreatmentLedgerView
+              patientId={selectedLedgerPatient.id}
+              token={token}
+              patientName={selectedLedgerPatient.fullName}
+              patientCode={selectedLedgerPatient.patientId}
+              onUpdate={() => fetchReport(startDate, endDate)}
+            />
           </div>
         </div>,
         document.body

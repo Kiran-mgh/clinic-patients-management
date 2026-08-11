@@ -65,11 +65,18 @@ export class BillingController {
 
   @Get('reports/collections')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'doctor')
+  @Roles('admin', 'doctor', 'staff')
   async getCollectionsReport(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
     return this.billingService.getCollectionsReport(startDate, endDate);
+  }
+
+  @Get('reports/clinic-summary')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'doctor', 'staff')
+  async getClinicFinancialSummary() {
+    return this.billingService.getClinicFinancialSummary();
   }
 }

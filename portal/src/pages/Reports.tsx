@@ -1674,8 +1674,8 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                       onClick={() => exportToCSV(
                         reportData.newPatients || [], 
                         'newly_registered_patients_report', 
-                        ['Registration Date', 'Patient ID', 'Full Name', 'Phone', 'Age', 'Gender', 'Town / City'],
-                        ['createdAt', 'patientId', 'fullName', 'mobileNumber', 'age', 'gender', 'town']
+                        ['Registration Date / Time', 'Patient ID', 'Full Name', 'Phone Number', 'Gender', 'Date of Birth', 'Town / Residence', 'Status'],
+                        ['createdAt', 'patientId', 'fullName', 'mobileNumber', 'gender', 'dateOfBirth', 'town', 'status']
                       )}
                       style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                     >
@@ -1685,9 +1685,9 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                       className="btn btn-secondary" 
                       onClick={() => exportToPDF(
                         'Newly Registered Patients Report', 
-                        ['Registration Date', 'Patient ID', 'Full Name', 'Phone', 'Age', 'Gender', 'Town'],
+                        ['Registration Date / Time', 'Patient ID', 'Full Name', 'Phone', 'Gender', 'Date of Birth', 'Town / Residence', 'Status'],
                         reportData.newPatients || [],
-                        ['createdAt', 'patientId', 'fullName', 'mobileNumber', 'age', 'gender', 'town']
+                        ['createdAt', 'patientId', 'fullName', 'mobileNumber', 'gender', 'dateOfBirth', 'town', 'status']
                       )}
                       style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                     >
@@ -1700,18 +1700,20 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                   <table className="custom-table">
                     <thead>
                       <tr>
-                        <th>Registration Date</th>
+                        <th>Registration Date / Time</th>
                         <th>Patient ID</th>
                         <th>Patient Name</th>
-                        <th>Phone</th>
-                        <th>Age / Gender</th>
-                        <th>Town / City</th>
+                        <th>Phone Number</th>
+                        <th>Gender</th>
+                        <th>Date of Birth</th>
+                        <th>Town / Residence</th>
+                        <th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {!reportData.newPatients || reportData.newPatients.length === 0 ? (
                         <tr>
-                          <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: 'hsl(var(--text-muted))' }}>
+                          <td colSpan={8} style={{ textAlign: 'center', padding: '32px', color: 'hsl(var(--text-muted))' }}>
                             No new patient registrations in the selected date range.
                           </td>
                         </tr>
@@ -1724,21 +1726,39 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                                 {formatFriendlyDate(p.createdAt)}
                               </td>
                               <td>
-                                <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'hsl(var(--primary))' }}>
+                                <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'hsl(var(--primary))' }}>
                                   {p.patientId}
                                 </span>
                               </td>
                               <td style={{ fontWeight: 600, color: 'hsl(var(--text-main))' }}>
                                 {p.fullName}
                               </td>
-                              <td style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem' }}>
-                                {p.mobileNumber || '-'}
+                              <td style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: 'hsl(var(--text-main))' }}>
+                                {p.mobileNumber || '—'}
+                              </td>
+                              <td style={{ textTransform: 'capitalize' }}>
+                                {p.gender || '—'}
                               </td>
                               <td>
-                                {p.age ? `${p.age} yrs` : '-'} / {p.gender || '-'}
+                                {p.dateOfBirth || '—'}
                               </td>
                               <td>
-                                {p.town || '-'}
+                                {p.town || '—'}
+                              </td>
+                              <td>
+                                <span style={{
+                                  display: 'inline-block',
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  textTransform: 'uppercase',
+                                  background: p.status === 'active' ? 'hsla(150, 55%, 32%, 0.12)' : 'hsla(38, 92%, 50%, 0.12)',
+                                  color: p.status === 'active' ? 'hsl(var(--success))' : '#b45309',
+                                  border: `1px solid ${p.status === 'active' ? 'hsla(150, 55%, 32%, 0.25)' : 'hsla(38, 92%, 50%, 0.25)'}`,
+                                }}>
+                                  {p.status === 'active' ? 'ACTIVE' : (p.status || 'PENDING')}
+                                </span>
                               </td>
                             </tr>
                           ))

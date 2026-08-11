@@ -243,7 +243,7 @@ export class QueueService {
         generatedAt: Between(start, end),
         status: 'served',
       },
-      relations: ['patient'],
+      relations: ['patient', 'patient.user'],
       order: { generatedAt: 'DESC' },
     });
 
@@ -251,6 +251,7 @@ export class QueueService {
       where: {
         createdAt: Between(start, end),
       },
+      relations: ['user'],
       order: { createdAt: 'DESC' },
     });
 
@@ -300,7 +301,9 @@ export class QueueService {
         patientId: t.patient?.id || '',
         patientName: t.patient?.fullName || '',
         patientCustomId: t.patient?.patientId || '',
+        patientPhone: t.patient?.user?.mobileNumber || '',
         notes: t.notes || '',
+        servingNotes: t.notes || '',
         paymentStatus: t.paymentStatus || 'Unpaid',
         paymentNotes: t.paymentNotes || '',
         paymentDisplay: (t.paymentStatus || 'Unpaid') + (t.paymentNotes ? ` (${t.paymentNotes})` : ''),
@@ -309,6 +312,7 @@ export class QueueService {
         id: p.id,
         patientId: p.patientId || 'Pending Approval',
         fullName: p.fullName,
+        mobileNumber: p.user?.mobileNumber || '',
         gender: p.gender,
         dateOfBirth: p.dateOfBirth,
         town: p.town,

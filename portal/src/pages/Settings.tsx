@@ -9,7 +9,6 @@ import {
   Palmtree, 
   Megaphone, 
   AlertTriangle, 
-  Sparkles, 
   Trash2, 
   Send,
   Eye,
@@ -325,13 +324,6 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
     await handleSaveAnnouncement(false);
   };
 
-  const applyPreset = (type: string, title: string, message: string, autoPause: boolean) => {
-    setAnnouncementType(type);
-    setAnnouncementTitle(title);
-    setAnnouncementMessage(message);
-    setAnnouncementAutoPause(autoPause);
-  };
-
   useEffect(() => {
     fetchTokenSettings(true);
     fetchAnnouncement();
@@ -481,87 +473,6 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
             {announcementMsg}
           </div>
         )}
-
-        {/* Quick Presets */}
-        <div style={{
-          marginBottom: '24px',
-          padding: '14px 18px',
-          borderRadius: '12px',
-          background: 'hsla(var(--primary) / 0.04)',
-          border: '1px solid hsla(var(--primary) / 0.12)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          flexWrap: 'wrap'
-        }}>
-          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Sparkles size={16} /> Quick Presets:
-          </span>
-          <button
-            type="button"
-            onClick={() => applyPreset('vacation', 'Dr. Amar on Leave', 'Dr. Amar will be out of station. Consultations will resume on Monday.', true)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              border: '1px solid #fde68a',
-              background: '#fef3c7',
-              color: '#92400e',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            🏖️ Doctor Vacation
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset('holiday', 'Clinic Holiday Notice', 'The clinic will remain closed on account of public holiday. Emergency inquiries can contact clinic helpline.', true)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              border: '1px solid #bfdbfe',
-              background: '#dbeafe',
-              color: '#1e40af',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            🎉 Clinic Holiday
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset('emergency', 'Schedule Adjustment', 'Please note that consultation hours have been adjusted for today due to unforeseen circumstances.', false)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              border: '1px solid #fed7aa',
-              background: '#ffedd5',
-              color: '#9a3412',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            ⚠️ Schedule Adjustment
-          </button>
-          <button
-            type="button"
-            onClick={() => applyPreset('general', 'Clinic Announcement', 'Warm greetings from Amar Ayurveda Clinic. Please review our upcoming health camp schedules.', false)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              border: '1px solid #bbf7d0',
-              background: '#dcfce7',
-              color: '#166534',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            📢 General Update
-          </button>
-        </div>
 
         {/* Form Content Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>

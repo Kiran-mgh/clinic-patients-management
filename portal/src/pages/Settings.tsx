@@ -540,6 +540,9 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
 };
 
 export const Settings: React.FC<SettingsProps> = ({ token }) => {
+  // Tab Switcher State: Notices vs Token Rules
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'notices' | 'tokens'>('notices');
+
   // Token Timings State
   const [startTime, setStartTime] = useState('07:00');
   const [endTime, setEndTime] = useState('15:30');
@@ -789,7 +792,84 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
         </div>
       </div>
 
-      {/* 🏥 Doctor Availability & Patient Notices Center */}
+      {/* Top Tab Navigation Switcher: Notices vs Token Rules */}
+      <div style={{
+        display: 'flex',
+        gap: '12px',
+        borderBottom: '2px solid hsl(var(--border-color))',
+        paddingBottom: '2px',
+      }}>
+        <button
+          type="button"
+          onClick={() => setActiveSettingsTab('notices')}
+          style={{
+            padding: '12px 20px',
+            borderRadius: '10px 10px 0 0',
+            border: 'none',
+            borderBottom: activeSettingsTab === 'notices' ? '3px solid hsl(var(--primary))' : '3px solid transparent',
+            background: activeSettingsTab === 'notices' ? 'hsla(var(--primary) / 0.12)' : 'transparent',
+            color: activeSettingsTab === 'notices' ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+            fontWeight: 800,
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <Megaphone size={18} />
+          Doctor Availability & Patient Notices
+          {announcementEnabled && (
+            <span style={{
+              background: '#f59e0b',
+              color: '#ffffff',
+              fontSize: '0.72rem',
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              fontWeight: 800,
+            }}>
+              LIVE ON APP
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSettingsTab('tokens')}
+          style={{
+            padding: '12px 20px',
+            borderRadius: '10px 10px 0 0',
+            border: 'none',
+            borderBottom: activeSettingsTab === 'tokens' ? '3px solid hsl(var(--primary))' : '3px solid transparent',
+            background: activeSettingsTab === 'tokens' ? 'hsla(var(--primary) / 0.12)' : 'transparent',
+            color: activeSettingsTab === 'tokens' ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+            fontWeight: 800,
+            fontSize: '0.95rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <Clock size={18} />
+          Token Generation Rules & Operating Hours
+          <span style={{
+            background: tokenEnabled ? '#10b981' : '#ef4444',
+            color: '#ffffff',
+            fontSize: '0.72rem',
+            padding: '2px 8px',
+            borderRadius: '9999px',
+            fontWeight: 800,
+          }}>
+            {tokenEnabled ? 'ACTIVE' : 'PAUSED'}
+          </span>
+        </button>
+      </div>
+
+      {/* TAB 1: 🏥 Doctor Availability & Patient Notices Center */}
+      {activeSettingsTab === 'notices' && (
       <div className="glass-card animate-fade-in" style={{
         borderLeft: `4px solid ${announcementEnabled ? '#f59e0b' : 'hsl(var(--primary))'}`,
         position: 'relative',
@@ -1139,8 +1219,11 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
           </div>
         </div>
       </div>
+      )}
 
-      {/* Dynamic Token Timing Settings Card */}
+      {/* TAB 2: Dynamic Token Timing Settings Card */}
+      {activeSettingsTab === 'tokens' && (
+      <>
       <div className="glass-card animate-fade-in" style={{ borderLeft: `4px solid ${tokenEnabled ? 'hsl(var(--primary))' : 'hsl(var(--danger))'}` }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
@@ -1371,6 +1454,8 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
           <li>At <strong>5:00 PM</strong>, all remaining active/waiting tokens are automatically expired by the daily cron system.</li>
         </ul>
       </div>
+      </>
+      )}
     </div>
   );
 };

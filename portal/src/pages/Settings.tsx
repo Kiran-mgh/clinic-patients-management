@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../api';
 import { 
   Clock, 
@@ -176,7 +177,9 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
   placeholder = 'Select Date',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
   const getInitialViewDate = () => {
     if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -192,18 +195,39 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
 
   const [viewDate, setViewDate] = useState<Date>(getInitialViewDate);
 
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleOutsideClick);
+  const updateCoords = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + 6 + window.scrollY,
+        left: rect.left + window.scrollX,
+      });
     }
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-    };
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      updateCoords();
+      const handleOutsideClick = (e: MouseEvent) => {
+        if (
+          triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+          popoverRef.current && !popoverRef.current.contains(e.target as Node)
+        ) {
+          setIsOpen(false);
+        }
+      };
+      const handleScrollOrResize = () => {
+        updateCoords();
+      };
+      document.addEventListener('mousedown', handleOutsideClick);
+      window.addEventListener('scroll', handleScrollOrResize, true);
+      window.addEventListener('resize', handleScrollOrResize);
+      return () => {
+        document.removeEventListener('mousedown', handleOutsideClick);
+        window.removeEventListener('scroll', handleScrollOrResize, true);
+        window.removeEventListener('resize', handleScrollOrResize);
+      };
+    }
   }, [isOpen]);
 
   useEffect(() => {
@@ -258,14 +282,18 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
   const istTodayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
 
   return (
-    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', zIndex: isOpen ? 9999 : 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
         {label}
       </label>
 
       {/* Trigger Button */}
       <div
-        onClick={() => setIsOpen(!isOpen)}
+        ref={triggerRef}
+        onClick={() => {
+          updateCoords();
+          setIsOpen(!isOpen);
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -316,20 +344,21 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
         )}
       </div>
 
-      {/* Custom Theme Calendar Dropdown Popover */}
-      {isOpen && (
+      {/* Custom Theme Calendar Popover via createPortal */}
+      {isOpen && createPortal(
         <div
+          ref={popoverRef}
           className="animate-fade-in"
           style={{
             position: 'absolute',
-            top: 'calc(100% + 8px)',
-            left: 0,
-            zIndex: 10000,
+            top: `${coords.top}px`,
+            left: `${coords.left}px`,
+            zIndex: 999999,
             width: '290px',
             backgroundColor: '#ffffff',
             borderRadius: '16px',
-            border: '1.5px solid hsl(var(--border-color))',
-            boxShadow: '0 20px 45px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+            border: '1.5px solid hsla(var(--primary) / 0.3)',
+            boxShadow: '0 24px 50px rgba(0, 0, 0, 0.28), 0 4px 16px rgba(33, 57, 50, 0.15)',
             padding: '16px',
             display: 'flex',
             flexDirection: 'column',
@@ -342,7 +371,7 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
               type="button"
               onClick={handlePrevMonth}
               style={{
-                background: 'hsla(var(--primary) / 0.06)',
+                background: 'hsla(var(--primary) / 0.08)',
                 border: 'none',
                 borderRadius: '8px',
                 width: '32px',
@@ -365,7 +394,7 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
               type="button"
               onClick={handleNextMonth}
               style={{
-                background: 'hsla(var(--primary) / 0.06)',
+                background: 'hsla(var(--primary) / 0.08)',
                 border: 'none',
                 borderRadius: '8px',
                 width: '32px',
@@ -503,7 +532,8 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
               Clear
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

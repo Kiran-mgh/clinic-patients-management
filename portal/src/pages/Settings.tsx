@@ -258,7 +258,7 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
   const istTodayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
 
   return (
-    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
+    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative', zIndex: isOpen ? 9999 : 'auto' }}>
       <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
         {label}
       </label>
@@ -322,14 +322,14 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
           className="animate-fade-in"
           style={{
             position: 'absolute',
-            top: 'calc(100% + 6px)',
+            top: 'calc(100% + 8px)',
             left: 0,
-            zIndex: 100,
-            width: '280px',
-            background: '#ffffff',
+            zIndex: 10000,
+            width: '290px',
+            backgroundColor: '#ffffff',
             borderRadius: '16px',
-            border: '1.5px solid hsla(var(--primary) / 0.2)',
-            boxShadow: '0 12px 32px rgba(33, 57, 50, 0.15)',
+            border: '1.5px solid hsl(var(--border-color))',
+            boxShadow: '0 20px 45px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.05)',
             padding: '16px',
             display: 'flex',
             flexDirection: 'column',
@@ -384,7 +384,7 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
           {/* Weekday Labels */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
             {dayHeaders.map((dh, i) => (
-              <span key={i} style={{ fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+              <span key={i} style={{ fontSize: '0.75rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>
                 {dh}
               </span>
             ))}
@@ -394,7 +394,7 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
             {/* Empty offset days */}
             {Array.from({ length: firstDayIndex }).map((_, idx) => (
-              <div key={`empty-${idx}`} style={{ height: '32px' }} />
+              <div key={`empty-${idx}`} style={{ height: '34px' }} />
             ))}
 
             {/* Days in Month */}
@@ -417,38 +417,40 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
                     }
                   }}
                   style={{
-                    height: '32px',
-                    width: '32px',
+                    height: '34px',
+                    width: '34px',
                     margin: '0 auto',
                     borderRadius: '8px',
                     border: isToday && !isSelected ? '1.5px solid hsl(var(--primary))' : 'none',
-                    background: isSelected 
+                    backgroundColor: isSelected 
                       ? 'hsl(var(--primary))' 
+                      : disabled 
+                      ? '#f8fafc' 
                       : 'transparent',
                     color: isSelected 
                       ? '#ffffff' 
                       : disabled 
                       ? '#cbd5e1' 
-                      : 'hsl(var(--text-main))',
-                    fontSize: '0.85rem',
-                    fontWeight: isSelected || isToday ? 800 : 500,
+                      : '#1e293b',
+                    fontSize: '0.88rem',
+                    fontWeight: isSelected || isToday ? 800 : 700,
                     cursor: disabled ? 'not-allowed' : 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.15s ease',
-                    opacity: disabled ? 0.35 : 1
+                    opacity: disabled ? 0.45 : 1
                   }}
                   onMouseEnter={(e) => {
                     if (!disabled && !isSelected) {
-                      e.currentTarget.style.background = 'hsla(var(--primary) / 0.1)';
+                      e.currentTarget.style.backgroundColor = 'hsla(var(--primary) / 0.12)';
                       e.currentTarget.style.color = 'hsl(var(--primary))';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!disabled && !isSelected) {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = 'hsl(var(--text-main))';
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = '#1e293b';
                     }
                   }}
                 >
@@ -761,7 +763,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
       <div className="glass-card animate-fade-in" style={{
         borderLeft: `4px solid ${announcementEnabled ? '#f59e0b' : 'hsl(var(--primary))'}`,
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'visible'
       }}>
         {/* Banner header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>

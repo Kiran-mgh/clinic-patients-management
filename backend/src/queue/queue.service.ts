@@ -21,9 +21,24 @@ export class QueueService {
     private queueGateway: QueueGateway,
   ) {}
 
-  async getPublicLiveQueue(): Promise<any> {
+  private getStartOfTodayIST(): Date {
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    try {
+      const istDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' });
+      const istDateStr = istDateFormatter.format(now);
+      const [y, m, d] = istDateStr.split('-').map(Number);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        const utcMs = typeof Date.UTC === 'function' ? Date.UTC(y, m - 1, d, 0, 0, 0) : new Date(y, m - 1, d).getTime();
+        return new Date(utcMs - (5.5 * 60 * 60 * 1000));
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  async getPublicLiveQueue(): Promise<any> {
+    const startOfToday = this.getStartOfTodayIST();
 
     const activeMedicineToken = await this.tokenRepository.findOne({
       where: {
@@ -114,8 +129,7 @@ export class QueueService {
   }
 
   async getDashboardMetrics(): Promise<any> {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = this.getStartOfTodayIST();
 
     const totalPatients = await this.tokenRepository.count({
       where: { generatedAt: MoreThanOrEqual(startOfToday) },
@@ -174,8 +188,7 @@ export class QueueService {
   }
 
   async getTodayQueue(): Promise<any[]> {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = this.getStartOfTodayIST();
 
     const tokens = await this.tokenRepository.find({
       where: { generatedAt: MoreThanOrEqual(startOfToday) },
@@ -206,7 +219,7 @@ export class QueueService {
     }
 
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = this.getStartOfTodayIST();
 
     // 1. Automatically mark any currently in_progress token of this type as served
     const currentActiveToken = await this.tokenRepository.findOne({

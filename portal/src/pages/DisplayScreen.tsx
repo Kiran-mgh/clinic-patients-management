@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { api } from '../api';
 import { Volume2, VolumeX, Maximize, Minimize, Radio, Clock, Stethoscope, Sparkles, Bell } from 'lucide-react';
 
 interface PublicLiveQueue {
@@ -173,11 +174,8 @@ export const DisplayScreen: React.FC = () => {
   // Fetch Public Live Queue Data
   const fetchLiveQueue = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-      const res = await fetch(`${apiUrl}/queue/public-live`);
-      if (res.ok) {
-        const json: PublicLiveQueue = await res.json();
-        
+      const json: PublicLiveQueue = await api.get('/queue/public-live');
+      if (json) {
         // Detect new token calls to trigger chime + speech
         if (json.currentServingMedicine && prevMedToken.current !== null && json.currentServingMedicine !== prevMedToken.current) {
           setRecentlyCalled(prev => ({ ...prev, med: true }));

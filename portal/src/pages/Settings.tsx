@@ -226,14 +226,56 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
       if (data) {
         setAnnouncementEnabled(data.enabled || false);
         setAnnouncementType(data.type || 'vacation');
-        setAnnouncementTitle(data.title || '');
-        setAnnouncementMessage(data.message || '');
+        
+        let cleanTitle = (data.title || '').replace(/Dr\.?\s*(?:Amar|Anil)/gi, 'Dr Anit Goswamy');
+        let cleanMsg = (data.message || '').replace(/Dr\.?\s*(?:Amar|Anil)/gi, 'Dr Anit Goswamy');
+        if (!cleanTitle && (data.type === 'vacation' || !data.type)) {
+          cleanTitle = 'Dr Anit Goswamy on Leave';
+        }
+        setAnnouncementTitle(cleanTitle);
+        setAnnouncementMessage(cleanMsg);
         setAnnouncementStartDate(data.startDate || '');
         setAnnouncementEndDate(data.endDate || '');
         setAnnouncementAutoPause(data.autoPauseTokens !== undefined ? data.autoPauseTokens : true);
       }
     } catch (err) {
       console.error('Failed to fetch announcement', err);
+    }
+  };
+
+  const handleCategorySelect = (catKey: string) => {
+    setAnnouncementType(catKey);
+    if (
+      !announcementTitle ||
+      announcementTitle === 'Dr Anit Goswamy on Leave' ||
+      announcementTitle === 'Clinic Holiday Closure' ||
+      announcementTitle === 'Schedule Adjustment Notice' ||
+      announcementTitle === 'Clinic Announcement' ||
+      announcementTitle.includes('Amar') ||
+      announcementTitle.includes('Anil') ||
+      announcementTitle === 'Doctor On Leave'
+    ) {
+      if (catKey === 'vacation') {
+        setAnnouncementTitle('Dr Anit Goswamy on Leave');
+        if (!announcementMessage || announcementMessage.includes('Amar') || announcementMessage.includes('Anil')) {
+          setAnnouncementMessage('Dr Anit Goswamy will be unavailable for consultations. Consultations will resume on Monday.');
+        }
+      } else if (catKey === 'holiday') {
+        setAnnouncementTitle('Clinic Holiday Closure');
+        if (!announcementMessage || announcementMessage.includes('Amar') || announcementMessage.includes('Anil')) {
+          setAnnouncementMessage('The clinic will remain closed on account of public holiday. Emergency inquiries can contact clinic helpline.');
+        }
+      } else if (catKey === 'emergency') {
+        setAnnouncementTitle('Schedule Adjustment Notice');
+        if (!announcementMessage || announcementMessage.includes('Amar') || announcementMessage.includes('Anil')) {
+          setAnnouncementMessage('Please note that consultation hours have been adjusted for today due to unforeseen circumstances.');
+        }
+      } else {
+        setAnnouncementTitle('Clinic Announcement');
+        if (!announcementMessage || announcementMessage.includes('Amar') || announcementMessage.includes('Anil')) {
+          setAnnouncementMessage('Warm greetings from Amar Ayurveda Clinic. Please review our latest clinic advisory.');
+        }
+      }
     }
   };
 
@@ -413,46 +455,25 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            {announcementEnabled ? (
-              <button
-                type="button"
-                onClick={handleDeactivateAnnouncement}
-                disabled={savingAnnouncement}
-                className="btn"
-                style={{
-                  background: '#fee2e2',
-                  color: '#991b1b',
-                  border: '1px solid #fecaca',
-                  fontWeight: 700,
-                  borderRadius: '10px',
-                  padding: '10px 18px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <Trash2 size={16} /> Withdraw Notice
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleSaveAnnouncement(true)}
-                disabled={savingAnnouncement}
-                className="btn btn-primary"
-                style={{
-                  fontWeight: 700,
-                  borderRadius: '10px',
-                  padding: '10px 20px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <Send size={16} /> Publish Notice
-              </button>
-            )}
-          </div>
+          {/* Status info if active */}
+          {announcementEnabled && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                fontSize: '0.82rem',
+                fontWeight: 800,
+                background: '#fef3c7',
+                color: '#92400e',
+                border: '1px solid #fde68a'
+              }}>
+                <Radio size={14} className="animate-pulse" /> LIVE ON MOBILE APP
+              </span>
+            </div>
+          )}
         </div>
 
         {announcementMsg && (
@@ -495,7 +516,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                     <button
                       key={cat.key}
                       type="button"
-                      onClick={() => setAnnouncementType(cat.key)}
+                      onClick={() => handleCategorySelect(cat.key)}
                       style={{
                         padding: '8px 14px',
                         borderRadius: '8px',

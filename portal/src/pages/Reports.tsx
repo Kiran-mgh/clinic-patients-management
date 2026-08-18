@@ -1546,7 +1546,7 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                                 </td>
                                 <td>
                                   <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'hsl(var(--primary))' }}>
-                                    {visit.patientId || '-'}
+                                    {visit.patientCustomId || visit.patientId || '-'}
                                   </span>
                                 </td>
                                 <td style={{ fontWeight: 600, color: 'hsl(var(--text-main))' }}>

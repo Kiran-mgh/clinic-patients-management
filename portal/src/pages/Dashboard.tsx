@@ -360,7 +360,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                   fontWeight: 800,
                   color: announcement.type === 'vacation' ? '#92400e' : announcement.type === 'emergency' ? '#991b1b' : '#166534'
                 }}>
-                  {announcement.title || 'Doctor on Leave / Clinic Notice Active'}
+                  {announcement.title || 'Doctor On Leave / Active Advisory'}
                 </h4>
                 <span style={{
                   padding: '2px 8px',
@@ -371,7 +371,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                   color: '#b45309',
                   border: '1px solid #fde68a'
                 }}>
-                  BROADCASTING TO PATIENT APPS
+                  ACTIVE ADVISORY
                 </span>
               </div>
               <p style={{
@@ -400,7 +400,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
               background: '#ffffff'
             }}
           >
-            Manage Notice / Return
+            Manage Notice
           </button>
         </div>
       )}

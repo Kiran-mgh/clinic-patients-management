@@ -365,7 +365,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
         </div>
       </div>
 
-      {/* 🏖️ Doctor Vacation & Clinic Announcements Center */}
+      {/* 🏥 Doctor Availability & Patient Notices Center */}
       <div className="glass-card animate-fade-in" style={{
         borderLeft: `4px solid ${announcementEnabled ? '#f59e0b' : 'hsl(var(--primary))'}`,
         position: 'relative',
@@ -388,7 +388,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <h3 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, color: 'hsl(var(--text-color))' }}>
-                  Doctor Vacation & Mobile Announcements Center
+                  Doctor Availability & Patient Notices
                 </h3>
                 {announcementEnabled && (
                   <span style={{
@@ -403,12 +403,12 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                     color: '#92400e',
                     border: '1px solid #fde68a'
                   }}>
-                    <Radio size={12} className="animate-pulse" /> LIVE ON PATIENT APPS
+                    <Radio size={12} className="animate-pulse" /> ACTIVE NOTICE
                   </span>
                 )}
               </div>
               <p style={{ fontSize: '0.88rem', color: 'hsl(var(--text-muted))', margin: '6px 0 0 0' }}>
-                Broadcast vacation notices, holiday closures, or schedule updates directly to all patients in real-time.
+                Publish doctor availability schedules, clinic holiday closures, or patient advisory notices.
               </p>
             </div>
           </div>
@@ -432,7 +432,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                   gap: '8px'
                 }}
               >
-                <Trash2 size={16} /> Deactivate Notice
+                <Trash2 size={16} /> Withdraw Notice
               </button>
             ) : (
               <button
@@ -449,7 +449,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                   gap: '8px'
                 }}
               >
-                <Send size={16} /> Publish Notice Live
+                <Send size={16} /> Publish Notice
               </button>
             )}
           </div>
@@ -481,14 +481,14 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
             {/* Category Selector */}
             <div>
               <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
-                Notice Type / Category
+                Notice Category
               </label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {[
-                  { key: 'vacation', label: '🏖️ Doctor Vacation', color: '#f59e0b' },
-                  { key: 'holiday', label: '🎉 Holiday Closure', color: '#3b82f6' },
-                  { key: 'emergency', label: '⚠️ Urgent Notice', color: '#ef4444' },
-                  { key: 'general', label: '📢 General Update', color: '#10b981' }
+                  { key: 'vacation', label: '🏖️ Doctor On Leave', color: '#f59e0b' },
+                  { key: 'holiday', label: '🏥 Holiday Closure', color: '#3b82f6' },
+                  { key: 'emergency', label: '⚠️ Schedule Adjustment', color: '#ef4444' },
+                  { key: 'general', label: '📢 General Announcement', color: '#10b981' }
                 ].map(cat => {
                   const active = announcementType === cat.key;
                   return (
@@ -524,7 +524,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                 type="text"
                 value={announcementTitle}
                 onChange={(e) => setAnnouncementTitle(e.target.value)}
-                placeholder="e.g. Dr. Amar on Vacation (20 Aug - 24 Aug)"
+                placeholder="e.g. Doctor On Leave (20 Aug - 24 Aug)"
                 style={{
                   width: '100%',
                   padding: '10px 14px',
@@ -542,7 +542,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
-                  Effective Start Date
+                  Start Date
                 </label>
                 <input
                   type="date"
@@ -562,7 +562,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
               </div>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
-                  Effective End Date
+                  End Date
                 </label>
                 <input
                   type="date"
@@ -582,15 +582,15 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
               </div>
             </div>
 
-            {/* Detailed Message */}
+            {/* Patient Advisory Message */}
             <div>
               <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
-                Detailed Message to Patients *
+                Patient Advisory Message *
               </label>
               <textarea
                 value={announcementMessage}
                 onChange={(e) => setAnnouncementMessage(e.target.value)}
-                placeholder="e.g. Dr. Amar will be out of station attending an Ayurveda conference. The clinic will reopen for token booking on Monday morning at 7:00 AM."
+                placeholder="e.g. Dr. Amar will be unavailable for consultations during this period. Normal clinic consultations will resume on Monday morning at 7:00 AM."
                 rows={3}
                 style={{
                   width: '100%',
@@ -624,7 +624,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                 style={{ width: '18px', height: '18px', cursor: 'pointer' }}
               />
               <label htmlFor="autoPauseToggle" style={{ fontSize: '0.88rem', fontWeight: 700, color: '#334155', cursor: 'pointer' }}>
-                Automatically pause Token Generation while this notice is active
+                Temporarily suspend daily token issuance while this notice is active
               </label>
             </div>
 
@@ -645,7 +645,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                 }}
               >
                 <Send size={18} />
-                {savingAnnouncement ? 'Broadcasting...' : announcementEnabled ? 'Update & Broadcast Notice' : 'Publish & Broadcast Live'}
+                {savingAnnouncement ? 'Saving...' : announcementEnabled ? 'Update Notice' : 'Publish Notice'}
               </button>
 
               {announcementEnabled && (
@@ -656,13 +656,13 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                   className="btn btn-secondary"
                   style={{ padding: '12px 20px', borderRadius: '10px', fontWeight: 700 }}
                 >
-                  Deactivate
+                  Withdraw Notice
                 </button>
               )}
             </div>
           </div>
 
-          {/* Right Column: Live Mobile App Preview */}
+          {/* Right Column: Patient Mobile App Preview */}
           <div style={{
             background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
             border: '1px solid #e2e8f0',
@@ -674,10 +674,10 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Eye size={16} /> Live Patient Mobile Preview
+                <Eye size={16} /> Patient Mobile App Preview
               </span>
               <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'hsl(var(--text-muted))' }}>
-                Real-time Rendering
+                Live Preview
               </span>
             </div>
 
@@ -709,7 +709,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                     fontWeight: 800,
                     color: announcementType === 'vacation' ? '#92400e' : announcementType === 'emergency' ? '#991b1b' : '#166534'
                   }}>
-                    {announcementTitle || 'Dr. Amar on Leave'}
+                    {announcementTitle || 'Doctor On Leave'}
                   </h4>
                   {(announcementStartDate || announcementEndDate) && (
                     <span style={{
@@ -745,13 +745,13 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                   alignItems: 'center',
                   gap: '6px'
                 }}>
-                  🔒 Token generation is currently suspended.
+                  🔒 Token booking is temporarily suspended.
                 </div>
               )}
             </div>
 
             <div style={{ fontSize: '0.78rem', color: 'hsl(var(--text-muted))', textAlign: 'center' }}>
-              Patients will immediately see this banner on their home screen upon launching the app or via live push sync.
+              Patients will view this advisory notice at the top of their mobile app home screen.
             </div>
           </div>
         </div>

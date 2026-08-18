@@ -269,7 +269,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                   ? styles.announcementTitleEmergency 
                   : styles.announcementTitleGeneral
               ]}>
-                {announcement.title || (announcement.type === 'vacation' ? 'Doctor On Leave' : 'Clinic Notice')}
+                {announcement.title || (announcement.type === 'vacation' ? 'Dr Anit Goswamy on Leave' : 'Clinic Notice')}
               </Text>
               {(announcement.startDate || announcement.endDate) ? (
                 <Text style={styles.announcementDateText}>
@@ -417,10 +417,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                     return (
                       <View style={{ backgroundColor: '#fffbeb', borderWidth: 1.5, borderColor: '#fde68a', borderRadius: 12, padding: 16 }}>
                         <Text style={{ fontSize: 15, fontWeight: '800', color: '#92400e', marginBottom: 4 }}>
-                          🏖️ Token Booking Suspended (Doctor On Leave)
+                          🏖️ Token Booking Suspended (Dr Anit Goswamy on Leave)
                         </Text>
                         <Text style={{ fontSize: 13, color: '#78350f', lineHeight: 18 }}>
-                          {announcement.message || 'Dr. Amar is currently unavailable for consultations. Token booking will resume once the clinic reopens.'}
+                          {announcement.message || 'Dr Anit Goswamy is currently unavailable for consultations. Token booking will resume once the clinic reopens.'}
                         </Text>
                         {announcement.endDate ? (
                           <View style={{ marginTop: 8, alignSelf: 'flex-start', backgroundColor: '#fef3c7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#fde68a' }}>

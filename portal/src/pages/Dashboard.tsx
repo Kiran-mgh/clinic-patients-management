@@ -360,7 +360,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                   fontWeight: 800,
                   color: announcement.type === 'vacation' ? '#92400e' : announcement.type === 'emergency' ? '#991b1b' : '#166534'
                 }}>
-                  {announcement.title || 'Doctor On Leave / Active Advisory'}
+                  {announcement.title || 'Dr Anit Goswamy on Leave / Active Advisory'}
                 </h4>
                 <span style={{
                   padding: '2px 8px',

@@ -524,7 +524,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                 type="text"
                 value={announcementTitle}
                 onChange={(e) => setAnnouncementTitle(e.target.value)}
-                placeholder="e.g. Doctor On Leave (20 Aug - 24 Aug)"
+                placeholder="e.g. Dr Anit Goswamy on Leave (20 Aug - 24 Aug)"
                 style={{
                   width: '100%',
                   padding: '10px 14px',
@@ -590,7 +590,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
               <textarea
                 value={announcementMessage}
                 onChange={(e) => setAnnouncementMessage(e.target.value)}
-                placeholder="e.g. Dr. Amar will be unavailable for consultations during this period. Normal clinic consultations will resume on Monday morning at 7:00 AM."
+                placeholder="e.g. Dr Anit Goswamy will be unavailable for consultations during this period. Normal clinic consultations will resume on Monday morning at 7:00 AM."
                 rows={3}
                 style={{
                   width: '100%',
@@ -709,7 +709,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                     fontWeight: 800,
                     color: announcementType === 'vacation' ? '#92400e' : announcementType === 'emergency' ? '#991b1b' : '#166534'
                   }}>
-                    {announcementTitle || 'Doctor On Leave'}
+                    {announcementTitle || 'Dr Anit Goswamy on Leave'}
                   </h4>
                   {(announcementStartDate || announcementEndDate) && (
                     <span style={{
@@ -729,7 +729,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
                 color: announcementType === 'vacation' ? '#78350f' : announcementType === 'emergency' ? '#7f1d1d' : '#14532d',
                 lineHeight: '1.4'
               }}>
-                {announcementMessage || 'Doctor is currently away. Clinic will resume normal consultation hours shortly.'}
+                {announcementMessage || 'Dr Anit Goswamy is currently away. Clinic will resume normal consultation hours shortly.'}
               </p>
 
               {announcementAutoPause && (

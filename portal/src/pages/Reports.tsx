@@ -1440,12 +1440,12 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                       </thead>
                       <tbody>
                         {reportData.monthlyBreakdown.map((m: any) => (
-                          <tr key={m.month}>
-                            <td style={{ fontWeight: 600 }}>{m.monthName}</td>
-                            <td style={{ fontWeight: 700 }}>{m.total}</td>
-                            <td>{m.medicine}</td>
-                            <td>{m.treatment}</td>
-                            <td>{m.newPatients}</td>
+                          <tr key={m.month || m.monthName}>
+                            <td style={{ fontWeight: 600 }}>{m.monthName || m.month || '—'}</td>
+                            <td style={{ fontWeight: 700 }}>{m.total || 0}</td>
+                            <td>{m.medicine || 0}</td>
+                            <td>{m.treatment || 0}</td>
+                            <td>{m.newPatients || 0}</td>
                           </tr>
                         ))}
                       </tbody>

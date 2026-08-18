@@ -260,7 +260,7 @@ export class QueueService {
     const totalCount = tokens.length;
 
     // Monthly breakdown
-    const monthlyMap = new Map<string, { month: string; medicine: number; treatment: number; total: number }>();
+    const monthlyMap = new Map<string, { month: string; monthName: string; medicine: number; treatment: number; newPatients: number; total: number }>();
     
     for (const token of tokens) {
       const date = new Date(token.generatedAt);
@@ -268,8 +268,10 @@ export class QueueService {
       if (!monthlyMap.has(monthKey)) {
         monthlyMap.set(monthKey, {
           month: monthKey,
+          monthName: monthKey,
           medicine: 0,
           treatment: 0,
+          newPatients: 0,
           total: 0,
         });
       }
@@ -280,6 +282,23 @@ export class QueueService {
       } else if (token.serviceType === 'treatment') {
         monthData.treatment++;
       }
+    }
+
+    for (const patient of newPatients) {
+      const date = new Date(patient.createdAt);
+      const monthKey = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+      if (!monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, {
+          month: monthKey,
+          monthName: monthKey,
+          medicine: 0,
+          treatment: 0,
+          newPatients: 0,
+          total: 0,
+        });
+      }
+      const monthData = monthlyMap.get(monthKey)!;
+      monthData.newPatients++;
     }
 
     const monthlyBreakdown = Array.from(monthlyMap.values());

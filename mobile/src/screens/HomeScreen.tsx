@@ -180,7 +180,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
     fetchProfileAndToken();
 
     // Connect to WebSocket server
-    const socketUrl = 'https://amar.vistarafabtech.com';
+    const socketUrl = 'https://pms-api-staging.amarayurveda.in';
     const socket = io(socketUrl);
 
     socket.on('connect', () => {

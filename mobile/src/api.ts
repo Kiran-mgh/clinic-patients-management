@@ -1,5 +1,5 @@
-// API client for Mobile App connecting directly to NestJS Production Backend
-const API_BASE = 'https://amar.vistarafabtech.com/api';
+// API client for Mobile App connecting directly to NestJS Staging/Production Backend
+const API_BASE = 'https://pms-api-staging.amarayurveda.in/api';
 
 const getHeaders = (token: string | null) => ({
   'Content-Type': 'application/json',

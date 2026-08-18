@@ -17,6 +17,7 @@ function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('amar_staff_token'));
   const [user, setUser] = useState<any>(null);
   const [screen, setScreen] = useState<'dashboard' | 'verification' | 'queue' | 'search' | 'reports' | 'settings'>('dashboard');
+  const [settingsTab, setSettingsTab] = useState<'tokens' | 'notices'>('tokens');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('amar_staff_user');
@@ -93,7 +94,10 @@ function App() {
           </a>
           <a
             className={`nav-link ${screen === 'settings' ? 'active' : ''}`}
-            onClick={() => setScreen('settings')}
+            onClick={() => {
+              setSettingsTab('tokens');
+              setScreen('settings');
+            }}
           >
             <SettingsIcon size={18} />
             Clinic Settings
@@ -125,12 +129,20 @@ function App() {
 
       {/* Main Panel Content */}
       <main className="main-content">
-        {screen === 'dashboard' && <Dashboard token={token} onNavigate={(target) => setScreen(target)} />}
+        {screen === 'dashboard' && (
+          <Dashboard
+            token={token}
+            onNavigate={(target, subTab) => {
+              if (subTab) setSettingsTab(subTab);
+              setScreen(target);
+            }}
+          />
+        )}
         {screen === 'verification' && <PatientVerification token={token} />}
         {screen === 'queue' && <QueueManagement token={token} />}
         {screen === 'search' && <PatientSearch token={token} />}
         {screen === 'reports' && <Reports token={token} />}
-        {screen === 'settings' && <Settings token={token} />}
+        {screen === 'settings' && <Settings token={token} initialTab={settingsTab} />}
       </main>
     </div>
   );

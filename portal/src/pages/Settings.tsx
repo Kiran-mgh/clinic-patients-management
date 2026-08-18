@@ -23,6 +23,7 @@ import { formatTo12HourTime } from '../utils/dateUtils';
 
 interface SettingsProps {
   token: string | null;
+  initialTab?: 'tokens' | 'notices';
 }
 
 interface TimePicker12HProps {
@@ -539,9 +540,15 @@ const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
   );
 };
 
-export const Settings: React.FC<SettingsProps> = ({ token }) => {
+export const Settings: React.FC<SettingsProps> = ({ token, initialTab = 'tokens' }) => {
   // Tab Switcher State: Notices vs Token Rules
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'notices' | 'tokens'>('notices');
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'notices' | 'tokens'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveSettingsTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Token Timings State
   const [startTime, setStartTime] = useState('07:00');

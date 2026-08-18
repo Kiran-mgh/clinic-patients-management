@@ -6,7 +6,7 @@ import { formatTo12HourTime } from '../utils/dateUtils';
 
 interface DashboardProps {
   token: string | null;
-  onNavigate: (page: any) => void;
+  onNavigate: (screen: 'dashboard' | 'verification' | 'queue' | 'search' | 'reports' | 'settings', subTab?: 'tokens' | 'notices') => void;
 }
 
 interface TimePicker12HProps {
@@ -390,7 +390,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
           </div>
 
           <button
-            onClick={() => onNavigate('settings')}
+            onClick={() => onNavigate('settings', 'notices')}
             className="btn btn-secondary"
             style={{
               padding: '8px 16px',
@@ -556,7 +556,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => onNavigate('settings')}
+                  onClick={() => onNavigate('settings', 'tokens')}
                   className="btn btn-primary"
                   style={{
                     display: 'inline-flex',

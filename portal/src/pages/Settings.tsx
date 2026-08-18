@@ -12,7 +12,10 @@ import {
   Trash2, 
   Send,
   Eye,
-  Radio
+  Radio,
+  ChevronLeft,
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { formatTo12HourTime } from '../utils/dateUtils';
@@ -102,7 +105,7 @@ const TimePicker12H: React.FC<TimePicker12HProps> = ({ value, onChange, label })
           ))}
         </select>
 
-        <span style={{ fontWeight: 800, color: 'hsl(var(--primary))', fontSize: '1.1rem' }}>:</span>
+        <span style={{ fontWeight: 800, color: 'hsl(var(--primary))' }}>:</span>
 
         {/* Minute Select */}
         <select
@@ -153,6 +156,353 @@ const TimePicker12H: React.FC<TimePicker12HProps> = ({ value, onChange, label })
           </button>
         </div>
       </div>
+    </div>
+  );
+};
+
+interface ThemeDatePickerProps {
+  value: string; // YYYY-MM-DD
+  onChange: (val: string) => void;
+  label: string;
+  minDate?: string; // YYYY-MM-DD (e.g. today)
+  placeholder?: string;
+}
+
+const ThemeDatePicker: React.FC<ThemeDatePickerProps> = ({
+  value,
+  onChange,
+  label,
+  minDate,
+  placeholder = 'Select Date',
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const getInitialViewDate = () => {
+    if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [y, m] = value.split('-').map(Number);
+      return new Date(y, m - 1, 1);
+    }
+    if (minDate && /^\d{4}-\d{2}-\d{2}$/.test(minDate)) {
+      const [y, m] = minDate.split('-').map(Number);
+      return new Date(y, m - 1, 1);
+    }
+    return new Date();
+  };
+
+  const [viewDate, setViewDate] = useState<Date>(getInitialViewDate);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [y, m] = value.split('-').map(Number);
+      if (!isNaN(y) && !isNaN(m)) {
+        setViewDate(new Date(y, m - 1, 1));
+      }
+    }
+  }, [value]);
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const dayHeaders = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  const handlePrevMonth = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setViewDate(new Date(year, month - 1, 1));
+  };
+
+  const handleNextMonth = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setViewDate(new Date(year, month + 1, 1));
+  };
+
+  const firstDayIndex = new Date(year, month, 1).getDay();
+  const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const formatYMD = (y: number, m: number, d: number) => {
+    const mm = String(m + 1).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    return `${y}-${mm}-${dd}`;
+  };
+
+  const isDateDisabled = (dateStr: string) => {
+    if (!minDate) return false;
+    return dateStr < minDate;
+  };
+
+  const formatDisplay = (valStr: string) => {
+    if (!valStr || !/^\d{4}-\d{2}-\d{2}$/.test(valStr)) return placeholder;
+    const [y, m, d] = valStr.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    return dateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const istTodayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+
+  return (
+    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
+      <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        {label}
+      </label>
+
+      {/* Trigger Button */}
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '10px 14px',
+          borderRadius: '10px',
+          border: isOpen ? '1.5px solid hsl(var(--primary))' : '1px solid hsl(var(--border-color))',
+          background: '#ffffff',
+          cursor: 'pointer',
+          boxShadow: isOpen ? '0 0 0 3px hsla(var(--primary) / 0.1)' : '0 2px 4px rgba(0,0,0,0.02)',
+          transition: 'all 0.2s ease',
+          userSelect: 'none',
+          minHeight: '44px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Calendar size={18} style={{ color: value ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))' }} />
+          <span style={{
+            fontSize: '0.92rem',
+            fontWeight: value ? 700 : 500,
+            color: value ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))'
+          }}>
+            {formatDisplay(value)}
+          </span>
+        </div>
+
+        {value && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange('');
+            }}
+            title="Clear date"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              padding: '2px',
+              display: 'flex',
+              alignItems: 'center',
+              borderRadius: '50%'
+            }}
+          >
+            <X size={15} />
+          </button>
+        )}
+      </div>
+
+      {/* Custom Theme Calendar Dropdown Popover */}
+      {isOpen && (
+        <div
+          className="animate-fade-in"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            left: 0,
+            zIndex: 100,
+            width: '280px',
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: '1.5px solid hsla(var(--primary) / 0.2)',
+            boxShadow: '0 12px 32px rgba(33, 57, 50, 0.15)',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}
+        >
+          {/* Calendar Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              style={{
+                background: 'hsla(var(--primary) / 0.06)',
+                border: 'none',
+                borderRadius: '8px',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'hsl(var(--primary))'
+              }}
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'hsl(var(--primary))', fontFamily: 'Outfit, sans-serif' }}>
+              {monthNames[month]} {year}
+            </span>
+
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              style={{
+                background: 'hsla(var(--primary) / 0.06)',
+                border: 'none',
+                borderRadius: '8px',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'hsl(var(--primary))'
+              }}
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          {/* Weekday Labels */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center' }}>
+            {dayHeaders.map((dh, i) => (
+              <span key={i} style={{ fontSize: '0.72rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+                {dh}
+              </span>
+            ))}
+          </div>
+
+          {/* Days Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
+            {/* Empty offset days */}
+            {Array.from({ length: firstDayIndex }).map((_, idx) => (
+              <div key={`empty-${idx}`} style={{ height: '32px' }} />
+            ))}
+
+            {/* Days in Month */}
+            {Array.from({ length: totalDaysInMonth }).map((_, idx) => {
+              const dayNum = idx + 1;
+              const dateStr = formatYMD(year, month, dayNum);
+              const disabled = isDateDisabled(dateStr);
+              const isSelected = value === dateStr;
+              const isToday = dateStr === istTodayStr;
+
+              return (
+                <button
+                  key={dateStr}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => {
+                    if (!disabled) {
+                      onChange(dateStr);
+                      setIsOpen(false);
+                    }
+                  }}
+                  style={{
+                    height: '32px',
+                    width: '32px',
+                    margin: '0 auto',
+                    borderRadius: '8px',
+                    border: isToday && !isSelected ? '1.5px solid hsl(var(--primary))' : 'none',
+                    background: isSelected 
+                      ? 'hsl(var(--primary))' 
+                      : 'transparent',
+                    color: isSelected 
+                      ? '#ffffff' 
+                      : disabled 
+                      ? '#cbd5e1' 
+                      : 'hsl(var(--text-main))',
+                    fontSize: '0.85rem',
+                    fontWeight: isSelected || isToday ? 800 : 500,
+                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.15s ease',
+                    opacity: disabled ? 0.35 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!disabled && !isSelected) {
+                      e.currentTarget.style.background = 'hsla(var(--primary) / 0.1)';
+                      e.currentTarget.style.color = 'hsl(var(--primary))';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!disabled && !isSelected) {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'hsl(var(--text-main))';
+                    }
+                  }}
+                >
+                  {dayNum}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Action Footer */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #f1f5f9', marginTop: '4px' }}>
+            <button
+              type="button"
+              disabled={isDateDisabled(istTodayStr)}
+              onClick={() => {
+                if (!isDateDisabled(istTodayStr)) {
+                  onChange(istTodayStr);
+                  setIsOpen(false);
+                }
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: isDateDisabled(istTodayStr) ? '#cbd5e1' : 'hsl(var(--primary))',
+                fontSize: '0.78rem',
+                fontWeight: 800,
+                cursor: isDateDisabled(istTodayStr) ? 'not-allowed' : 'pointer',
+                padding: '4px 6px'
+              }}
+            >
+              Today
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onChange('');
+                setIsOpen(false);
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#94a3b8',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                padding: '4px 6px'
+              }}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -560,47 +910,27 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
             </div>
 
             {/* Date Window */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  value={announcementStartDate}
-                  onChange={(e) => setAnnouncementStartDate(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '10px',
-                    border: '1px solid hsl(var(--border-color))',
-                    background: '#ffffff',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    outline: 'none'
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
-                  End Date
-                </label>
-                <input
-                  type="date"
-                  value={announcementEndDate}
-                  onChange={(e) => setAnnouncementEndDate(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '10px',
-                    border: '1px solid hsl(var(--border-color))',
-                    background: '#ffffff',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    outline: 'none'
-                  }}
-                />
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px' }}>
+              <ThemeDatePicker
+                label="Start Date"
+                value={announcementStartDate}
+                onChange={(val) => {
+                  setAnnouncementStartDate(val);
+                  if (announcementEndDate && val && announcementEndDate < val) {
+                    setAnnouncementEndDate(val);
+                  }
+                }}
+                minDate={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date())}
+                placeholder="Pick start date"
+              />
+
+              <ThemeDatePicker
+                label="End Date"
+                value={announcementEndDate}
+                onChange={setAnnouncementEndDate}
+                minDate={announcementStartDate || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date())}
+                placeholder="Pick end date"
+              />
             </div>
 
             {/* Patient Advisory Message */}

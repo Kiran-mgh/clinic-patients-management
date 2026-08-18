@@ -684,87 +684,91 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
               />
             </div>
 
-            {/* Payment Details Section */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '16px',
-              padding: '16px',
-              background: 'hsla(var(--primary) / 0.04)',
-              borderRadius: '12px',
-              border: '1px solid hsl(var(--border-color))'
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase' }}>
-                  Payment Status
-                </label>
-                <select
-                  value={paymentStatus}
-                  onChange={(e: any) => setPaymentStatus(e.target.value)}
+            {/* Treatment & Payment Ledger Quick Access Option */}
+            {servingToken.patientId && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '14px 18px',
+                background: 'hsla(var(--primary) / 0.05)',
+                borderRadius: '12px',
+                border: '1px solid hsla(var(--primary) / 0.2)',
+                gap: '12px',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    background: 'hsl(var(--primary))',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <CreditCard size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'hsl(var(--primary))' }}>
+                      Patient Payment & Treatment Ledger
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'hsl(var(--text-muted))' }}>
+                      Record treatment packages, advance payments, installments, or print receipts
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn"
                   style={{
-                    width: '100%',
-                    padding: '9px 12px',
+                    padding: '8px 14px',
+                    background: '#ffffff',
+                    color: 'hsl(var(--primary))',
+                    border: '1.5px solid hsl(var(--primary))',
                     borderRadius: '8px',
-                    border: '1px solid hsl(var(--border-color))',
-                    fontSize: '0.9rem',
                     fontWeight: 800,
-                    color: paymentStatus === 'Paid' ? '#15803d' : '#b91c1c',
-                    background: paymentStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.1)' : 'hsla(350, 65%, 44%, 0.1)',
-                    outline: 'none',
-                    cursor: 'pointer'
+                    fontSize: '0.82rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                  }}
+                  onClick={() => {
+                    const pId = servingToken.patientId;
+                    handleStatusUpdate(servingToken.id, 'served', healthNotes);
+                    setServingToken(null);
+                    setHealthNotes('');
+                    handlePatientClick(pId, 'ledger');
                   }}
                 >
-                  <option value="Unpaid">⏳ Unpaid</option>
-                  <option value="Paid">✓ Paid</option>
-                </select>
+                  <CreditCard size={14} /> Open Ledger & Record Payment ➔
+                </button>
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
-                  Payment Notes / Ref
-                </label>
-                <input
-                  type="text"
-                  value={paymentNotes}
-                  onChange={(e) => setPaymentNotes(e.target.value)}
-                  placeholder="e.g. Cash ₹500, UPI #9821"
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid hsl(var(--border-color))',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    color: '#1a202c',
-                    background: '#ffffff',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-            </div>
+            )}
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
               <button 
                 className="btn btn-secondary" 
-                style={{ padding: '8px 16px', cursor: 'pointer' }}
+                style={{ padding: '9px 18px', cursor: 'pointer', fontWeight: 600 }}
                 onClick={() => {
                   setServingToken(null);
                   setHealthNotes('');
-                  setPaymentStatus('Unpaid');
-                  setPaymentNotes('');
                 }}
               >
                 Cancel
               </button>
               <button 
                 className="btn btn-success" 
-                style={{ padding: '8px 24px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ padding: '9px 24px', cursor: 'pointer', fontWeight: 700 }}
                 onClick={() => {
-                  handleStatusUpdate(servingToken.id, 'served', healthNotes, paymentStatus, paymentNotes);
+                  handleStatusUpdate(servingToken.id, 'served', healthNotes);
                   setServingToken(null);
                   setHealthNotes('');
-                  setPaymentStatus('Unpaid');
-                  setPaymentNotes('');
                 }}
               >
                 Complete & Serve

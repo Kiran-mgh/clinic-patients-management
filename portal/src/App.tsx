@@ -7,9 +7,14 @@ import { PatientSearch } from './pages/PatientSearch';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
-import { LayoutDashboard, UserCheck, Stethoscope, Search, LogOut, Activity, BarChart3, Settings as SettingsIcon } from 'lucide-react';
+import { DisplayScreen } from './pages/DisplayScreen';
+import { LayoutDashboard, UserCheck, Stethoscope, Search, LogOut, Activity, BarChart3, Settings as SettingsIcon, Tv } from 'lucide-react';
 
 function App() {
+  if (typeof window !== 'undefined' && (window.location.pathname === '/display' || window.location.pathname === '/tv')) {
+    return <DisplayScreen />;
+  }
+
   if (typeof window !== 'undefined' && window.location.pathname === '/privacy-policy') {
     return <PrivacyPolicy />;
   }
@@ -101,6 +106,23 @@ function App() {
           >
             <SettingsIcon size={18} />
             Clinic Settings
+          </a>
+          <a
+            className="nav-link"
+            href="/display"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              marginTop: '12px',
+              border: '1.5px dashed hsla(var(--primary) / 0.4)',
+              background: 'hsla(var(--primary) / 0.05)',
+              color: 'hsl(var(--primary))',
+              fontWeight: 700
+            }}
+            title="Open Large Waiting Room TV Display in New Window"
+          >
+            <Tv size={18} />
+            TV Queue Display ↗
           </a>
         </nav>
 

@@ -4,6 +4,7 @@ import { Repository, MoreThanOrEqual, In, Between } from 'typeorm';
 import { Token } from '../entities/token.entity';
 import { Patient } from '../entities/patient.entity';
 import { AuditLog } from '../entities/audit-log.entity';
+import { SystemSetting } from '../entities/system-setting.entity';
 import { QueueGateway } from './queue.gateway';
 
 @Injectable()
@@ -15,8 +16,102 @@ export class QueueService {
     private patientRepository: Repository<Patient>,
     @InjectRepository(AuditLog)
     private auditLogRepository: Repository<AuditLog>,
+    @InjectRepository(SystemSetting)
+    private systemSettingRepository: Repository<SystemSetting>,
     private queueGateway: QueueGateway,
   ) {}
+
+  async getPublicLiveQueue(): Promise<any> {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const activeMedicineToken = await this.tokenRepository.findOne({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'medicine',
+        status: 'in_progress',
+      },
+    });
+
+    const activeTreatmentToken = await this.tokenRepository.findOne({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'treatment',
+        status: 'in_progress',
+      },
+    });
+
+    const waitingMedicineTokens = await this.tokenRepository.find({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'medicine',
+        status: 'waiting',
+      },
+      order: { sequenceNumber: 'ASC' },
+      take: 8,
+    });
+
+    const waitingTreatmentTokens = await this.tokenRepository.find({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'treatment',
+        status: 'waiting',
+      },
+      order: { sequenceNumber: 'ASC' },
+      take: 8,
+    });
+
+    const recentServedTokens = await this.tokenRepository.find({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        status: 'served',
+      },
+      order: { servedAt: 'DESC' },
+      take: 5,
+    });
+
+    const medicineWaitingCount = await this.tokenRepository.count({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'medicine',
+        status: 'waiting',
+      },
+    });
+
+    const treatmentWaitingCount = await this.tokenRepository.count({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'treatment',
+        status: 'waiting',
+      },
+    });
+
+    let announcement = null;
+    try {
+      const setting = await this.systemSettingRepository.findOne({ where: { key: 'clinic_announcement' } });
+      if (setting && setting.value) {
+        announcement = JSON.parse(setting.value);
+      }
+    } catch (e) {}
+
+    return {
+      currentServingMedicine: activeMedicineToken ? activeMedicineToken.tokenNumber : null,
+      currentServingTreatment: activeTreatmentToken ? activeTreatmentToken.tokenNumber : null,
+      medicineCalledAt: activeMedicineToken?.calledAt || null,
+      treatmentCalledAt: activeTreatmentToken?.calledAt || null,
+      medicineWaitingCount,
+      treatmentWaitingCount,
+      waitingMedicineTokens: waitingMedicineTokens.map(t => t.tokenNumber),
+      waitingTreatmentTokens: waitingTreatmentTokens.map(t => t.tokenNumber),
+      recentServedTokens: recentServedTokens.map(t => ({
+        tokenNumber: t.tokenNumber,
+        serviceType: t.serviceType,
+        servedAt: t.servedAt,
+      })),
+      announcement: announcement && announcement.enabled ? announcement : null,
+      serverTime: new Date().toISOString(),
+    };
+  }
 
   async getDashboardMetrics(): Promise<any> {
     const now = new Date();

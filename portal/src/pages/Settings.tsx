@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Clock, CheckCircle, Settings as SettingsIcon, Power, ShieldAlert, Calendar } from 'lucide-react';
+import { 
+  Clock, 
+  CheckCircle, 
+  Settings as SettingsIcon, 
+  Power, 
+  Calendar, 
+  Palmtree, 
+  Megaphone, 
+  AlertTriangle, 
+  Sparkles, 
+  Trash2, 
+  Send,
+  Eye,
+  Radio
+} from 'lucide-react';
 import { io } from 'socket.io-client';
 import { formatTo12HourTime } from '../utils/dateUtils';
 
@@ -145,6 +159,7 @@ const TimePicker12H: React.FC<TimePicker12HProps> = ({ value, onChange, label })
 };
 
 export const Settings: React.FC<SettingsProps> = ({ token }) => {
+  // Token Timings State
   const [startTime, setStartTime] = useState('07:00');
   const [endTime, setEndTime] = useState('15:30');
   const [saturdayStartTime, setSaturdayStartTime] = useState('07:30');
@@ -157,6 +172,17 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
   const [isFormDirty, setIsFormDirty] = useState(false);
   const isFormDirtyRef = React.useRef(false);
   const [loading, setLoading] = useState(true);
+
+  // Announcement / Doctor Vacation State
+  const [announcementEnabled, setAnnouncementEnabled] = useState(false);
+  const [announcementType, setAnnouncementType] = useState('vacation');
+  const [announcementTitle, setAnnouncementTitle] = useState('');
+  const [announcementMessage, setAnnouncementMessage] = useState('');
+  const [announcementStartDate, setAnnouncementStartDate] = useState('');
+  const [announcementEndDate, setAnnouncementEndDate] = useState('');
+  const [announcementAutoPause, setAnnouncementAutoPause] = useState(true);
+  const [savingAnnouncement, setSavingAnnouncement] = useState(false);
+  const [announcementMsg, setAnnouncementMsg] = useState('');
 
   const toggleMedicineDay = (day: number) => {
     isFormDirtyRef.current = true;
@@ -178,7 +204,6 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
     try {
       const data = await api.get('/settings/tokens', token);
       if (data) {
-        // Prevent background polling from overwriting unsaved form inputs if user is actively editing
         if (force || !isFormDirtyRef.current) {
           if (data.startTime) setStartTime(data.startTime);
           if (data.endTime) setEndTime(data.endTime);
@@ -193,6 +218,23 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
       console.error('Failed to fetch token settings', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAnnouncement = async () => {
+    try {
+      const data = await api.get('/settings/announcement', token);
+      if (data) {
+        setAnnouncementEnabled(data.enabled || false);
+        setAnnouncementType(data.type || 'vacation');
+        setAnnouncementTitle(data.title || '');
+        setAnnouncementMessage(data.message || '');
+        setAnnouncementStartDate(data.startDate || '');
+        setAnnouncementEndDate(data.endDate || '');
+        setAnnouncementAutoPause(data.autoPauseTokens !== undefined ? data.autoPauseTokens : true);
+      }
+    } catch (err) {
+      console.error('Failed to fetch announcement', err);
     }
   };
 
@@ -248,8 +290,51 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
     }
   };
 
+  const handleSaveAnnouncement = async (forceEnabled?: boolean) => {
+    const targetEnabled = forceEnabled !== undefined ? forceEnabled : announcementEnabled;
+    if (targetEnabled && !announcementTitle.trim()) {
+      alert('Please enter a Title for the announcement.');
+      return;
+    }
+    setSavingAnnouncement(true);
+    setAnnouncementMsg('');
+    try {
+      const res = await api.put('/settings/announcement', {
+        enabled: targetEnabled,
+        type: announcementType,
+        title: announcementTitle.trim(),
+        message: announcementMessage.trim(),
+        startDate: announcementStartDate,
+        endDate: announcementEndDate,
+        autoPauseTokens: announcementAutoPause,
+      }, token);
+      if (res) {
+        setAnnouncementEnabled(res.enabled);
+        setAnnouncementMsg(res.enabled ? '🏖️ Announcement is now LIVE and broadcasted to all patient mobile apps!' : 'Announcement has been deactivated.');
+        setTimeout(() => setAnnouncementMsg(''), 5000);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to save announcement');
+    } finally {
+      setSavingAnnouncement(false);
+    }
+  };
+
+  const handleDeactivateAnnouncement = async () => {
+    setAnnouncementEnabled(false);
+    await handleSaveAnnouncement(false);
+  };
+
+  const applyPreset = (type: string, title: string, message: string, autoPause: boolean) => {
+    setAnnouncementType(type);
+    setAnnouncementTitle(title);
+    setAnnouncementMessage(message);
+    setAnnouncementAutoPause(autoPause);
+  };
+
   useEffect(() => {
     fetchTokenSettings(true);
+    fetchAnnouncement();
 
     const socketUrl = import.meta.env.VITE_API_URL
       ? import.meta.env.VITE_API_URL.replace(/\/api$/, '')
@@ -262,10 +347,10 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
     });
 
     socket.on('queue_updated', () => {
-      // Only sync if user is not actively editing form
       if (!isFormDirtyRef.current) {
         fetchTokenSettings(false);
       }
+      fetchAnnouncement();
     });
 
     return () => {
@@ -274,17 +359,490 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
   }, []);
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '32px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2 style={{ fontSize: '2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '12px' }}>
             <SettingsIcon size={28} style={{ color: 'hsl(var(--primary))' }} />
-            Clinic Settings
+            Clinic Settings & Doctor Status
           </h2>
           <p style={{ color: 'hsl(var(--text-muted))' }}>
-            Configure token generation timings, operating days, and clinic service windows.
+            Broadcast doctor leave status, emergency clinic announcements, and manage daily token generation rules.
           </p>
+        </div>
+      </div>
+
+      {/* 🏖️ Doctor Vacation & Clinic Announcements Center */}
+      <div className="glass-card animate-fade-in" style={{
+        borderLeft: `4px solid ${announcementEnabled ? '#f59e0b' : 'hsl(var(--primary))'}`,
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Banner header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div style={{
+              padding: '14px',
+              background: announcementEnabled ? 'hsla(38, 92%, 50%, 0.15)' : 'hsla(var(--primary) / 0.1)',
+              color: announcementEnabled ? '#b45309' : 'hsl(var(--primary))',
+              borderRadius: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {announcementType === 'vacation' ? <Palmtree size={28} /> : announcementType === 'emergency' ? <AlertTriangle size={28} /> : <Megaphone size={28} />}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, color: 'hsl(var(--text-color))' }}>
+                  Doctor Vacation & Mobile Announcements Center
+                </h3>
+                {announcementEnabled && (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    fontSize: '0.75rem',
+                    fontWeight: 800,
+                    background: '#fef3c7',
+                    color: '#92400e',
+                    border: '1px solid #fde68a'
+                  }}>
+                    <Radio size={12} className="animate-pulse" /> LIVE ON PATIENT APPS
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: '0.88rem', color: 'hsl(var(--text-muted))', margin: '6px 0 0 0' }}>
+                Broadcast vacation notices, holiday closures, or schedule updates directly to all patients in real-time.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {announcementEnabled ? (
+              <button
+                type="button"
+                onClick={handleDeactivateAnnouncement}
+                disabled={savingAnnouncement}
+                className="btn"
+                style={{
+                  background: '#fee2e2',
+                  color: '#991b1b',
+                  border: '1px solid #fecaca',
+                  fontWeight: 700,
+                  borderRadius: '10px',
+                  padding: '10px 18px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <Trash2 size={16} /> Deactivate Notice
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleSaveAnnouncement(true)}
+                disabled={savingAnnouncement}
+                className="btn btn-primary"
+                style={{
+                  fontWeight: 700,
+                  borderRadius: '10px',
+                  padding: '10px 20px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <Send size={16} /> Publish Notice Live
+              </button>
+            )}
+          </div>
+        </div>
+
+        {announcementMsg && (
+          <div style={{
+            backgroundColor: announcementEnabled ? '#ecfdf5' : '#fef2f2',
+            border: `1px solid ${announcementEnabled ? '#a7f3d0' : '#fecaca'}`,
+            color: announcementEnabled ? '#065f46' : '#991b1b',
+            padding: '12px 18px',
+            borderRadius: '10px',
+            marginBottom: '20px',
+            fontSize: '0.92rem',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <CheckCircle size={18} />
+            {announcementMsg}
+          </div>
+        )}
+
+        {/* Quick Presets */}
+        <div style={{
+          marginBottom: '24px',
+          padding: '14px 18px',
+          borderRadius: '12px',
+          background: 'hsla(var(--primary) / 0.04)',
+          border: '1px solid hsla(var(--primary) / 0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Sparkles size={16} /> Quick Presets:
+          </span>
+          <button
+            type="button"
+            onClick={() => applyPreset('vacation', 'Dr. Amar on Leave', 'Dr. Amar will be out of station. Consultations will resume on Monday.', true)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: '1px solid #fde68a',
+              background: '#fef3c7',
+              color: '#92400e',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            🏖️ Doctor Vacation
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset('holiday', 'Clinic Holiday Notice', 'The clinic will remain closed on account of public holiday. Emergency inquiries can contact clinic helpline.', true)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: '1px solid #bfdbfe',
+              background: '#dbeafe',
+              color: '#1e40af',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            🎉 Clinic Holiday
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset('emergency', 'Schedule Adjustment', 'Please note that consultation hours have been adjusted for today due to unforeseen circumstances.', false)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: '1px solid #fed7aa',
+              background: '#ffedd5',
+              color: '#9a3412',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            ⚠️ Schedule Adjustment
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset('general', 'Clinic Announcement', 'Warm greetings from Amar Ayurveda Clinic. Please review our upcoming health camp schedules.', false)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '8px',
+              border: '1px solid #bbf7d0',
+              background: '#dcfce7',
+              color: '#166534',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            📢 General Update
+          </button>
+        </div>
+
+        {/* Form Content Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+          {/* Left Column: Form Controls */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            {/* Category Selector */}
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
+                Notice Type / Category
+              </label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[
+                  { key: 'vacation', label: '🏖️ Doctor Vacation', color: '#f59e0b' },
+                  { key: 'holiday', label: '🎉 Holiday Closure', color: '#3b82f6' },
+                  { key: 'emergency', label: '⚠️ Urgent Notice', color: '#ef4444' },
+                  { key: 'general', label: '📢 General Update', color: '#10b981' }
+                ].map(cat => {
+                  const active = announcementType === cat.key;
+                  return (
+                    <button
+                      key={cat.key}
+                      type="button"
+                      onClick={() => setAnnouncementType(cat.key)}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: '8px',
+                        border: active ? `2px solid ${cat.color}` : '1px solid hsl(var(--border-color))',
+                        background: active ? '#ffffff' : 'transparent',
+                        color: active ? '#1f2937' : 'hsl(var(--text-muted))',
+                        fontWeight: active ? 800 : 600,
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        boxShadow: active ? '0 2px 8px rgba(0,0,0,0.06)' : 'none'
+                      }}
+                    >
+                      {active ? '✓ ' : ''}{cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Title */}
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
+                Notice Title *
+              </label>
+              <input
+                type="text"
+                value={announcementTitle}
+                onChange={(e) => setAnnouncementTitle(e.target.value)}
+                placeholder="e.g. Dr. Amar on Vacation (20 Aug - 24 Aug)"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid hsl(var(--border-color))',
+                  background: '#ffffff',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  outline: 'none'
+                }}
+              />
+            </div>
+
+            {/* Date Window */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
+                  Effective Start Date
+                </label>
+                <input
+                  type="date"
+                  value={announcementStartDate}
+                  onChange={(e) => setAnnouncementStartDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    border: '1px solid hsl(var(--border-color))',
+                    background: '#ffffff',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    outline: 'none'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
+                  Effective End Date
+                </label>
+                <input
+                  type="date"
+                  value={announcementEndDate}
+                  onChange={(e) => setAnnouncementEndDate(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    border: '1px solid hsl(var(--border-color))',
+                    background: '#ffffff',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    outline: 'none'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Detailed Message */}
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
+                Detailed Message to Patients *
+              </label>
+              <textarea
+                value={announcementMessage}
+                onChange={(e) => setAnnouncementMessage(e.target.value)}
+                placeholder="e.g. Dr. Amar will be out of station attending an Ayurveda conference. The clinic will reopen for token booking on Monday morning at 7:00 AM."
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid hsl(var(--border-color))',
+                  background: '#ffffff',
+                  fontSize: '0.92rem',
+                  lineHeight: '1.4',
+                  outline: 'none',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            {/* Auto-pause toggle */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              background: '#f8fafc',
+              padding: '12px 14px',
+              borderRadius: '10px',
+              border: '1px solid #e2e8f0'
+            }}>
+              <input
+                type="checkbox"
+                id="autoPauseToggle"
+                checked={announcementAutoPause}
+                onChange={(e) => setAnnouncementAutoPause(e.target.checked)}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              <label htmlFor="autoPauseToggle" style={{ fontSize: '0.88rem', fontWeight: 700, color: '#334155', cursor: 'pointer' }}>
+                Automatically pause Token Generation while this notice is active
+              </label>
+            </div>
+
+            {/* Action Bar */}
+            <div style={{ display: 'flex', gap: '12px', marginTop: '6px' }}>
+              <button
+                type="button"
+                onClick={() => handleSaveAnnouncement(true)}
+                disabled={savingAnnouncement}
+                className="btn btn-primary"
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: '10px',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <Send size={18} />
+                {savingAnnouncement ? 'Broadcasting...' : announcementEnabled ? 'Update & Broadcast Notice' : 'Publish & Broadcast Live'}
+              </button>
+
+              {announcementEnabled && (
+                <button
+                  type="button"
+                  onClick={handleDeactivateAnnouncement}
+                  disabled={savingAnnouncement}
+                  className="btn btn-secondary"
+                  style={{ padding: '12px 20px', borderRadius: '10px', fontWeight: 700 }}
+                >
+                  Deactivate
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Live Mobile App Preview */}
+          <div style={{
+            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '14px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Eye size={16} /> Live Patient Mobile Preview
+              </span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'hsl(var(--text-muted))' }}>
+                Real-time Rendering
+              </span>
+            </div>
+
+            {/* Mobile Banner Mockup */}
+            <div style={{
+              background: announcementType === 'vacation' 
+                ? 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' 
+                : announcementType === 'emergency'
+                ? 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)'
+                : 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+              border: `1.5px solid ${
+                announcementType === 'vacation' ? '#fde68a' : announcementType === 'emergency' ? '#fecaca' : '#bbf7d0'
+              }`,
+              borderRadius: '14px',
+              padding: '16px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.3rem' }}>
+                  {announcementType === 'vacation' ? '🏖️' : announcementType === 'emergency' ? '⚠️' : '📢'}
+                </span>
+                <div>
+                  <h4 style={{
+                    margin: 0,
+                    fontSize: '1rem',
+                    fontWeight: 800,
+                    color: announcementType === 'vacation' ? '#92400e' : announcementType === 'emergency' ? '#991b1b' : '#166534'
+                  }}>
+                    {announcementTitle || 'Dr. Amar on Leave'}
+                  </h4>
+                  {(announcementStartDate || announcementEndDate) && (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      color: announcementType === 'vacation' ? '#b45309' : announcementType === 'emergency' ? '#b91c1c' : '#15803d'
+                    }}>
+                      🗓️ {announcementStartDate || 'Today'} {announcementEndDate ? `to ${announcementEndDate}` : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <p style={{
+                margin: 0,
+                fontSize: '0.85rem',
+                color: announcementType === 'vacation' ? '#78350f' : announcementType === 'emergency' ? '#7f1d1d' : '#14532d',
+                lineHeight: '1.4'
+              }}>
+                {announcementMessage || 'Doctor is currently away. Clinic will resume normal consultation hours shortly.'}
+              </p>
+
+              {announcementAutoPause && (
+                <div style={{
+                  marginTop: '4px',
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  background: 'rgba(255,255,255,0.7)',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#b91c1c',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  🔒 Token generation is currently suspended.
+                </div>
+              )}
+            </div>
+
+            <div style={{ fontSize: '0.78rem', color: 'hsl(var(--text-muted))', textAlign: 'center' }}>
+              Patients will immediately see this banner on their home screen upon launching the app or via live push sync.
+            </div>
+          </div>
         </div>
       </div>
 
@@ -305,7 +863,7 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
             </div>
             <div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'hsl(var(--text-color))' }}>
-                Token Generation Rules & Timings
+                Token Generation Rules & Operating Hours
               </h3>
               <p style={{ fontSize: '0.85rem', color: 'hsl(var(--text-muted))', margin: '4px 0 0 0' }}>
                 Configure clinic operating hours, allowed days per service, or temporarily pause token creation.
@@ -354,88 +912,77 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
         )}
 
         <form onSubmit={handleSaveSettings} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Weekday Timing Selection Row */}
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'hsl(var(--primary))', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Clock size={16} />
-              WEEKDAY OPERATING WINDOW (MONDAY TO FRIDAY)
-            </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '20px',
-              padding: '18px',
-              background: 'hsla(var(--primary) / 0.03)',
-              borderRadius: '14px',
-              border: '1px solid hsl(var(--border-color))'
-            }}>
+          {/* Weekday Token Generation Window */}
+          <div style={{
+            background: 'hsla(var(--primary) / 0.03)',
+            padding: '16px 20px',
+            borderRadius: '12px',
+            border: '1px solid hsla(var(--primary) / 0.08)'
+          }}>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'hsl(var(--primary))', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              🗓️ Weekday Token Window (Monday – Friday)
+            </h4>
+            <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', alignItems: 'center' }}>
               <TimePicker12H
-                label="Weekday Start Time (Mon - Fri)"
+                label="Start Time"
                 value={startTime}
                 onChange={(val) => {
-                  setStartTime(val);
                   isFormDirtyRef.current = true;
                   setIsFormDirty(true);
+                  setStartTime(val);
                 }}
               />
-
               <TimePicker12H
-                label="Weekday End Time (Mon - Fri)"
+                label="End Time"
                 value={endTime}
                 onChange={(val) => {
-                  setEndTime(val);
                   isFormDirtyRef.current = true;
                   setIsFormDirty(true);
+                  setEndTime(val);
                 }}
               />
             </div>
           </div>
 
-          {/* Saturday Special Timing Selection Row */}
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#b45309', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Calendar size={16} />
-              SATURDAY SPECIAL OPERATING WINDOW
-            </div>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '20px',
-              padding: '18px',
-              background: 'rgba(245, 158, 11, 0.04)',
-              borderRadius: '14px',
-              border: '1px solid rgba(245, 158, 11, 0.25)'
-            }}>
+          {/* Saturday Token Generation Window */}
+          <div style={{
+            background: 'hsla(var(--primary) / 0.03)',
+            padding: '16px 20px',
+            borderRadius: '12px',
+            border: '1px solid hsla(var(--primary) / 0.08)'
+          }}>
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'hsl(var(--primary))', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              🗓️ Saturday Token Window
+            </h4>
+            <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', alignItems: 'center' }}>
               <TimePicker12H
-                label="Saturday Start Time"
+                label="Start Time (Saturday)"
                 value={saturdayStartTime}
                 onChange={(val) => {
-                  setSaturdayStartTime(val);
                   isFormDirtyRef.current = true;
                   setIsFormDirty(true);
+                  setSaturdayStartTime(val);
                 }}
               />
-
               <TimePicker12H
-                label="Saturday End Time"
+                label="End Time (Saturday)"
                 value={saturdayEndTime}
                 onChange={(val) => {
-                  setSaturdayEndTime(val);
                   isFormDirtyRef.current = true;
                   setIsFormDirty(true);
+                  setSaturdayEndTime(val);
                 }}
               />
             </div>
           </div>
 
-          {/* Medicine Allowed Days */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          {/* Medicine Service Allowed Days */}
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
               Medicine Consultation Allowed Days
             </label>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {[
-                { day: 0, label: 'Sun' },
                 { day: 1, label: 'Mon' },
                 { day: 2, label: 'Tue' },
                 { day: 3, label: 'Wed' },
@@ -469,14 +1016,13 @@ export const Settings: React.FC<SettingsProps> = ({ token }) => {
             </div>
           </div>
 
-          {/* Treatment Allowed Days */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Treatment / Dressing Allowed Days
+          {/* Treatment Service Allowed Days */}
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'block' }}>
+              Treatment & Dressing Allowed Days
             </label>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               {[
-                { day: 0, label: 'Sun' },
                 { day: 1, label: 'Mon' },
                 { day: 2, label: 'Tue' },
                 { day: 3, label: 'Wed' },

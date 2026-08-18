@@ -48,6 +48,13 @@ export class TokensService {
       throw new BadRequestException('Token generation is currently paused by the clinic.');
     }
 
+    // Check if Doctor Vacation / Clinic Notice is active and auto-pauses tokens
+    const announcement = await this.settingsService.getAnnouncement();
+    if (announcement.enabled && announcement.autoPauseTokens) {
+      const noticeMsg = announcement.message || announcement.title || 'Doctor is currently on leave / clinic is closed.';
+      throw new BadRequestException(`Token generation is currently paused: ${noticeMsg}`);
+    }
+
     // 2. Dynamic Time Availability Validation (evaluated in IST)
     const isSaturday = dayOfWeek === 6;
     const activeStartTime = isSaturday ? (tokenSettings.saturdayStartTime || '07:30') : (tokenSettings.startTime || '07:00');

@@ -17,6 +17,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
   const [tokenLoading, setTokenLoading] = useState(false);
   const [error, setError] = useState('');
   const [tokenConfig, setTokenConfig] = useState<any>(null);
+  const [announcement, setAnnouncement] = useState<any>(null);
 
   // Edit Profile States
   const [showEditModal, setShowEditModal] = useState(false);
@@ -157,6 +158,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       const cfg = await api.get('/settings/tokens', token);
       setTokenConfig(cfg);
 
+      try {
+        const ann = await api.get('/settings/announcement', token);
+        setAnnouncement(ann);
+      } catch (e) {
+        // Optional announcement
+      }
+
       if (prof.status === 'active') {
         const tokRes = await api.get('/tokens/today', token);
         setTodayToken(tokRes.token);
@@ -237,6 +245,62 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </View>
+
+      {/* 🏖️ Doctor Vacation & Clinic Announcements Banner */}
+      {announcement && announcement.enabled ? (
+        <View style={[
+          styles.announcementBanner,
+          announcement.type === 'vacation' 
+            ? styles.announcementVacation 
+            : announcement.type === 'emergency' 
+            ? styles.announcementEmergency 
+            : styles.announcementGeneral
+        ]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <Text style={{ fontSize: 22 }}>
+              {announcement.type === 'vacation' ? '🏖️' : announcement.type === 'emergency' ? '⚠️' : '📢'}
+            </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[
+                styles.announcementTitle,
+                announcement.type === 'vacation' 
+                  ? styles.announcementTitleVacation 
+                  : announcement.type === 'emergency' 
+                  ? styles.announcementTitleEmergency 
+                  : styles.announcementTitleGeneral
+              ]}>
+                {announcement.title || (announcement.type === 'vacation' ? 'Doctor on Vacation / Leave' : 'Clinic Notice')}
+              </Text>
+              {(announcement.startDate || announcement.endDate) ? (
+                <Text style={styles.announcementDateText}>
+                  🗓️ {announcement.startDate || 'Current'} {announcement.endDate ? `to ${announcement.endDate}` : ''}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+
+          {announcement.message ? (
+            <Text style={[
+              styles.announcementMessage,
+              announcement.type === 'vacation' 
+                ? styles.announcementMessageVacation 
+                : announcement.type === 'emergency' 
+                ? styles.announcementMessageEmergency 
+                : styles.announcementMessageGeneral
+            ]}>
+              {announcement.message}
+            </Text>
+          ) : null}
+
+          {announcement.autoPauseTokens ? (
+            <View style={styles.announcementPauseTag}>
+              <Text style={styles.announcementPauseTagText}>
+                🔒 Token booking is temporarily suspended.
+              </Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
 
       {/* Account Info card */}
       <View style={styles.card}>
@@ -348,6 +412,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
 
                   const medDayText = medAllowedDays.map(d => DAY_SHORT[d]).join(', ');
                   const treatDayText = treatAllowedDays.map(d => DAY_SHORT[d]).join(', ');
+
+                  if (announcement && announcement.enabled && announcement.autoPauseTokens) {
+                    return (
+                      <View style={{ backgroundColor: '#fffbeb', borderWidth: 1.5, borderColor: '#fde68a', borderRadius: 12, padding: 16 }}>
+                        <Text style={{ fontSize: 15, fontWeight: '800', color: '#92400e', marginBottom: 4 }}>
+                          🏖️ Token Booking Suspended (Doctor on Leave)
+                        </Text>
+                        <Text style={{ fontSize: 13, color: '#78350f', lineHeight: 18 }}>
+                          {announcement.message || 'Dr. Amar is currently on leave. Token booking will resume once the clinic reopens.'}
+                        </Text>
+                        {announcement.endDate ? (
+                          <View style={{ marginTop: 8, alignSelf: 'flex-start', backgroundColor: '#fef3c7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#fde68a' }}>
+                            <Text style={{ fontSize: 11, fontWeight: '800', color: '#b45309' }}>
+                              🗓️ Resuming: {announcement.endDate}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    );
+                  }
 
                   if (!isGloballyEnabled) {
                     return (
@@ -1001,5 +1085,77 @@ const styles = StyleSheet.create({
   genderChipTextActive: {
     color: '#ffffff',
     fontWeight: '700',
+  },
+  announcementBanner: {
+    width: '100%',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  announcementVacation: {
+    backgroundColor: '#fffbeb',
+    borderWidth: 1.5,
+    borderColor: '#fde68a',
+  },
+  announcementEmergency: {
+    backgroundColor: '#fef2f2',
+    borderWidth: 1.5,
+    borderColor: '#fecaca',
+  },
+  announcementGeneral: {
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1.5,
+    borderColor: '#bbf7d0',
+  },
+  announcementTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  announcementTitleVacation: {
+    color: '#92400e',
+  },
+  announcementTitleEmergency: {
+    color: '#991b1b',
+  },
+  announcementTitleGeneral: {
+    color: '#166534',
+  },
+  announcementDateText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#b45309',
+    marginTop: 2,
+  },
+  announcementMessage: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  announcementMessageVacation: {
+    color: '#78350f',
+  },
+  announcementMessageEmergency: {
+    color: '#7f1d1d',
+  },
+  announcementMessageGeneral: {
+    color: '#14532d',
+  },
+  announcementPauseTag: {
+    marginTop: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  announcementPauseTagText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#b91c1c',
   },
 });

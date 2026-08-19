@@ -21,15 +21,6 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
   const [detailError, setDetailError] = useState('');
   const [servingToken, setServingToken] = useState<any>(null);
   const [healthNotes, setHealthNotes] = useState('');
-  const [paymentStatus, setPaymentStatus] = useState<'Unpaid' | 'Paid'>('Unpaid');
-  const [paymentNotes, setPaymentNotes] = useState('');
-  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
-
-  const [editingPaymentToken, setEditingPaymentToken] = useState<any>(null);
-  const [editPayStatus, setEditPayStatus] = useState<'Unpaid' | 'Paid'>('Unpaid');
-  const [editPayNotes, setEditPayNotes] = useState('');
-  const [savingPayment, setSavingPayment] = useState(false);
-  const [paymentModalError, setPaymentModalError] = useState('');
   const [queueDetailTab, setQueueDetailTab] = useState<'ledger' | 'profile'>('ledger');
   const [returnToServingToken, setReturnToServingToken] = useState<any>(null);
 
@@ -107,44 +98,16 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
     }
   };
 
-  const handleStatusUpdate = async (id: string, status: string, notes?: string, payStatus?: string, payNotes?: string) => {
+  const handleStatusUpdate = async (id: string, status: string, notes?: string) => {
     setError('');
     try {
       await api.patch(`/queue/tokens/${id}/status`, {
         status,
         notes,
-        paymentStatus: payStatus,
-        paymentNotes: payNotes,
       }, token);
       fetchQueue();
     } catch (err: any) {
       setError(err.message || 'Failed to update token status');
-    }
-  };
-
-  const openEditPaymentModal = (t: any) => {
-    setEditingPaymentToken(t);
-    setEditPayStatus(t.paymentStatus === 'Paid' ? 'Paid' : 'Unpaid');
-    setEditPayNotes(t.paymentNotes || '');
-    setPaymentModalError('');
-  };
-
-  const handleSavePaymentUpdate = async () => {
-    if (!editingPaymentToken) return;
-    setSavingPayment(true);
-    setPaymentModalError('');
-    try {
-      await api.patch(`/queue/tokens/${editingPaymentToken.id}/payment`, {
-        paymentStatus: editPayStatus,
-        paymentNotes: editPayNotes,
-      }, token);
-      setEditingPaymentToken(null);
-      fetchQueue();
-    } catch (err: any) {
-      console.error('Payment update error:', err);
-      setPaymentModalError(err.message || 'Failed to update payment status');
-    } finally {
-      setSavingPayment(false);
     }
   };
 
@@ -153,10 +116,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
     const matchesSearch = t.tokenNumber.toLowerCase().includes(searchToken.toLowerCase()) ||
                           t.patient?.fullName.toLowerCase().includes(searchToken.toLowerCase());
     const matchesType = filterType === 'all' || t.serviceType === filterType;
-    const matchesPayment = paymentFilter === 'all' ||
-      (paymentFilter === 'paid' && t.paymentStatus === 'Paid') ||
-      (paymentFilter === 'unpaid' && t.paymentStatus !== 'Paid');
-    return matchesSearch && matchesType && matchesPayment;
+    return matchesSearch && matchesType;
   });
 
   const medicineQueue = filteredQueue.filter((t) => t.serviceType === 'medicine');
@@ -225,28 +185,8 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
             <button className={`btn ${filterType === 'treatment' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => setFilterType('treatment')}>Treatment</button>
           </div>
 
-          {/* Payment Filter & Search */}
+          {/* Search */}
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <select
-              value={paymentFilter}
-              onChange={(e: any) => setPaymentFilter(e.target.value)}
-              style={{
-                borderRadius: '8px',
-                border: '1px solid hsl(var(--border-color))',
-                padding: '7px 12px',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                color: paymentFilter === 'unpaid' ? '#b91c1c' : paymentFilter === 'paid' ? '#15803d' : '#1a202c',
-                background: '#ffffff',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="all">All Payment Statuses</option>
-              <option value="unpaid">Unpaid Only</option>
-              <option value="paid">Paid Only</option>
-            </select>
-
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'hsl(var(--bg-primary))', border: '1px solid hsl(var(--border-color))', borderRadius: '8px', padding: '6px 12px', width: '260px' }}>
               <Search size={18} style={{ color: 'hsl(var(--text-muted))' }} />
               <input
@@ -272,7 +212,6 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                   <th>Token</th>
                   <th>Patient Info</th>
                   <th>Service</th>
-                  <th>Payment Status</th>
                   <th>Status</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -296,40 +235,6 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                     </td>
                     <td>
                       <span style={{ textTransform: 'capitalize' }}>{t.serviceType}</span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditPaymentModal(t);
-                          }}
-                          title="Click to change payment status"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.75rem',
-                            fontWeight: 800,
-                            width: 'fit-content',
-                            background: t.paymentStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
-                            color: t.paymentStatus === 'Paid' ? 'hsl(var(--success))' : 'hsl(var(--danger))',
-                            border: t.paymentStatus === 'Paid' ? '1px solid hsla(150, 55%, 32%, 0.25)' : '1px solid hsla(350, 65%, 44%, 0.25)',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <span>{t.paymentStatus === 'Paid' ? '✓ Paid' : '⏳ Unpaid'}</span>
-                          <Edit size={11} style={{ opacity: 0.8 }} />
-                        </button>
-                        {t.paymentNotes && (
-                          <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
-                            {t.paymentNotes}
-                          </span>
-                        )}
-                      </div>
                     </td>
                     <td>
                       {t.isMissed ? (
@@ -787,132 +692,6 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
         </div>
       )}
 
-      {/* Update Payment Status Modal */}
-      {editingPaymentToken && createPortal(
-        <div
-          onClick={() => setEditingPaymentToken(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(21, 35, 30, 0.5)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 10000,
-            padding: '20px'
-          }}
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="glass-card animate-fade-in" 
-            style={{
-              width: '100%',
-              maxWidth: '450px',
-              background: 'hsl(var(--bg-secondary))',
-              padding: '28px',
-              borderRadius: '16px',
-              border: '1px solid hsl(var(--border) / 0.15)',
-              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px'
-            }}
-          >
-            <div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'hsl(var(--primary))', marginBottom: '6px' }}>
-                Update Payment Status
-              </h3>
-              <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem' }}>
-                Updating payment details for Token <strong>{editingPaymentToken.tokenNumber}</strong> ({editingPaymentToken.patient?.fullName || 'Patient'})
-              </p>
-            </div>
-
-            {paymentModalError && (
-              <div style={{
-                backgroundColor: 'hsla(350, 80%, 55%, 0.15)',
-                color: 'hsl(350, 80%, 55%)',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                border: '1px solid hsla(350, 80%, 55%, 0.3)',
-                fontSize: '0.85rem'
-              }}>
-                {paymentModalError}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase' }}>
-                Payment Status
-              </label>
-              <select
-                value={editPayStatus}
-                onChange={(e: any) => setEditPayStatus(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid hsl(var(--border-color))',
-                  fontSize: '0.95rem',
-                  fontWeight: 800,
-                  color: editPayStatus === 'Paid' ? '#15803d' : '#b91c1c',
-                  background: editPayStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.1)' : 'hsla(350, 65%, 44%, 0.1)',
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="Unpaid">⏳ Unpaid</option>
-                <option value="Paid">✓ Paid</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
-                Payment Notes / Transaction Ref (Optional)
-              </label>
-              <input
-                type="text"
-                value={editPayNotes}
-                onChange={(e) => setEditPayNotes(e.target.value)}
-                placeholder="e.g. Cash ₹500, UPI #9821, Paid on GPay"
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid hsl(var(--border-color))',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  color: '#1a202c',
-                  background: '#ffffff',
-                  outline: 'none'
-                }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <button 
-                className="btn btn-secondary" 
-                style={{ padding: '8px 16px', cursor: 'pointer' }}
-                onClick={() => setEditingPaymentToken(null)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-primary" 
-                style={{ padding: '8px 24px', cursor: 'pointer', fontWeight: 600 }}
-                onClick={handleSavePaymentUpdate}
-                disabled={savingPayment}
-              >
-                {savingPayment ? 'Saving...' : 'Save Payment Status'}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </>
   );
 };

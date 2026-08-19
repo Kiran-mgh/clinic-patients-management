@@ -402,35 +402,6 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
   const [collectionsPage, setCollectionsPage] = useState(1);
   const [collectionsRowsPerPage, setCollectionsRowsPerPage] = useState(10);
 
-  // Edit Payment State
-  const [editingPaymentToken, setEditingPaymentToken] = useState<any>(null);
-  const [editPayStatus, setEditPayStatus] = useState<'Unpaid' | 'Paid'>('Unpaid');
-  const [editPayNotes, setEditPayNotes] = useState('');
-  const [savingPayment, setSavingPayment] = useState(false);
-
-  const openEditPaymentModal = (visit: any) => {
-    setEditingPaymentToken(visit);
-    setEditPayStatus(visit.paymentStatus === 'Paid' ? 'Paid' : 'Unpaid');
-    setEditPayNotes(visit.paymentNotes || '');
-  };
-
-  const handleSavePaymentUpdate = async () => {
-    if (!editingPaymentToken) return;
-    setSavingPayment(true);
-    try {
-      await api.patch(`/queue/tokens/${editingPaymentToken.tokenId || editingPaymentToken.id}/payment`, {
-        paymentStatus: editPayStatus,
-        paymentNotes: editPayNotes,
-      }, token);
-      setEditingPaymentToken(null);
-      fetchReport(startDate, endDate);
-    } catch (err: any) {
-      alert(err.message || 'Failed to update payment status');
-    } finally {
-      setSavingPayment(false);
-    }
-  };
-
   // Reset page indexes when report data changes
   useEffect(() => {
     setVisitsPage(1);
@@ -1473,8 +1444,8 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                       onClick={() => exportToCSV(
                         reportData.visits || [], 
                         'visited_patients_report', 
-                        ['Date', 'Token Number', 'Service Type', 'Patient ID', 'Patient Name', 'Phone', 'Payment Status', 'Payment Notes', 'Staff Notes'],
-                        ['date', 'tokenNumber', 'serviceType', 'patientId', 'patientName', 'patientPhone', 'paymentStatus', 'paymentNotes', 'servingNotes']
+                        ['Date', 'Token Number', 'Service Type', 'Patient ID', 'Patient Name', 'Phone', 'Clinical Notes'],
+                        ['date', 'tokenNumber', 'serviceType', 'patientId', 'patientName', 'patientPhone', 'servingNotes']
                       )}
                       style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                     >
@@ -1484,9 +1455,9 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                       className="btn btn-secondary" 
                       onClick={() => exportToPDF(
                         'Visited Patients Log', 
-                        ['Date', 'Token', 'Type', 'Patient ID', 'Patient Name', 'Phone', 'Payment Status', 'Payment Notes'],
+                        ['Date', 'Token', 'Type', 'Patient ID', 'Patient Name', 'Phone', 'Clinical Notes'],
                         reportData.visits || [],
-                        ['date', 'tokenNumber', 'serviceType', 'patientId', 'patientName', 'patientPhone', 'paymentStatus', 'paymentNotes']
+                        ['date', 'tokenNumber', 'serviceType', 'patientId', 'patientName', 'patientPhone', 'servingNotes']
                       )}
                       style={{ padding: '6px 12px', fontSize: '0.8rem' }}
                     >
@@ -1505,15 +1476,13 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                         <th>Patient ID</th>
                         <th>Patient Name</th>
                         <th>Contact</th>
-                        <th>Payment Status</th>
-                        <th>Payment Notes</th>
                         <th>Clinical Notes</th>
                       </tr>
                     </thead>
                     <tbody>
                       {!reportData.visits || reportData.visits.length === 0 ? (
                         <tr>
-                          <td colSpan={9} style={{ textAlign: 'center', padding: '32px', color: 'hsl(var(--text-muted))' }}>
+                          <td colSpan={7} style={{ textAlign: 'center', padding: '32px', color: 'hsl(var(--text-muted))' }}>
                             No patient visits found for the selected date range.
                           </td>
                         </tr>
@@ -1522,7 +1491,6 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                           .slice((visitsPage - 1) * visitsRowsPerPage, visitsPage * visitsRowsPerPage)
                           .map((visit: any, idx: number) => {
                             const isMedicine = visit.serviceType === 'medicine';
-                            const isPaid = visit.paymentStatus === 'Paid';
                             return (
                               <tr key={visit.id || idx}>
                                 <td style={{ fontWeight: 500 }}>
@@ -1554,40 +1522,6 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                                 </td>
                                 <td style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem' }}>
                                   {visit.patientPhone || '-'}
-                                </td>
-                                <td>
-                                  <button
-                                    onClick={() => openEditPaymentModal(visit)}
-                                    style={{
-                                      border: 'none',
-                                      background: 'transparent',
-                                      cursor: 'pointer',
-                                      padding: 0,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
-                                    }}
-                                    title="Click to change payment status"
-                                  >
-                                    <span style={{
-                                      padding: '3px 8px',
-                                      borderRadius: '6px',
-                                      fontSize: '0.75rem',
-                                      fontWeight: 700,
-                                      background: isPaid ? 'hsla(150, 55%, 32%, 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
-                                      color: isPaid ? '#15803d' : '#b91c1c',
-                                      border: `1px solid ${isPaid ? 'hsla(150, 55%, 32%, 0.25)' : 'hsla(350, 65%, 44%, 0.25)'}`,
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '4px'
-                                    }}>
-                                      {isPaid ? '✓ Paid' : '⏳ Unpaid'}
-                                      <Edit size={11} style={{ opacity: 0.6 }} />
-                                    </span>
-                                  </button>
-                                </td>
-                                <td style={{ color: visit.paymentNotes ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))', fontStyle: visit.paymentNotes ? 'normal' : 'italic' }}>
-                                  {visit.paymentNotes || '—'}
                                 </td>
                                 <td style={{ color: visit.servingNotes ? 'hsl(var(--text-main))' : 'hsl(var(--text-muted))', fontStyle: visit.servingNotes ? 'normal' : 'italic' }}>
                                   {visit.servingNotes || '—'}
@@ -1844,120 +1778,6 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
             <Loader2 className="animate-spin" style={{ color: 'hsl(var(--text-muted))' }} size={32} />
           </div>
         </div>
-      )}
-
-      {/* Update Payment Status Modal */}
-      {editingPaymentToken && createPortal(
-        <div
-          onClick={() => setEditingPaymentToken(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(21, 35, 30, 0.5)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 10000,
-            padding: '20px'
-          }}
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="glass-card animate-fade-in" 
-            style={{
-              width: '100%',
-              maxWidth: '450px',
-              background: 'hsl(var(--bg-secondary))',
-              padding: '28px',
-              borderRadius: '16px',
-              border: '1px solid hsl(var(--border) / 0.15)',
-              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px'
-            }}
-          >
-            <div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'hsl(var(--primary))', marginBottom: '6px' }}>
-                Update Payment Status
-              </h3>
-              <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem' }}>
-                Updating payment details for Token <strong>{editingPaymentToken.tokenNumber}</strong> ({editingPaymentToken.patientName || 'Patient'})
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase' }}>
-                Payment Status
-              </label>
-              <select
-                value={editPayStatus}
-                onChange={(e: any) => setEditPayStatus(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid hsl(var(--border-color))',
-                  fontSize: '0.95rem',
-                  fontWeight: 800,
-                  color: editPayStatus === 'Paid' ? '#15803d' : '#b91c1c',
-                  background: editPayStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.1)' : 'hsla(350, 65%, 44%, 0.1)',
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="Unpaid">⏳ Unpaid</option>
-                <option value="Paid">✓ Paid</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
-                Payment Notes / Transaction Ref (Optional)
-              </label>
-              <input
-                type="text"
-                value={editPayNotes}
-                onChange={(e) => setEditPayNotes(e.target.value)}
-                placeholder="e.g. Cash ₹500, UPI #9821, Paid on GPay"
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid hsl(var(--border-color))',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  color: '#1a202c',
-                  background: '#ffffff',
-                  outline: 'none'
-                }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <button 
-                className="btn btn-secondary" 
-                style={{ padding: '8px 16px', cursor: 'pointer' }}
-                onClick={() => setEditingPaymentToken(null)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-primary" 
-                style={{ padding: '8px 24px', cursor: 'pointer', fontWeight: 600 }}
-                onClick={handleSavePaymentUpdate}
-                disabled={savingPayment}
-              >
-                {savingPayment ? 'Saving...' : 'Save Payment Status'}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
       )}
 
       {/* Interactive Patient Treatment & Billing Ledger Modal */}

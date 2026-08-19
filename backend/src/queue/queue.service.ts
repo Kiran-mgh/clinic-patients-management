@@ -293,7 +293,9 @@ export class QueueService {
       token.paymentNotes = paymentNotes;
     }
 
-    if (status === 'served') {
+    if (status === 'in_progress') {
+      token.calledAt = now;
+    } else if (status === 'served') {
       token.servedAt = now;
     } else if (status === 'cancelled') {
       token.cancelledAt = now;

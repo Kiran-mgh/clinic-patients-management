@@ -36,6 +36,9 @@ export const DisplayScreen: React.FC = () => {
 
   const prevMedToken = useRef<string | null>(null);
   const prevTrtToken = useRef<string | null>(null);
+  const prevMedCalledAt = useRef<string | null>(null);
+  const prevTrtCalledAt = useRef<string | null>(null);
+  const isFirstFetch = useRef<boolean>(true);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   // Play pleasant hospital ding chime using Web Audio API
@@ -185,21 +188,42 @@ export const DisplayScreen: React.FC = () => {
     try {
       const json: PublicLiveQueue = await api.get('/queue/public-live');
       if (json) {
-        // Detect new token calls to trigger chime + speech
-        if (json.currentServingMedicine && prevMedToken.current !== null && json.currentServingMedicine !== prevMedToken.current) {
-          setRecentlyCalled(prev => ({ ...prev, med: true }));
-          setTimeout(() => setRecentlyCalled(prev => ({ ...prev, med: false })), 10000);
-          announceToken(json.currentServingMedicine, 'Doctor Consultation Room');
-        }
+        if (isFirstFetch.current) {
+          isFirstFetch.current = false;
+          prevMedToken.current = json.currentServingMedicine;
+          prevTrtToken.current = json.currentServingTreatment;
+          prevMedCalledAt.current = json.medicineCalledAt;
+          prevTrtCalledAt.current = json.treatmentCalledAt;
+        } else {
+          // Detect Medicine Token Call / Change
+          const medCalled = json.currentServingMedicine && (
+            json.currentServingMedicine !== prevMedToken.current ||
+            (json.medicineCalledAt && json.medicineCalledAt !== prevMedCalledAt.current)
+          );
 
-        if (json.currentServingTreatment && prevTrtToken.current !== null && json.currentServingTreatment !== prevTrtToken.current) {
-          setRecentlyCalled(prev => ({ ...prev, trt: true }));
-          setTimeout(() => setRecentlyCalled(prev => ({ ...prev, trt: false })), 10000);
-          announceToken(json.currentServingTreatment, 'Treatment Room');
-        }
+          if (medCalled) {
+            setRecentlyCalled(prev => ({ ...prev, med: true }));
+            setTimeout(() => setRecentlyCalled(prev => ({ ...prev, med: false })), 12000);
+            announceToken(json.currentServingMedicine!, 'Doctor Consultation Room 1');
+          }
 
-        prevMedToken.current = json.currentServingMedicine;
-        prevTrtToken.current = json.currentServingTreatment;
+          // Detect Treatment Token Call / Change
+          const trtCalled = json.currentServingTreatment && (
+            json.currentServingTreatment !== prevTrtToken.current ||
+            (json.treatmentCalledAt && json.treatmentCalledAt !== prevTrtCalledAt.current)
+          );
+
+          if (trtCalled) {
+            setRecentlyCalled(prev => ({ ...prev, trt: true }));
+            setTimeout(() => setRecentlyCalled(prev => ({ ...prev, trt: false })), 12000);
+            announceToken(json.currentServingTreatment!, 'Treatment Room');
+          }
+
+          prevMedToken.current = json.currentServingMedicine;
+          prevTrtToken.current = json.currentServingTreatment;
+          prevMedCalledAt.current = json.medicineCalledAt;
+          prevTrtCalledAt.current = json.treatmentCalledAt;
+        }
 
         setData(json);
       }

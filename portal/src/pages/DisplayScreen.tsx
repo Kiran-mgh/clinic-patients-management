@@ -83,30 +83,40 @@ export const DisplayScreen: React.FC = () => {
 
   // Voice Announcement using Web Speech API
   const announceToken = (tokenNumber: string, roomName: string) => {
-    if (!audioEnabled || !('speechSynthesis' in window)) return;
+    if (!('speechSynthesis' in window)) return;
 
     try {
       playChime();
 
       setTimeout(() => {
-        // Format token number so TTS pronounces letters individually e.g. "M 0 1 4"
-        const spacedToken = tokenNumber.split('').join(' ');
-        const text = `Token number ${spacedToken}, please proceed to ${roomName}.`;
+        try {
+          if (!('speechSynthesis' in window)) return;
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+          window.speechSynthesis.cancel(); // cancel any ongoing speech
 
-        window.speechSynthesis.cancel(); // cancel any ongoing speech
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.88;
-        utterance.pitch = 1.05;
-        utterance.lang = 'en-IN';
+          // Format token number so TTS pronounces letters individually e.g. "M 0 0 1"
+          const spacedToken = tokenNumber.split('').join(' ');
+          const text = `Token number ${spacedToken}, please proceed to ${roomName}.`;
 
-        const voices = window.speechSynthesis.getVoices();
-        const indianVoice = voices.find(v => v.lang.includes('IN') || v.name.includes('India') || v.lang.includes('en-GB'));
-        if (indianVoice) {
-          utterance.voice = indianVoice;
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.rate = 0.85;
+          utterance.pitch = 1.0;
+          utterance.volume = 1.0;
+          utterance.lang = 'en-IN';
+
+          const voices = window.speechSynthesis.getVoices();
+          const voice = voices.find(v => v.lang.includes('IN') || v.name.includes('India') || v.lang.includes('en-GB') || v.lang.includes('en-US'));
+          if (voice) {
+            utterance.voice = voice;
+          }
+
+          window.speechSynthesis.speak(utterance);
+        } catch (innerErr) {
+          console.warn('SpeechSynthesis error:', innerErr);
         }
-
-        window.speechSynthesis.speak(utterance);
-      }, 700);
+      }, 600);
     } catch (e) {
       console.warn('TTS error', e);
     }
@@ -237,9 +247,24 @@ export const DisplayScreen: React.FC = () => {
   };
 
   const handleEnableAudio = () => {
-    setAudioEnabled(!audioEnabled);
-    if (!audioEnabled) {
-      playChime();
+    const nextState = !audioEnabled;
+    setAudioEnabled(nextState);
+    if (nextState) {
+      if (data?.currentServingMedicine) {
+        announceToken(data.currentServingMedicine, 'Doctor Consultation Room 1');
+      } else if (data?.currentServingTreatment) {
+        announceToken(data.currentServingTreatment, 'Treatment Room');
+      } else {
+        playChime();
+        setTimeout(() => {
+          if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance("Voice announcement system active.");
+            utterance.rate = 0.88;
+            utterance.lang = 'en-IN';
+            window.speechSynthesis.speak(utterance);
+          }
+        }, 500);
+      }
     }
   };
 
@@ -420,19 +445,42 @@ export const DisplayScreen: React.FC = () => {
                 <Stethoscope size={18} /> CONSULTATION ROOM 1
               </div>
 
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: data?.currentServingMedicine ? 'hsla(150, 55%, 32%, 0.15)' : 'hsl(var(--bg-tertiary))',
-                color: data?.currentServingMedicine ? 'hsl(var(--success))' : 'hsl(var(--text-muted))',
-                padding: '6px 14px',
-                borderRadius: '30px',
-                fontSize: '0.85rem',
-                fontWeight: 800
-              }}>
-                <Radio size={14} />
-                {data?.currentServingMedicine ? 'NOW SERVING' : 'WAITING FOR DOCTOR'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {data?.currentServingMedicine && (
+                  <button
+                    onClick={() => announceToken(data.currentServingMedicine!, 'Doctor Consultation Room 1')}
+                    style={{
+                      background: 'hsla(150, 55%, 32%, 0.1)',
+                      border: '1.5px solid hsl(var(--success))',
+                      color: 'hsl(var(--success))',
+                      padding: '5px 12px',
+                      borderRadius: '20px',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    title="Replay voice announcement for this token"
+                  >
+                    <Volume2 size={13} /> Speak
+                  </button>
+                )}
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: data?.currentServingMedicine ? 'hsla(150, 55%, 32%, 0.15)' : 'hsl(var(--bg-tertiary))',
+                  color: data?.currentServingMedicine ? 'hsl(var(--success))' : 'hsl(var(--text-muted))',
+                  padding: '6px 14px',
+                  borderRadius: '30px',
+                  fontSize: '0.85rem',
+                  fontWeight: 800
+                }}>
+                  <Radio size={14} />
+                  {data?.currentServingMedicine ? 'NOW SERVING' : 'WAITING FOR DOCTOR'}
+                </div>
               </div>
             </div>
 
@@ -580,19 +628,42 @@ export const DisplayScreen: React.FC = () => {
                 💆 TREATMENT & DRESSING
               </div>
 
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: data?.currentServingTreatment ? 'hsla(38, 75%, 38%, 0.15)' : 'hsl(var(--bg-tertiary))',
-                color: data?.currentServingTreatment ? 'hsl(var(--warning))' : 'hsl(var(--text-muted))',
-                padding: '6px 14px',
-                borderRadius: '30px',
-                fontSize: '0.85rem',
-                fontWeight: 800
-              }}>
-                <Radio size={14} />
-                {data?.currentServingTreatment ? 'NOW SERVING' : 'ROOM READY'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {data?.currentServingTreatment && (
+                  <button
+                    onClick={() => announceToken(data.currentServingTreatment!, 'Treatment Room')}
+                    style={{
+                      background: 'hsla(38, 75%, 38%, 0.1)',
+                      border: '1.5px solid hsl(var(--warning))',
+                      color: 'hsl(var(--warning))',
+                      padding: '5px 12px',
+                      borderRadius: '20px',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    title="Replay voice announcement for this token"
+                  >
+                    <Volume2 size={13} /> Speak
+                  </button>
+                )}
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: data?.currentServingTreatment ? 'hsla(38, 75%, 38%, 0.15)' : 'hsl(var(--bg-tertiary))',
+                  color: data?.currentServingTreatment ? 'hsl(var(--warning))' : 'hsl(var(--text-muted))',
+                  padding: '6px 14px',
+                  borderRadius: '30px',
+                  fontSize: '0.85rem',
+                  fontWeight: 800
+                }}>
+                  <Radio size={14} />
+                  {data?.currentServingTreatment ? 'NOW SERVING' : 'ROOM READY'}
+                </div>
               </div>
             </div>
 

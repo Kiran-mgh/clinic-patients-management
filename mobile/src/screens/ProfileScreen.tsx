@@ -39,6 +39,21 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ token, onGoBack, o
     return cleaned;
   };
 
+  const formatToIndianDate = (dateStr?: string | null): string => {
+    if (!dateStr) return 'N/A';
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+    if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+      const [y, m, d] = dateStr.split('T')[0].split('-');
+      return `${d}/${m}/${y}`;
+    }
+    const dateObj = new Date(dateStr);
+    if (isNaN(dateObj.getTime())) return dateStr;
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const year = dateObj.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   const fetchProfile = async () => {
     setLoading(true);
     setError('');
@@ -235,7 +250,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ token, onGoBack, o
 
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>DATE OF BIRTH</Text>
-                <Text style={styles.infoValue}>{profile.dateOfBirth}</Text>
+                <Text style={styles.infoValue}>{formatToIndianDate(profile.dateOfBirth)}</Text>
               </View>
 
               <View style={styles.infoRow}>

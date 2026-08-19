@@ -4,6 +4,7 @@ import { Play, Check, X, RefreshCw, Search, Edit, CreditCard } from 'lucide-reac
 import { io } from 'socket.io-client';
 import { createPortal } from 'react-dom';
 import { TreatmentLedgerView } from '../components/TreatmentLedgerView';
+import { formatToIndianDate } from '../utils/dateUtils';
 
 interface QueueManagementProps {
   token: string | null;
@@ -444,7 +445,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                       </div>
                       <div>
                         <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Date of Birth</span>
-                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.dateOfBirth}</strong>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{formatToIndianDate(selectedPatientDetail.dateOfBirth)}</strong>
                       </div>
                       <div>
                         <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Blood Group</span>

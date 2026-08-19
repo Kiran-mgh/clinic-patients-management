@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { TreatmentLedgerView } from '../components/TreatmentLedgerView';
+import { formatToIndianDate } from '../utils/dateUtils';
 
 interface ReportsProps {
   token: string | null;
@@ -1606,7 +1607,7 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                     <button 
                       className="btn btn-secondary" 
                       onClick={() => exportToCSV(
-                        reportData.newPatients || [], 
+                        (reportData.newPatients || []).map((p: any) => ({ ...p, dateOfBirth: formatToIndianDate(p.dateOfBirth) })), 
                         'newly_registered_patients_report', 
                         ['Registration Date / Time', 'Patient ID', 'Full Name', 'Phone Number', 'Gender', 'Date of Birth', 'Town / Residence', 'Status'],
                         ['createdAt', 'patientId', 'fullName', 'mobileNumber', 'gender', 'dateOfBirth', 'town', 'status']
@@ -1620,7 +1621,7 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                       onClick={() => exportToPDF(
                         'Newly Registered Patients Report', 
                         ['Registration Date / Time', 'Patient ID', 'Full Name', 'Phone', 'Gender', 'Date of Birth', 'Town / Residence', 'Status'],
-                        reportData.newPatients || [],
+                        (reportData.newPatients || []).map((p: any) => ({ ...p, dateOfBirth: formatToIndianDate(p.dateOfBirth) })),
                         ['createdAt', 'patientId', 'fullName', 'mobileNumber', 'gender', 'dateOfBirth', 'town', 'status']
                       )}
                       style={{ padding: '6px 12px', fontSize: '0.8rem' }}
@@ -1674,7 +1675,7 @@ export const Reports: React.FC<ReportsProps> = ({ token }) => {
                                 {p.gender || '—'}
                               </td>
                               <td>
-                                {p.dateOfBirth || '—'}
+                                {formatToIndianDate(p.dateOfBirth)}
                               </td>
                               <td>
                                 {p.town || '—'}

@@ -23,6 +23,7 @@ import { TokensModule } from './tokens/tokens.module';
 import { QueueModule } from './queue/queue.module';
 import { SettingsModule } from './settings/settings.module';
 import { BillingModule } from './billing/billing.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { BillingModule } from './billing/billing.module';
     QueueModule,
     SettingsModule,
     BillingModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
 })

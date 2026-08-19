@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView, StyleSheet, Platform, StatusBar as RNStatusBar, Text, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ContactScreen } from './src/screens/ContactScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
+import { registerForPushNotificationsAsync } from './src/services/notificationService';
 
 import registerRootComponent from 'expo/build/launch/registerRootComponent';
 
@@ -20,6 +22,21 @@ export default function App() {
   const [token, setToken] = useState<string | null>(null);
   const [showRegister, setShowRegister] = useState(false);
   const [screen, setScreen] = useState<'home' | 'contact' | 'profile'>('home');
+
+  useEffect(() => {
+    if (token) {
+      registerForPushNotificationsAsync(token).catch(() => {});
+    }
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('[PUSH TAP] User tapped notification:', response.notification.request.content.data);
+      setScreen('home');
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(responseListener);
+    };
+  }, [token]);
 
   // New user registers → single screen handles /auth/register + /patients/register
   const handleRegistrationSuccess = (newToken: string) => {

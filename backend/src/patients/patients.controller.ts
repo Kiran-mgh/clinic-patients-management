@@ -5,10 +5,17 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RegisterPatientDto } from './dto/register-patient.dto';
 import { RegisterPatientByStaffDto } from './dto/register-patient-by-staff.dto';
+import { UpdatePushTokenDto } from './dto/update-push-token.dto';
 
 @Controller('patients')
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
+
+  @Post('push-token')
+  @UseGuards(JwtAuthGuard)
+  async updatePushToken(@Req() req: any, @Body() dto: UpdatePushTokenDto) {
+    return this.patientsService.updatePushToken(req.user.id, dto.pushToken);
+  }
 
   @Post('register')
   @UseGuards(JwtAuthGuard)

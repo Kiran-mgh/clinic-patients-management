@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image, Modal, TextInput, Linking } from 'react-native';
 import { api } from '../api';
 import { io } from 'socket.io-client';
+import { registerForPushNotificationsAsync } from '../services/notificationService';
 
 interface HomeScreenProps {
   token: string | null;
@@ -168,6 +169,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       if (prof.status === 'active') {
         const tokRes = await api.get('/tokens/today', token);
         setTodayToken(tokRes.token);
+      }
+
+      // Register / refresh push notification token in background
+      if (token) {
+        registerForPushNotificationsAsync(token).catch(() => {});
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch status updates.');

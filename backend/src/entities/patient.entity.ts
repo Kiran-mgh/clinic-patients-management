@@ -58,6 +58,12 @@ export class Patient {
   @OneToMany(() => CoursePayment, (payment) => payment.patient)
   payments: CoursePayment[];
 
+  @Column({ type: 'text', nullable: true })
+  pushToken: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  pushTokenUpdatedAt: Date;
+
   @Index()
   @CreateDateColumn()
   createdAt: Date;

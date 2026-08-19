@@ -11,6 +11,7 @@ import { AuditLog } from '../entities/audit-log.entity';
 import { OtpSession } from '../entities/otp-session.entity';
 import { RegisterPatientByStaffDto } from './dto/register-patient-by-staff.dto';
 import { QueueGateway } from '../queue/queue.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PatientsService {
@@ -26,6 +27,7 @@ export class PatientsService {
     @InjectDataSource()
     private dataSource: DataSource,
     private queueGateway: QueueGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   async register(
@@ -194,6 +196,14 @@ export class PatientsService {
     this.sendApprovalEmail(updatedPatient).catch(err => {
       console.error(`[APPROVAL EMAIL ERROR] Failed to send approval email: ${err.message}`);
     });
+
+    // Send instant push notification to patient mobile app
+    this.notificationsService.sendToPatient(
+      patient.id,
+      '🎉 Account Approved!',
+      `Welcome ${patient.fullName}, your registration is approved. Your Patient ID is ${finalPatientId}. You can now generate daily tokens!`,
+      { type: 'ACCOUNT_APPROVED', patientId: finalPatientId },
+    ).catch(err => console.error(`[PUSH ERROR] Failed to send approval push: ${err.message}`));
 
     // Audit log
     await this.logAction(
@@ -574,6 +584,18 @@ export class PatientsService {
     this.queueGateway.emitQueueUpdate();
 
     return { message: `Successfully deleted patient ${patientName} (${patientDisplayId}).` };
+  }
+
+  async updatePushToken(userId: string, pushToken: string): Promise<{ success: boolean }> {
+    const patient = await this.patientRepository.findOne({ where: { id: userId } });
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    patient.pushToken = pushToken;
+    patient.pushTokenUpdatedAt = new Date();
+    await this.patientRepository.save(patient);
+    return { success: true };
   }
 
   private parseToIsoDate(dateStr: string): string {

@@ -7,11 +7,13 @@ import { User } from '../entities/user.entity';
 import { AuditLog } from '../entities/audit-log.entity';
 import { OtpSession } from '../entities/otp-session.entity';
 import { QueueModule } from '../queue/queue.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Patient, User, AuditLog, OtpSession]),
     QueueModule,
+    NotificationsModule,
   ],
   controllers: [PatientsController],
   providers: [PatientsService],

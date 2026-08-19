@@ -6,6 +6,7 @@ import { Patient } from '../entities/patient.entity';
 import { AuditLog } from '../entities/audit-log.entity';
 import { SystemSetting } from '../entities/system-setting.entity';
 import { QueueGateway } from './queue.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class QueueService {
@@ -19,6 +20,7 @@ export class QueueService {
     @InjectRepository(SystemSetting)
     private systemSettingRepository: Repository<SystemSetting>,
     private queueGateway: QueueGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   private getStartOfTodayIST(): Date {
@@ -257,6 +259,45 @@ export class QueueService {
 
     await this.logAction(adminId, 'TOKEN_CALL_NEXT', `Called token ${updatedToken.tokenNumber} for ${serviceType}`);
 
+    // Dispatch push notifications asynchronously
+    const roomName = serviceType === 'medicine' ? 'Doctor Consultation Room 1' : 'Treatment Room';
+    
+    // 1. Send "Now Serving" alert to the called patient
+    this.notificationsService.sendToPatient(
+      updatedToken.patientId,
+      `🔔 It's Your Turn! (Token ${updatedToken.tokenNumber})`,
+      `Token ${updatedToken.tokenNumber}: Please proceed to ${roomName} now.`,
+      { type: 'TOKEN_CALLED', tokenNumber: updatedToken.tokenNumber, serviceType },
+    ).catch(err => console.error(`[PUSH ERROR] Failed to send token call push: ${err.message}`));
+
+    // 2. Send "Approaching Turn" alerts to the next 2 waiting patients
+    this.tokenRepository.find({
+      where: {
+        serviceType,
+        status: 'waiting',
+        generatedAt: MoreThanOrEqual(startOfToday),
+      },
+      order: { sequenceNumber: 'ASC' },
+      take: 2,
+    }).then(upcoming => {
+      if (upcoming[0]) {
+        this.notificationsService.sendToPatient(
+          upcoming[0].patientId,
+          `⏳ You are Next! (Token ${upcoming[0].tokenNumber})`,
+          `Token ${upcoming[0].tokenNumber}: The doctor is now serving Token ${updatedToken.tokenNumber}. You are next in line.`,
+          { type: 'QUEUE_AHEAD_1', tokenNumber: upcoming[0].tokenNumber },
+        ).catch(() => {});
+      }
+      if (upcoming[1]) {
+        this.notificationsService.sendToPatient(
+          upcoming[1].patientId,
+          `⏳ Turn Approaching (Token ${upcoming[1].tokenNumber})`,
+          `Token ${upcoming[1].tokenNumber}: 2 patients ahead for ${serviceType === 'medicine' ? 'Medicine Consultation' : 'Treatment'}.`,
+          { type: 'QUEUE_AHEAD_2', tokenNumber: upcoming[1].tokenNumber },
+        ).catch(() => {});
+      }
+    }).catch(() => {});
+
     // Broadcast real-time update
     this.queueGateway.emitQueueUpdate();
 
@@ -295,6 +336,13 @@ export class QueueService {
 
     if (status === 'in_progress') {
       token.calledAt = now;
+      const roomName = token.serviceType === 'medicine' ? 'Doctor Consultation Room 1' : 'Treatment Room';
+      this.notificationsService.sendToPatient(
+        token.patientId,
+        `🔔 It's Your Turn! (Token ${token.tokenNumber})`,
+        `Token ${token.tokenNumber}: Please proceed to ${roomName} now.`,
+        { type: 'TOKEN_CALLED', tokenNumber: token.tokenNumber, serviceType: token.serviceType },
+      ).catch(err => console.error(`[PUSH ERROR] Failed to send token call push: ${err.message}`));
     } else if (status === 'served') {
       token.servedAt = now;
     } else if (status === 'cancelled') {

@@ -310,11 +310,9 @@ export class TokensService {
   @Cron('0 17 * * *', { timeZone: 'Asia/Kolkata' })
   async handleDailyExpiration() {
     console.log('[CRON] Running daily token expiration reset at 5:00 PM IST');
-    const startOfToday = this.getStartOfTodayIST();
 
     const activeTokens = await this.tokenRepository.createQueryBuilder('token')
       .where('token.status IN (:...statuses)', { statuses: ['waiting', 'in_progress'] })
-      .andWhere('token.generatedAt >= :startOfToday', { startOfToday })
       .getMany();
 
     if (activeTokens.length > 0) {

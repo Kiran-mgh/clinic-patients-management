@@ -740,13 +740,11 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                   }}
                   onClick={() => {
                     const pId = servingToken.patientId;
-                    handleStatusUpdate(servingToken.id, 'served', healthNotes);
                     setServingToken(null);
-                    setHealthNotes('');
                     handlePatientClick(pId, 'ledger');
                   }}
                 >
-                  <CreditCard size={14} /> Open Ledger & Record Payment ➔
+                  <CreditCard size={14} /> Open Ledger ➔
                 </button>
               </div>
             )}

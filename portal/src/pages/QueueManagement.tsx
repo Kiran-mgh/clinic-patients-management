@@ -31,6 +31,16 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
   const [savingPayment, setSavingPayment] = useState(false);
   const [paymentModalError, setPaymentModalError] = useState('');
   const [queueDetailTab, setQueueDetailTab] = useState<'ledger' | 'profile'>('ledger');
+  const [returnToServingToken, setReturnToServingToken] = useState<any>(null);
+
+  const handleClosePatientDetail = () => {
+    setSelectedPatientDetail(null);
+    setDetailError('');
+    if (returnToServingToken) {
+      setServingToken(returnToServingToken);
+      setReturnToServingToken(null);
+    }
+  };
 
   const handlePatientClick = async (patientId: string, initialTab: 'ledger' | 'profile' = 'profile') => {
     if (!patientId) return;
@@ -388,7 +398,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
       {/* Patient Detail Modal */}
       {(selectedPatientDetail || detailLoading || detailError) && (
         <div 
-          onClick={() => { setSelectedPatientDetail(null); setDetailError(''); }}
+          onClick={handleClosePatientDetail}
           style={{
             position: 'fixed',
             top: 0,
@@ -421,7 +431,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
             }}
           >
             <button 
-              onClick={() => { setSelectedPatientDetail(null); setDetailError(''); }}
+              onClick={handleClosePatientDetail}
               style={{
                 position: 'absolute',
                 top: '20px',
@@ -442,7 +452,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
             ) : detailError ? (
               <div style={{ padding: '20px', textAlign: 'center' }}>
                 <p style={{ color: 'hsl(var(--danger))', marginBottom: '16px' }}>{detailError}</p>
-                <button className="btn btn-secondary" onClick={() => { setSelectedPatientDetail(null); setDetailError(''); }}>Close</button>
+                <button className="btn btn-secondary" onClick={handleClosePatientDetail}>Close</button>
               </div>
             ) : selectedPatientDetail ? (
               <>
@@ -603,7 +613,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-                  <button className="btn btn-primary" onClick={() => setSelectedPatientDetail(null)} style={{ padding: '10px 24px', borderRadius: '8px' }}>
+                  <button className="btn btn-primary" onClick={handleClosePatientDetail} style={{ padding: '10px 24px', borderRadius: '8px' }}>
                     Close File
                   </button>
                 </div>
@@ -740,6 +750,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                   }}
                   onClick={() => {
                     const pId = servingToken.patientId;
+                    setReturnToServingToken(servingToken);
                     setServingToken(null);
                     handlePatientClick(pId, 'ledger');
                   }}

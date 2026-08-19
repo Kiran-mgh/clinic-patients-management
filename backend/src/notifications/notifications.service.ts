@@ -1,18 +1,38 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { Expo, ExpoPushMessage, ExpoPushTicket } from "expo-server-sdk";
+import * as https from "https";
 import { Patient } from "../entities/patient.entity";
+
+export interface PushNotificationPayload {
+  to: string;
+  sound?: string;
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+  channelId?: string;
+  priority?: "default" | "normal" | "high";
+}
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
-  private expo = new Expo();
 
   constructor(
     @InjectRepository(Patient)
     private patientRepository: Repository<Patient>,
   ) {}
+
+  /**
+   * Helper to check if a string is a valid Expo Push Token
+   */
+  private isExpoPushToken(token: string): boolean {
+    if (!token || typeof token !== "string") return false;
+    return (
+      /^(ExponentPushToken|ExpoPushToken)\[.*\]$/.test(token) ||
+      /^[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}$/i.test(token)
+    );
+  }
 
   /**
    * Send a single push notification to a patient by their patient UUID
@@ -31,8 +51,8 @@ export class NotificationsService {
       }
 
       return await this.sendToPushToken(patient.pushToken, title, body, data);
-    } catch (err) {
-      this.logger.error(`Error sending push to patient ${patientId}:`, err);
+    } catch (err: any) {
+      this.logger.error(`Error sending push to patient ${patientId}: ${err.message}`);
       return false;
     }
   }
@@ -46,12 +66,12 @@ export class NotificationsService {
     body: string,
     data: Record<string, any> = {},
   ): Promise<boolean> {
-    if (!Expo.isExpoPushToken(pushToken)) {
+    if (!this.isExpoPushToken(pushToken)) {
       this.logger.warn(`Invalid Expo push token: ${pushToken}`);
       return false;
     }
 
-    const message: ExpoPushMessage = {
+    const message: PushNotificationPayload = {
       to: pushToken,
       sound: "default",
       title,
@@ -61,17 +81,7 @@ export class NotificationsService {
       priority: "high",
     };
 
-    try {
-      const chunks = this.expo.chunkPushNotifications([message]);
-      for (const chunk of chunks) {
-        await this.expo.sendPushNotificationsAsync(chunk);
-        this.logger.log(`Push notification sent successfully: ${title} -> ${pushToken.slice(0, 20)}...`);
-      }
-      return true;
-    } catch (err) {
-      this.logger.error("Failed to send push notification chunk:", err);
-      return false;
-    }
+    return await this.postToExpoPushApi([message]);
   }
 
   /**
@@ -87,11 +97,11 @@ export class NotificationsService {
       const patients = await this.patientRepository.findByIds(patientIds);
       const validTokens = patients
         .map((p) => p.pushToken)
-        .filter((tok): tok is string => Boolean(tok && Expo.isExpoPushToken(tok)));
+        .filter((tok): tok is string => Boolean(tok && this.isExpoPushToken(tok)));
 
       if (validTokens.length === 0) return 0;
 
-      const messages: ExpoPushMessage[] = validTokens.map((to) => ({
+      const messages: PushNotificationPayload[] = validTokens.map((to) => ({
         to,
         sound: "default",
         title,
@@ -101,19 +111,71 @@ export class NotificationsService {
         priority: "high",
       }));
 
-      const chunks = this.expo.chunkPushNotifications(messages);
-      let sentCount = 0;
-
-      for (const chunk of chunks) {
-        await this.expo.sendPushNotificationsAsync(chunk);
-        sentCount += chunk.length;
-      }
-
-      this.logger.log(`Batch sent ${sentCount} push notifications: "${title}"`);
-      return sentCount;
-    } catch (err) {
-      this.logger.error("Failed to send batch push notifications:", err);
+      const success = await this.postToExpoPushApi(messages);
+      return success ? messages.length : 0;
+    } catch (err: any) {
+      this.logger.error(`Failed to send batch push notifications: ${err.message}`);
       return 0;
     }
+  }
+
+  /**
+   * Dispatches push messages via direct HTTPS POST to Expo Push API endpoint
+   */
+  private async postToExpoPushApi(messages: PushNotificationPayload[]): Promise<boolean> {
+    if (!messages || messages.length === 0) return true;
+
+    return new Promise((resolve) => {
+      try {
+        const payload = JSON.stringify(messages);
+        const options: https.RequestOptions = {
+          hostname: "exp.host",
+          port: 443,
+          path: "/--/api/v2/push/send",
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Accept-Encoding": "gzip, deflate",
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(payload),
+          },
+          timeout: 6000,
+        };
+
+        const req = https.request(options, (res) => {
+          let responseData = "";
+          res.on("data", (chunk) => {
+            responseData += chunk;
+          });
+
+          res.on("end", () => {
+            if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+              this.logger.log(`Successfully dispatched ${messages.length} push notification(s).`);
+              resolve(true);
+            } else {
+              this.logger.warn(`Expo push API responded with status ${res.statusCode}: ${responseData}`);
+              resolve(false);
+            }
+          });
+        });
+
+        req.on("error", (error) => {
+          this.logger.error(`HTTPS request to Expo push API failed: ${error.message}`);
+          resolve(false);
+        });
+
+        req.on("timeout", () => {
+          req.destroy();
+          this.logger.warn("HTTPS request to Expo push API timed out.");
+          resolve(false);
+        });
+
+        req.write(payload);
+        req.end();
+      } catch (err: any) {
+        this.logger.error(`Unexpected error in postToExpoPushApi: ${err.message}`);
+        resolve(false);
+      }
+    });
   }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { api } from '../api';
-import { Volume2, VolumeX, Maximize, Minimize, Radio, Clock, Stethoscope, Sparkles, Bell } from 'lucide-react';
+import { Volume2, VolumeX, Maximize, Minimize, Radio, Clock, Stethoscope, Sparkles, Bell, ArrowRight } from 'lucide-react';
 
 interface PublicLiveQueue {
   currentServingMedicine: string | null;
@@ -99,7 +99,6 @@ export const DisplayScreen: React.FC = () => {
         utterance.pitch = 1.05;
         utterance.lang = 'en-IN';
 
-        // Try to pick a natural English voice if available
         const voices = window.speechSynthesis.getVoices();
         const indianVoice = voices.find(v => v.lang.includes('IN') || v.name.includes('India') || v.lang.includes('en-GB'));
         if (indianVoice) {
@@ -248,8 +247,8 @@ export const DisplayScreen: React.FC = () => {
     <div style={{
       width: '100vw',
       height: '100vh',
-      backgroundColor: '#060f0c',
-      color: '#f8fafc',
+      backgroundColor: 'hsl(var(--bg-primary))',
+      color: 'hsl(var(--text-main))',
       fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
       display: 'flex',
       flexDirection: 'column',
@@ -265,8 +264,9 @@ export const DisplayScreen: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: 'linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 15, 12, 0.95) 100%)',
-        borderBottom: '2px solid rgba(16, 185, 129, 0.25)',
+        backgroundColor: '#ffffff',
+        borderBottom: '1.5px solid hsl(var(--border-color))',
+        boxShadow: '0 4px 16px rgba(33, 57, 50, 0.04)',
       }}>
         {/* Brand & Clinic Name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
@@ -274,40 +274,38 @@ export const DisplayScreen: React.FC = () => {
             src="/logo.png"
             alt="Amar Ayurveda"
             style={{
-              height: '62px',
-              width: '62px',
+              height: '58px',
+              width: '58px',
               objectFit: 'contain',
-              filter: 'drop-shadow(0 0 12px rgba(16, 185, 129, 0.4))'
             }}
             onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
           />
           <div>
-            <h1 style={{
-              margin: 0,
-              fontSize: '2.2rem',
-              fontWeight: 900,
-              fontFamily: 'Outfit, sans-serif',
-              letterSpacing: '-0.5px',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px'
-            }}>
-              AMAR AYURVEDA CLINIC
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <h1 style={{
+                margin: 0,
+                fontSize: '2.1rem',
+                fontWeight: 900,
+                fontFamily: 'Outfit, sans-serif',
+                letterSpacing: '-0.5px',
+                color: 'hsl(var(--primary))',
+              }}>
+                Amar Ayurveda Clinic
+              </h1>
               <span style={{
-                fontSize: '0.9rem',
+                fontSize: '0.85rem',
                 fontWeight: 800,
-                color: '#10b981',
-                background: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid rgba(16, 185, 129, 0.4)',
+                color: 'hsl(var(--primary))',
+                background: 'hsla(var(--primary) / 0.08)',
+                border: '1.5px solid hsla(var(--primary) / 0.25)',
                 padding: '4px 12px',
                 borderRadius: '20px',
-                letterSpacing: '1px'
+                letterSpacing: '0.5px'
               }}>
                 WAITING ROOM QUEUE
               </span>
-            </h1>
-            <p style={{ margin: 0, fontSize: '1rem', color: '#94a3b8', fontWeight: 600 }}>
+            </div>
+            <p style={{ margin: 0, fontSize: '0.95rem', color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
               Specialist Clinic for Ayurvedic Consultations & Proctology Care
             </p>
           </div>
@@ -319,14 +317,13 @@ export const DisplayScreen: React.FC = () => {
             <div style={{
               fontSize: '2.1rem',
               fontWeight: 900,
-              color: '#10b981',
+              color: 'hsl(var(--primary))',
               fontFamily: 'Outfit, monospace',
-              letterSpacing: '1px',
-              textShadow: '0 0 16px rgba(16, 185, 129, 0.4)'
+              letterSpacing: '0.5px',
             }}>
               {currentTime || '--:--:-- --'}
             </div>
-            <div style={{ fontSize: '0.95rem', color: '#cbd5e1', fontWeight: 700 }}>
+            <div style={{ fontSize: '0.9rem', color: 'hsl(var(--text-muted))', fontWeight: 700 }}>
               {currentDate || 'Loading date...'}
             </div>
           </div>
@@ -336,9 +333,9 @@ export const DisplayScreen: React.FC = () => {
             <button
               onClick={handleEnableAudio}
               style={{
-                background: audioEnabled ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-                border: `1.5px solid ${audioEnabled ? '#10b981' : 'rgba(255, 255, 255, 0.2)'}`,
-                color: audioEnabled ? '#34d399' : '#94a3b8',
+                background: audioEnabled ? 'hsla(150, 55%, 32%, 0.12)' : '#ffffff',
+                border: `1.5px solid ${audioEnabled ? 'hsl(var(--success))' : 'hsl(var(--border-color))'}`,
+                color: audioEnabled ? 'hsl(var(--success))' : 'hsl(var(--text-muted))',
                 padding: '10px 16px',
                 borderRadius: '12px',
                 fontWeight: 800,
@@ -347,6 +344,7 @@ export const DisplayScreen: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
                 transition: 'all 0.2s ease'
               }}
               title={audioEnabled ? 'Voice Bell & Ding Enabled' : 'Click to Enable Voice Announcement Bell'}
@@ -358,15 +356,16 @@ export const DisplayScreen: React.FC = () => {
             <button
               onClick={toggleFullscreen}
               style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1.5px solid rgba(255, 255, 255, 0.2)',
-                color: '#ffffff',
+                background: '#ffffff',
+                border: '1.5px solid hsl(var(--border-color))',
+                color: 'hsl(var(--text-main))',
                 padding: '10px 14px',
                 borderRadius: '12px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
                 transition: 'all 0.2s ease'
               }}
               title="Toggle TV Fullscreen"
@@ -388,13 +387,15 @@ export const DisplayScreen: React.FC = () => {
       }}>
         {/* HERO CARD 1: MEDICINE CONSULTATION */}
         <div style={{
-          background: 'linear-gradient(145deg, #0d221b 0%, #081712 100%)',
-          borderRadius: '28px',
-          border: recentlyCalled.med ? '3px solid #34d399' : '2px solid rgba(16, 185, 129, 0.35)',
+          backgroundColor: '#ffffff',
+          borderRadius: '24px',
+          border: recentlyCalled.med 
+            ? '3px solid hsl(var(--success))' 
+            : '2px solid hsla(150, 55%, 32%, 0.3)',
           boxShadow: recentlyCalled.med 
-            ? '0 0 50px rgba(52, 211, 153, 0.5), inset 0 0 30px rgba(16, 185, 129, 0.2)' 
-            : '0 16px 40px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(16, 185, 129, 0.05)',
-          padding: '3vh 3vw',
+            ? '0 12px 40px rgba(21, 128, 61, 0.2), 0 0 0 6px hsla(150, 55%, 32%, 0.1)' 
+            : '0 10px 30px rgba(33, 57, 50, 0.06)',
+          padding: '3.2vh 3vw',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -408,13 +409,13 @@ export const DisplayScreen: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: 'rgba(16, 185, 129, 0.2)',
-                color: '#34d399',
+                background: 'hsla(150, 55%, 32%, 0.1)',
+                color: 'hsl(var(--success))',
                 padding: '6px 16px',
                 borderRadius: '30px',
-                fontSize: '1rem',
+                fontSize: '0.95rem',
                 fontWeight: 900,
-                letterSpacing: '1px'
+                letterSpacing: '0.5px'
               }}>
                 <Stethoscope size={18} /> CONSULTATION ROOM 1
               </div>
@@ -423,11 +424,11 @@ export const DisplayScreen: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: data?.currentServingMedicine ? '#065f46' : 'rgba(255, 255, 255, 0.1)',
-                color: data?.currentServingMedicine ? '#a7f3d0' : '#94a3b8',
+                background: data?.currentServingMedicine ? 'hsla(150, 55%, 32%, 0.15)' : 'hsl(var(--bg-tertiary))',
+                color: data?.currentServingMedicine ? 'hsl(var(--success))' : 'hsl(var(--text-muted))',
                 padding: '6px 14px',
                 borderRadius: '30px',
-                fontSize: '0.9rem',
+                fontSize: '0.85rem',
                 fontWeight: 800
               }}>
                 <Radio size={14} />
@@ -436,15 +437,15 @@ export const DisplayScreen: React.FC = () => {
             </div>
 
             <h2 style={{
-              fontSize: '1.9rem',
+              fontSize: '1.85rem',
               fontWeight: 800,
               margin: '6px 0 0 0',
-              color: '#ffffff',
+              color: 'hsl(var(--primary))',
               fontFamily: 'Outfit, sans-serif'
             }}>
               Dr. Anit Goswamy, B.A.M.S
             </h2>
-            <p style={{ margin: '2px 0 0 0', fontSize: '1rem', color: '#6ee7b7', fontWeight: 600 }}>
+            <p style={{ margin: '2px 0 0 0', fontSize: '0.95rem', color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
               Ayurvedic Medicine & Proctologist
             </p>
           </div>
@@ -457,20 +458,20 @@ export const DisplayScreen: React.FC = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            background: 'hsla(150, 55%, 32%, 0.03)',
+            borderRadius: '20px',
+            border: '1.5px dashed hsla(150, 55%, 32%, 0.25)'
           }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'hsl(var(--text-muted))', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '6px' }}>
               CURRENT TOKEN NUMBER
             </div>
 
             <div style={{
-              fontSize: 'clamp(5.5rem, 12vw, 9.5rem)',
+              fontSize: 'clamp(5.5rem, 11vw, 8.5rem)',
               fontWeight: 900,
               fontFamily: 'Outfit, monospace',
               lineHeight: 1,
-              color: data?.currentServingMedicine ? '#ffffff' : '#64748b',
-              textShadow: data?.currentServingMedicine 
-                ? '0 0 35px rgba(52, 211, 153, 0.8), 0 0 70px rgba(16, 185, 129, 0.4)' 
-                : 'none',
+              color: data?.currentServingMedicine ? 'hsl(var(--primary))' : '#94a3b8',
               letterSpacing: '2px',
             }}>
               {data?.currentServingMedicine || '---'}
@@ -479,20 +480,21 @@ export const DisplayScreen: React.FC = () => {
             {data?.currentServingMedicine ? (
               <div style={{
                 marginTop: '16px',
-                fontSize: '1.15rem',
+                fontSize: '1.1rem',
                 fontWeight: 800,
-                color: '#34d399',
-                background: 'rgba(52, 211, 153, 0.15)',
-                padding: '6px 20px',
-                borderRadius: '20px',
+                color: '#ffffff',
+                background: 'hsl(var(--primary))',
+                padding: '8px 24px',
+                borderRadius: '30px',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(33, 57, 50, 0.25)'
               }}>
-                <Sparkles size={18} /> PLEASE ENTER CONSULTATION ROOM
+                <Sparkles size={18} /> PLEASE ENTER CONSULTATION ROOM 1
               </div>
             ) : (
-              <div style={{ marginTop: '16px', fontSize: '1.1rem', fontWeight: 700, color: '#64748b' }}>
+              <div style={{ marginTop: '16px', fontSize: '1.05rem', fontWeight: 700, color: 'hsl(var(--text-muted))' }}>
                 Doctor will call next token shortly
               </div>
             )}
@@ -500,35 +502,35 @@ export const DisplayScreen: React.FC = () => {
 
           {/* Card Footer: Queue Stats & Upcoming */}
           <div style={{
-            borderTop: '1px solid rgba(16, 185, 129, 0.2)',
+            borderTop: '1px solid hsl(var(--border-color))',
             paddingTop: '1.5vh',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center'
           }}>
             <div>
-              <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--text-muted))', fontWeight: 700, textTransform: 'uppercase' }}>
                 WAITING IN QUEUE
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', fontFamily: 'Outfit, sans-serif' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'hsl(var(--primary))', fontFamily: 'Outfit, sans-serif' }}>
                 {data?.medicineWaitingCount ?? 0} Patients
               </div>
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
+              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--text-muted))', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
                 NEXT IN LINE
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 {data?.waitingMedicineTokens && data.waitingMedicineTokens.length > 0 ? (
                   data.waitingMedicineTokens.slice(0, 4).map((tok, idx) => (
                     <span key={tok} style={{
-                      background: idx === 0 ? 'rgba(52, 211, 153, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-                      border: `1px solid ${idx === 0 ? '#34d399' : 'rgba(255, 255, 255, 0.15)'}`,
-                      color: idx === 0 ? '#6ee7b7' : '#cbd5e1',
+                      background: idx === 0 ? 'hsla(150, 55%, 32%, 0.12)' : 'hsl(var(--bg-tertiary))',
+                      border: `1px solid ${idx === 0 ? 'hsl(var(--success))' : 'hsl(var(--border-color))'}`,
+                      color: idx === 0 ? 'hsl(var(--success))' : 'hsl(var(--text-main))',
                       padding: '4px 10px',
                       borderRadius: '8px',
-                      fontSize: '1rem',
+                      fontSize: '0.95rem',
                       fontWeight: 800,
                       fontFamily: 'Outfit, monospace'
                     }}>
@@ -536,7 +538,7 @@ export const DisplayScreen: React.FC = () => {
                     </span>
                   ))
                 ) : (
-                  <span style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 700 }}>Queue Clear</span>
+                  <span style={{ fontSize: '0.9rem', color: 'hsl(var(--text-muted))', fontWeight: 700 }}>Queue Clear</span>
                 )}
               </div>
             </div>
@@ -545,13 +547,15 @@ export const DisplayScreen: React.FC = () => {
 
         {/* HERO CARD 2: TREATMENT & DRESSING */}
         <div style={{
-          background: 'linear-gradient(145deg, #241a08 0%, #171004 100%)',
-          borderRadius: '28px',
-          border: recentlyCalled.trt ? '3px solid #fbbf24' : '2px solid rgba(245, 158, 11, 0.35)',
+          backgroundColor: '#ffffff',
+          borderRadius: '24px',
+          border: recentlyCalled.trt 
+            ? '3px solid hsl(var(--warning))' 
+            : '2px solid hsla(38, 75%, 38%, 0.3)',
           boxShadow: recentlyCalled.trt 
-            ? '0 0 50px rgba(251, 191, 36, 0.5), inset 0 0 30px rgba(245, 158, 11, 0.2)' 
-            : '0 16px 40px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(245, 158, 11, 0.05)',
-          padding: '3vh 3vw',
+            ? '0 12px 40px rgba(180, 83, 9, 0.2), 0 0 0 6px hsla(38, 75%, 38%, 0.1)' 
+            : '0 10px 30px rgba(33, 57, 50, 0.06)',
+          padding: '3.2vh 3vw',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -565,13 +569,13 @@ export const DisplayScreen: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: 'rgba(245, 158, 11, 0.2)',
-                color: '#fbbf24',
+                background: 'hsla(38, 75%, 38%, 0.1)',
+                color: 'hsl(var(--warning))',
                 padding: '6px 16px',
                 borderRadius: '30px',
-                fontSize: '1rem',
+                fontSize: '0.95rem',
                 fontWeight: 900,
-                letterSpacing: '1px'
+                letterSpacing: '0.5px'
               }}>
                 💆 TREATMENT & DRESSING
               </div>
@@ -580,11 +584,11 @@ export const DisplayScreen: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: data?.currentServingTreatment ? '#78350f' : 'rgba(255, 255, 255, 0.1)',
-                color: data?.currentServingTreatment ? '#fde68a' : '#94a3b8',
+                background: data?.currentServingTreatment ? 'hsla(38, 75%, 38%, 0.15)' : 'hsl(var(--bg-tertiary))',
+                color: data?.currentServingTreatment ? 'hsl(var(--warning))' : 'hsl(var(--text-muted))',
                 padding: '6px 14px',
                 borderRadius: '30px',
-                fontSize: '0.9rem',
+                fontSize: '0.85rem',
                 fontWeight: 800
               }}>
                 <Radio size={14} />
@@ -593,15 +597,15 @@ export const DisplayScreen: React.FC = () => {
             </div>
 
             <h2 style={{
-              fontSize: '1.9rem',
+              fontSize: '1.85rem',
               fontWeight: 800,
               margin: '6px 0 0 0',
-              color: '#ffffff',
+              color: 'hsl(var(--primary))',
               fontFamily: 'Outfit, sans-serif'
             }}>
               Ksharasutra & Dressing Room
             </h2>
-            <p style={{ margin: '2px 0 0 0', fontSize: '1rem', color: '#fcd34d', fontWeight: 600 }}>
+            <p style={{ margin: '2px 0 0 0', fontSize: '0.95rem', color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
               Specialized Ayurvedic Therapy & Wound Care
             </p>
           </div>
@@ -614,20 +618,20 @@ export const DisplayScreen: React.FC = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            background: 'hsla(38, 75%, 38%, 0.03)',
+            borderRadius: '20px',
+            border: '1.5px dashed hsla(38, 75%, 38%, 0.25)'
           }}>
-            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#94a3b8', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'hsl(var(--text-muted))', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '6px' }}>
               CURRENT TOKEN NUMBER
             </div>
 
             <div style={{
-              fontSize: 'clamp(5.5rem, 12vw, 9.5rem)',
+              fontSize: 'clamp(5.5rem, 11vw, 8.5rem)',
               fontWeight: 900,
               fontFamily: 'Outfit, monospace',
               lineHeight: 1,
-              color: data?.currentServingTreatment ? '#ffffff' : '#64748b',
-              textShadow: data?.currentServingTreatment 
-                ? '0 0 35px rgba(251, 191, 36, 0.8), 0 0 70px rgba(245, 158, 11, 0.4)' 
-                : 'none',
+              color: data?.currentServingTreatment ? 'hsl(var(--warning))' : '#94a3b8',
               letterSpacing: '2px',
             }}>
               {data?.currentServingTreatment || '---'}
@@ -636,20 +640,21 @@ export const DisplayScreen: React.FC = () => {
             {data?.currentServingTreatment ? (
               <div style={{
                 marginTop: '16px',
-                fontSize: '1.15rem',
+                fontSize: '1.1rem',
                 fontWeight: 800,
-                color: '#fbbf24',
-                background: 'rgba(251, 191, 36, 0.15)',
-                padding: '6px 20px',
-                borderRadius: '20px',
+                color: '#ffffff',
+                background: 'hsl(var(--warning))',
+                padding: '8px 24px',
+                borderRadius: '30px',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(180, 83, 9, 0.25)'
               }}>
                 <Sparkles size={18} /> PLEASE ENTER TREATMENT ROOM
               </div>
             ) : (
-              <div style={{ marginTop: '16px', fontSize: '1.1rem', fontWeight: 700, color: '#64748b' }}>
+              <div style={{ marginTop: '16px', fontSize: '1.05rem', fontWeight: 700, color: 'hsl(var(--text-muted))' }}>
                 Staff will call next token shortly
               </div>
             )}
@@ -657,35 +662,35 @@ export const DisplayScreen: React.FC = () => {
 
           {/* Card Footer: Queue Stats & Upcoming */}
           <div style={{
-            borderTop: '1px solid rgba(245, 158, 11, 0.2)',
+            borderTop: '1px solid hsl(var(--border-color))',
             paddingTop: '1.5vh',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center'
           }}>
             <div>
-              <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--text-muted))', fontWeight: 700, textTransform: 'uppercase' }}>
                 WAITING IN QUEUE
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ffffff', fontFamily: 'Outfit, sans-serif' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'hsl(var(--primary))', fontFamily: 'Outfit, sans-serif' }}>
                 {data?.treatmentWaitingCount ?? 0} Patients
               </div>
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
+              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--text-muted))', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>
                 NEXT IN LINE
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 {data?.waitingTreatmentTokens && data.waitingTreatmentTokens.length > 0 ? (
                   data.waitingTreatmentTokens.slice(0, 4).map((tok, idx) => (
                     <span key={tok} style={{
-                      background: idx === 0 ? 'rgba(251, 191, 36, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-                      border: `1px solid ${idx === 0 ? '#fbbf24' : 'rgba(255, 255, 255, 0.15)'}`,
-                      color: idx === 0 ? '#fde68a' : '#cbd5e1',
+                      background: idx === 0 ? 'hsla(38, 75%, 38%, 0.12)' : 'hsl(var(--bg-tertiary))',
+                      border: `1px solid ${idx === 0 ? 'hsl(var(--warning))' : 'hsl(var(--border-color))'}`,
+                      color: idx === 0 ? 'hsl(var(--warning))' : 'hsl(var(--text-main))',
                       padding: '4px 10px',
                       borderRadius: '8px',
-                      fontSize: '1rem',
+                      fontSize: '0.95rem',
                       fontWeight: 800,
                       fontFamily: 'Outfit, monospace'
                     }}>
@@ -693,7 +698,7 @@ export const DisplayScreen: React.FC = () => {
                     </span>
                   ))
                 ) : (
-                  <span style={{ fontSize: '0.95rem', color: '#64748b', fontWeight: 700 }}>Queue Clear</span>
+                  <span style={{ fontSize: '0.9rem', color: 'hsl(var(--text-muted))', fontWeight: 700 }}>Queue Clear</span>
                 )}
               </div>
             </div>
@@ -709,33 +714,33 @@ export const DisplayScreen: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: '#040b09',
-        borderTop: '1.5px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: '#ffffff',
+        borderTop: '1.5px solid hsl(var(--border-color))',
         gap: '24px'
       }}>
         {/* Recently Served Tokens */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
             RECENTLY COMPLETED:
           </span>
           <div style={{ display: 'flex', gap: '8px' }}>
             {data?.recentServedTokens && data.recentServedTokens.length > 0 ? (
               data.recentServedTokens.map(tok => (
                 <span key={tok.tokenNumber} style={{
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  color: '#94a3b8',
-                  padding: '3px 10px',
+                  background: 'hsl(var(--bg-tertiary))',
+                  border: '1px solid hsl(var(--border-color))',
+                  color: 'hsl(var(--text-main))',
+                  padding: '4px 12px',
                   borderRadius: '6px',
                   fontSize: '0.9rem',
-                  fontWeight: 700,
+                  fontWeight: 800,
                   fontFamily: 'Outfit, monospace'
                 }}>
                   {tok.tokenNumber}
                 </span>
               ))
             ) : (
-              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>None</span>
+              <span style={{ fontSize: '0.85rem', color: 'hsl(var(--text-muted))' }}>None</span>
             )}
           </div>
         </div>
@@ -748,12 +753,12 @@ export const DisplayScreen: React.FC = () => {
             alignItems: 'center',
             gap: '10px',
             background: data.announcement.type === 'vacation' 
-              ? 'rgba(245, 158, 11, 0.15)' 
+              ? 'hsla(38, 75%, 38%, 0.1)' 
               : data.announcement.type === 'emergency' 
-              ? 'rgba(239, 68, 68, 0.15)' 
-              : 'rgba(16, 185, 129, 0.15)',
-            border: `1px solid ${
-              data.announcement.type === 'vacation' ? 'rgba(245, 158, 11, 0.4)' : data.announcement.type === 'emergency' ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.4)'
+              ? 'hsla(350, 65%, 44%, 0.1)' 
+              : 'hsla(150, 55%, 32%, 0.1)',
+            border: `1.5px solid ${
+              data.announcement.type === 'vacation' ? 'hsl(var(--warning))' : data.announcement.type === 'emergency' ? 'hsl(var(--danger))' : 'hsl(var(--success))'
             }`,
             padding: '6px 16px',
             borderRadius: '10px',
@@ -766,22 +771,22 @@ export const DisplayScreen: React.FC = () => {
             <span style={{
               fontWeight: 800,
               fontSize: '0.92rem',
-              color: data.announcement.type === 'vacation' ? '#fbbf24' : data.announcement.type === 'emergency' ? '#f87171' : '#34d399'
+              color: data.announcement.type === 'vacation' ? 'hsl(var(--warning))' : data.announcement.type === 'emergency' ? 'hsl(var(--danger))' : 'hsl(var(--success))'
             }}>
               {data.announcement.title}:
             </span>
-            <span style={{ fontSize: '0.9rem', color: '#f1f5f9', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.9rem', color: 'hsl(var(--text-main))', fontWeight: 600 }}>
               {data.announcement.message}
             </span>
             {data.announcement.endDate && (
-              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#fde68a', marginLeft: '6px' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'hsl(var(--warning))', marginLeft: '6px' }}>
                 (Resuming: {data.announcement.endDate})
               </span>
             )}
           </div>
         ) : (
-          <div style={{ flex: 1, textAlign: 'right', fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
-            🌿 Amar Ayurveda Clinic &bull; Please stay seated in the waiting hall until your token number is announced.
+          <div style={{ flex: 1, textAlign: 'right', fontSize: '0.85rem', color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
+            🌿 Amar Ayurveda Clinic &bull; Please stay seated in the waiting hall until your token number is called.
           </div>
         )}
       </footer>
@@ -794,11 +799,11 @@ export const DisplayScreen: React.FC = () => {
             position: 'absolute',
             bottom: '9.5vh',
             right: '3vw',
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            background: 'hsl(var(--primary))',
             color: '#ffffff',
             padding: '10px 20px',
             borderRadius: '14px',
-            boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)',
+            boxShadow: '0 8px 24px rgba(33, 57, 50, 0.3)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -806,6 +811,7 @@ export const DisplayScreen: React.FC = () => {
             fontWeight: 800,
             fontSize: '0.9rem',
             zIndex: 1000,
+            transition: 'all 0.2s ease'
           }}
         >
           <Bell size={18} />

@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../api';
+import { sendLocalNotification } from '../services/notificationService';
 
 interface RegisterScreenProps {
   onRegistrationSuccess: (token: string) => void;
@@ -129,6 +130,11 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
         isExisting,
         existingPatientId: (isExisting && hasPatientId) ? existingPatientId.trim() : null,
       }, token);
+
+      sendLocalNotification(
+        '📝 Registration Submitted',
+        `Welcome ${fullName.trim()}! Your registration has been submitted and is pending clinic approval.`,
+      ).catch(() => {});
 
       onRegistrationSuccess(token);
     } catch (err: any) {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Image, Modal, TextInput, Linking } from 'react-native';
 import { api } from '../api';
 import { io } from 'socket.io-client';
-import { registerForPushNotificationsAsync } from '../services/notificationService';
+import { registerForPushNotificationsAsync, sendLocalNotification } from '../services/notificationService';
 
 interface HomeScreenProps {
   token: string | null;
@@ -150,10 +150,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
     }
   };
 
+  const prevTokenStatusRef = React.useRef<string | null>(null);
+  const prevProfileStatusRef = React.useRef<string | null>(null);
+
   const fetchProfileAndToken = async () => {
     setError('');
     try {
       const prof = await api.get('/patients/profile', token);
+      if (prof) {
+        if (prevProfileStatusRef.current && prevProfileStatusRef.current !== 'active' && prof.status === 'active') {
+          sendLocalNotification(
+            '🎉 Account Approved!',
+            `Welcome ${prof.fullName}, your registration is approved. Your Patient ID is ${prof.patientId}. You can now generate daily tokens!`,
+          );
+        }
+        prevProfileStatusRef.current = prof.status;
+      }
       setProfile(prof);
 
       const cfg = await api.get('/settings/tokens', token);
@@ -166,9 +178,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         // Optional announcement
       }
 
-      if (prof.status === 'active') {
+      if (prof && prof.status === 'active') {
         const tokRes = await api.get('/tokens/today', token);
-        setTodayToken(tokRes.token);
+        const currentTok = tokRes.token;
+        if (currentTok) {
+          if (prevTokenStatusRef.current && prevTokenStatusRef.current !== 'in_progress' && currentTok.status === 'in_progress') {
+            sendLocalNotification(
+              `🔔 It's Your Turn! (Token ${currentTok.tokenNumber})`,
+              `Token ${currentTok.tokenNumber}: Please proceed to Doctor Consultation Room now.`,
+            );
+          }
+          prevTokenStatusRef.current = currentTok.status;
+        }
+        setTodayToken(currentTok);
       }
 
       // Register / refresh push notification token in background

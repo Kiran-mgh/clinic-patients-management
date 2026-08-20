@@ -156,7 +156,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
   const fetchProfileAndToken = async () => {
     setError('');
     try {
-      const prof = await api.get('/patients/profile', token);
+      const pushTok = await registerForPushNotificationsAsync(token).catch(() => null);
+      const prof = await api.get('/patients/profile', token, pushTok);
       if (prof) {
         if (prevProfileStatusRef.current && prevProfileStatusRef.current !== 'active' && prof.status === 'active') {
           sendLocalNotification(

@@ -1,9 +1,10 @@
 // API client for Mobile App connecting directly to NestJS Staging/Production Backend
 const API_BASE = 'https://pms-api-staging.amarayurveda.in/api';
 
-const getHeaders = (token: string | null) => ({
+const getHeaders = (token: string | null, pushToken: string | null = null) => ({
   'Content-Type': 'application/json',
   ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  ...(pushToken ? { 'x-push-token': pushToken } : {}),
 });
 
 const handleResponse = async (response: Response): Promise<any> => {
@@ -35,11 +36,11 @@ export const api = {
     }
   },
 
-  async get(endpoint: string, token: string | null = null) {
+  async get(endpoint: string, token: string | null = null, pushToken: string | null = null) {
     try {
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'GET',
-        headers: getHeaders(token),
+        headers: getHeaders(token, pushToken),
       });
       return await handleResponse(response);
     } catch (err: any) {

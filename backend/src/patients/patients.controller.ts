@@ -1,4 +1,4 @@
-import { Controller, Post, Put, Delete, Get, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Put, Delete, Get, Body, Param, Query, UseGuards, Req, Headers } from '@nestjs/common';
 import { PatientsService } from './patients.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -32,8 +32,8 @@ export class PatientsController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async getProfile(@Req() req: any) {
-    return this.patientsService.getProfile(req.user.id);
+  async getProfile(@Req() req: any, @Headers('x-push-token') pushToken?: string) {
+    return this.patientsService.getProfile(req.user.id, pushToken);
   }
 
   @Post('request-email-otp')

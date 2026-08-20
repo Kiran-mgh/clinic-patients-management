@@ -147,7 +147,7 @@ export class PatientsService {
     return savedPatient;
   }
 
-  async getProfile(userId: string): Promise<Patient> {
+  async getProfile(userId: string, pushToken?: string): Promise<Patient> {
     const patient = await this.patientRepository.findOne({
       where: { id: userId },
       relations: ['user'],
@@ -155,6 +155,13 @@ export class PatientsService {
 
     if (!patient) {
       throw new NotFoundException('Patient profile not found');
+    }
+
+    if (pushToken && patient.pushToken !== pushToken) {
+      patient.pushToken = pushToken;
+      patient.pushTokenUpdatedAt = new Date();
+      await this.patientRepository.save(patient);
+      console.log(`[PUSH AUTO-SYNC] Auto-healed push token for patient ${patient.fullName} (${patient.patientId || patient.id}): ${pushToken.slice(0, 25)}...`);
     }
 
     return patient;

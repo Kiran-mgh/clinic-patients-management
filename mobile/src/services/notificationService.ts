@@ -38,7 +38,7 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
     }
 
     if (finalStatus !== "granted") {
-      console.log("[PUSH] Push notification permission not granted.");
+      console.log("[PUSH] Notification permission not granted (status: " + finalStatus + ").");
       return null;
     }
 
@@ -47,20 +47,33 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
       Constants?.easConfig?.projectId ??
       DEFAULT_PROJECT_ID;
 
+    // 1. Attempt Expo Push Token
     try {
       const pushTokenData = await Notifications.getExpoPushTokenAsync({ projectId });
       token = pushTokenData.data;
-      console.log("[PUSH] Expo Push Token generated:", token);
+      console.log("[PUSH] Expo Push Token generated successfully:", token);
+    } catch (expoErr: any) {
+      console.log("[PUSH WARN] Expo push token fetch failed:", expoErr.message);
 
-      if (token && userToken) {
-        await api.post("/patients/push-token", { pushToken: token }, userToken);
-        console.log("[PUSH] Successfully registered push token with clinic server.");
+      // 2. Fallback to Native Device Push Token (FCM on Android)
+      try {
+        const deviceTokenData = await Notifications.getDevicePushTokenAsync();
+        token = typeof deviceTokenData.data === "string" ? deviceTokenData.data : JSON.stringify(deviceTokenData.data);
+        console.log("[PUSH] Native Device Push Token generated successfully:", token);
+      } catch (deviceErr: any) {
+        console.log("[PUSH ERROR] Native device push token fetch also failed:", deviceErr.message);
       }
-    } catch (err: any) {
-      console.log("[PUSH WARN] Expo push token fetch failed (expected on emulators without Google Play):", err.message);
+    }
+
+    // 3. Register push token with clinic NestJS backend
+    if (token && userToken) {
+      const res = await api.post("/patients/push-token", { pushToken: token }, userToken);
+      console.log("[PUSH SUCCESS] Registered push token with clinic server:", res);
+    } else {
+      console.log("[PUSH WARN] Registration skipped - token: " + (token ? "YES" : "NULL") + ", userToken: " + (userToken ? "YES" : "NULL"));
     }
   } catch (outerErr: any) {
-    console.log("[PUSH ERROR] Notification setup error:", outerErr.message);
+    console.log("[PUSH ERROR] Unexpected notification setup error:", outerErr.message);
   }
 
   return token;
@@ -75,7 +88,7 @@ export async function sendLocalNotification(title: string, body: string, data: R
         sound: "default",
         data,
       },
-      trigger: null, // trigger immediately
+      trigger: null,
     });
   } catch (err: any) {
     console.log("[LOCAL NOTIFICATION ERROR]", err.message);

@@ -745,7 +745,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeaderRow}>
-              <View style={{ flex: 1 }}>
+              <View style={{ flex: 1, marginRight: 12 }}>
                 <Text style={styles.modalTitleText}>💳 Payment Ledger Details</Text>
                 <Text style={styles.modalSubText}>
                   {profile?.fullName} • ID: {profile?.patientId || profile?.id?.slice(0, 8)}
@@ -902,7 +902,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeaderRow}>
-              <View>
+              <View style={{ flex: 1, marginRight: 12 }}>
                 <Text style={styles.modalTitleText}>📜 Visited Consultation History</Text>
                 <Text style={styles.modalSubText}>
                   All past tokens for {profile?.fullName}
@@ -965,7 +965,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeaderRow}>
-              <View>
+              <View style={{ flex: 1, marginRight: 12 }}>
                 <Text style={styles.modalTitleText}>🏥 Amar Ayurveda Clinic Details</Text>
                 <Text style={styles.modalSubText}>Healthcare services, doctors & timings</Text>
               </View>
@@ -1019,8 +1019,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       <Modal visible={showEditModal} animationType="slide" transparent={true} onRequestClose={() => setShowEditModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: '#213932', marginBottom: 4 }}>✏️ EDIT PROFILE DETAILS</Text>
-            <Text style={{ fontSize: 12, color: '#718096', marginBottom: 16 }}>Update your details anytime. Changes reflect immediately across clinic systems.</Text>
+            <View style={styles.modalHeaderRow}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={styles.modalTitleText}>✏️ Edit Profile Details</Text>
+                <Text style={styles.modalSubText}>Update your details anytime. Changes reflect immediately across clinic systems.</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowEditModal(false)} style={styles.modalCloseIconBtn}>
+                <Ionicons name="close" size={22} color="#475569" />
+              </TouchableOpacity>
+            </View>
 
             <ScrollView contentContainerStyle={{ gap: 14 }}>
               <View>
@@ -1532,17 +1539,18 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalContent: {
-    width: '100%',
+    width: '92%',
     maxWidth: 520,
     maxHeight: '88%',
     backgroundColor: '#ffffff',
     borderRadius: 20,
-    padding: 20,
+    padding: 18,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 8,
+    overflow: 'hidden',
   },
   modalHeaderRow: {
     flexDirection: 'row',
@@ -1567,6 +1575,8 @@ const styles = StyleSheet.create({
     padding: 6,
     backgroundColor: '#f1f5f9',
     borderRadius: 10,
+    flexShrink: 0,
+    alignSelf: 'flex-start',
   },
   // Treatment Package Ledger Specific Styles
   ledgerSummaryCard: {

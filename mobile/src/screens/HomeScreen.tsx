@@ -928,8 +928,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                 ) : (
                   patientHistory.map((tok: any) => (
                     <View key={tok.id} style={styles.historyCard}>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, flexWrap: 'wrap', marginRight: 6 }}>
                           <Text style={styles.historyTokenNum}>{tok.tokenNumber}</Text>
                           <Text style={styles.historyServiceText}>
                             {tok.serviceType === 'medicine' ? 'Medicine Consultation' : 'Treatment / Dressing'}
@@ -1767,9 +1767,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: 6,
     overflow: 'hidden',
+    flexShrink: 0,
+    alignSelf: 'flex-start',
   },
   status_served: { backgroundColor: '#dcfce7', color: '#166534' },
   status_waiting: { backgroundColor: '#f1f5f9', color: '#475569' },

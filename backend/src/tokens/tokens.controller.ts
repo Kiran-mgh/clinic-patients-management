@@ -22,4 +22,10 @@ export class TokensController {
   async getQueueStatus() {
     return this.tokensService.getQueueStatus();
   }
+
+  @Get('my-history')
+  @UseGuards(JwtAuthGuard)
+  async getMyHistory(@Req() req: any) {
+    return this.tokensService.getMyHistory(req.user.id);
+  }
 }

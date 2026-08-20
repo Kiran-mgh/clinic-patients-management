@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import os
+
+code = """import React, { useState, useEffect } from 'react';
 import {
   StyleSheet, Text, View, TouchableOpacity, ScrollView,
   ActivityIndicator, Alert, Image, Modal, TextInput, Linking
@@ -73,7 +75,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
   };
 
   const formatDobText = (text: string): string => {
-    let cleaned = text.replace(/\D/g, '').slice(0, 8);
+    let cleaned = text.replace(/\\D/g, '').slice(0, 8);
     if (cleaned.length > 4) return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4) + '/' + cleaned.slice(4, 8);
     if (cleaned.length > 2) return cleaned.slice(0, 2) + '/' + cleaned.slice(2, 4);
     return cleaned;
@@ -85,7 +87,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
     setEditGender(profile.gender || 'Male');
 
     let dobFormatted = profile.dateOfBirth || '';
-    if (/^\d{4}-\d{2}-\d{2}/.test(dobFormatted)) {
+    if (/^\\d{4}-\\d{2}-\\d{2}/.test(dobFormatted)) {
       const [y, m, d] = dobFormatted.split('T')[0].split('-');
       dobFormatted = `${d}/${m}/${y}`;
     }
@@ -113,7 +115,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       setEmailOtpSent(true);
       Alert.alert(
         'OTP Sent',
-        `${res.message || 'Verification OTP sent to your new email.'}\n\n[Dev OTP Code: ${res.otpCode || '123456'}]`
+        `${res.message || 'Verification OTP sent to your new email.'}\\n\\n[Dev OTP Code: ${res.otpCode || '123456'}]`
       );
     } catch (err: any) {
       Alert.alert('OTP Request Failed', err.message || 'Could not send verification OTP.');
@@ -144,7 +146,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       Alert.alert('Validation Error', 'Full Name is required.');
       return;
     }
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(editDateOfBirth.trim())) {
+    if (!/^\\d{2}\\/\\d{2}\\/\\d{4}$/.test(editDateOfBirth.trim())) {
       Alert.alert('Validation Error', 'Date of Birth must match DD/MM/YYYY format.');
       return;
     }
@@ -1867,3 +1869,9 @@ const styles = StyleSheet.create({
     color: '#b91c1c',
   },
 });
+"""
+
+with open('/Users/kiranbmayan.host/Desktop/clinic-app/mobile/src/screens/HomeScreen.tsx', 'w') as f:
+    f.write(code)
+
+print("Successfully updated HomeScreen.tsx")

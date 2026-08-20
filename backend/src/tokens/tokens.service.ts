@@ -374,6 +374,17 @@ export class TokensService {
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
+  async getMyHistory(userId: string): Promise<Token[]> {
+    const patient = await this.patientRepository.findOne({ where: { id: userId } });
+    if (!patient) {
+      throw new NotFoundException('Patient profile not found');
+    }
+    return this.tokenRepository.find({
+      where: { patientId: patient.id },
+      order: { generatedAt: 'DESC' },
+    });
+  }
+
   private async logAction(userId: string | null, action: string, details: string) {
     const log = this.auditLogRepository.create({
       userId,

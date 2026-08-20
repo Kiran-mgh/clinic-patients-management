@@ -270,7 +270,8 @@ export class QueueService {
       { type: 'TOKEN_CALLED', tokenNumber: updatedToken.tokenNumber, serviceType },
     ).catch(err => console.error(`[PUSH ERROR] Failed to send token call push: ${err.message}`));
 
-    // 2. Send "Approaching Turn" alerts to the next 2 waiting patients
+    // 2. Send "Approaching Turn" alerts to the next 5 waiting patients
+    const serviceName = serviceType === 'medicine' ? 'Medicine Consultation' : 'Treatment';
     this.tokenRepository.find({
       where: {
         serviceType,
@@ -278,24 +279,28 @@ export class QueueService {
         generatedAt: MoreThanOrEqual(startOfToday),
       },
       order: { sequenceNumber: 'ASC' },
-      take: 2,
+      take: 5,
     }).then(upcoming => {
-      if (upcoming[0]) {
+      upcoming.forEach((tok, index) => {
+        const spotsAhead = index + 1; // 1 to 5
+        let title = '';
+        let body = '';
+
+        if (spotsAhead === 1) {
+          title = `⏳ You are Next! (Token ${tok.tokenNumber})`;
+          body = `Token ${tok.tokenNumber}: The doctor is now serving Token ${updatedToken.tokenNumber}. You are next in line.`;
+        } else {
+          title = `⏳ Turn Approaching (Token ${tok.tokenNumber})`;
+          body = `Token ${tok.tokenNumber}: ${spotsAhead} patients ahead for ${serviceName}.`;
+        }
+
         this.notificationsService.sendToPatient(
-          upcoming[0].patientId,
-          `⏳ You are Next! (Token ${upcoming[0].tokenNumber})`,
-          `Token ${upcoming[0].tokenNumber}: The doctor is now serving Token ${updatedToken.tokenNumber}. You are next in line.`,
-          { type: 'QUEUE_AHEAD_1', tokenNumber: upcoming[0].tokenNumber },
+          tok.patientId,
+          title,
+          body,
+          { type: `QUEUE_AHEAD_${spotsAhead}`, tokenNumber: tok.tokenNumber, spotsAhead },
         ).catch(() => {});
-      }
-      if (upcoming[1]) {
-        this.notificationsService.sendToPatient(
-          upcoming[1].patientId,
-          `⏳ Turn Approaching (Token ${upcoming[1].tokenNumber})`,
-          `Token ${upcoming[1].tokenNumber}: 2 patients ahead for ${serviceType === 'medicine' ? 'Medicine Consultation' : 'Treatment'}.`,
-          { type: 'QUEUE_AHEAD_2', tokenNumber: upcoming[1].tokenNumber },
-        ).catch(() => {});
-      }
+      });
     }).catch(() => {});
 
     // Broadcast real-time update

@@ -625,36 +625,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
           </View>
         </View>
 
-        {/* Quick Menu Options */}
-        <View style={{ width: '100%', gap: 10, marginTop: 12 }}>
-          <TouchableOpacity
-            style={styles.navBtn}
-            onPress={() => {
-              fetchPatientLedger();
-              setShowLedgerModal(true);
-            }}
-          >
-            <Text style={styles.navBtnText}>💳 Payment Ledger Details</Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.navBtn}
-            onPress={() => {
-              fetchPatientHistory();
-              setShowHistoryModal(true);
-            }}
-          >
-            <Text style={styles.navBtnText}>📜 Visited History</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navBtn} onPress={openEditModal}>
-            <Text style={styles.navBtnText}>👤 My Profile</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.navBtn} onPress={() => setShowClinicDetailsModal(true)}>
-            <Text style={styles.navBtnText}>🏥 Clinic Details</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
 
       {/* ☰ 3-Line Hamburger Menu Drawer Modal */}

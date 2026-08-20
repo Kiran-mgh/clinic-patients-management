@@ -259,55 +259,10 @@ export class QueueService {
 
     await this.logAction(adminId, 'TOKEN_CALL_NEXT', `Called token ${updatedToken.tokenNumber} for ${serviceType}`);
 
-    // Dispatch push notifications asynchronously
-    const roomName = serviceType === 'medicine' ? 'Doctor Consultation Room 1' : 'Treatment Room';
-    
-    // 1. Send "Now Serving" alert to the called patient
-    this.notificationsService.sendToPatient(
-      updatedToken.patientId,
-      `🔔 It's Your Turn! (Token ${updatedToken.tokenNumber})`,
-      `Token ${updatedToken.tokenNumber}: Please proceed to ${roomName} now.`,
-      { type: 'TOKEN_CALLED', tokenNumber: updatedToken.tokenNumber, serviceType },
-    ).catch(err => console.error(`[PUSH ERROR] Failed to send token call push: ${err.message}`));
-
-    // 2. Send "Approaching Turn" alerts to the next 5 waiting patients
-    const serviceName = serviceType === 'medicine' ? 'Medicine Consultation' : 'Treatment';
-    this.tokenRepository.find({
-      where: {
-        serviceType,
-        status: 'waiting',
-        generatedAt: MoreThanOrEqual(startOfToday),
-      },
-      order: { sequenceNumber: 'ASC' },
-      take: 5,
-    }).then(upcoming => {
-      upcoming.forEach((tok, index) => {
-        const spotsAhead = index + 1; // 1 to 5
-
-        // Skip 3rd and 4th spot notifications as requested
-        if (![1, 2, 5].includes(spotsAhead)) {
-          return;
-        }
-
-        let title = '';
-        let body = '';
-
-        if (spotsAhead === 1) {
-          title = `⏳ You are Next! (Token ${tok.tokenNumber})`;
-          body = `Token ${tok.tokenNumber}: The doctor is now serving Token ${updatedToken.tokenNumber}. You are next in line.`;
-        } else {
-          title = `⏳ Turn Approaching (Token ${tok.tokenNumber})`;
-          body = `Token ${tok.tokenNumber}: ${spotsAhead} patients ahead for ${serviceName}.`;
-        }
-
-        this.notificationsService.sendToPatient(
-          tok.patientId,
-          title,
-          body,
-          { type: `QUEUE_AHEAD_${spotsAhead}`, tokenNumber: tok.tokenNumber, spotsAhead },
-        ).catch(() => {});
-      });
-    }).catch(() => {});
+    // Dispatch push notifications asynchronously to called patient and upcoming 1st, 2nd, 5th waiting patients
+    this.dispatchQueueNotifications(updatedToken).catch(err =>
+      console.error(`[PUSH ERROR] Failed dispatching queue notifications: ${err.message}`),
+    );
 
     // Broadcast real-time update
     this.queueGateway.emitQueueUpdate();
@@ -347,13 +302,10 @@ export class QueueService {
 
     if (status === 'in_progress') {
       token.calledAt = now;
-      const roomName = token.serviceType === 'medicine' ? 'Doctor Consultation Room 1' : 'Treatment Room';
-      this.notificationsService.sendToPatient(
-        token.patientId,
-        `🔔 It's Your Turn! (Token ${token.tokenNumber})`,
-        `Token ${token.tokenNumber}: Please proceed to ${roomName} now.`,
-        { type: 'TOKEN_CALLED', tokenNumber: token.tokenNumber, serviceType: token.serviceType },
-      ).catch(err => console.error(`[PUSH ERROR] Failed to send token call push: ${err.message}`));
+      // Dispatch push notifications asynchronously to called patient and upcoming 1st, 2nd, 5th waiting patients
+      this.dispatchQueueNotifications(token).catch(err =>
+        console.error(`[PUSH ERROR] Failed dispatching queue notifications: ${err.message}`),
+      );
     } else if (status === 'served') {
       token.servedAt = now;
     } else if (status === 'cancelled') {
@@ -368,6 +320,68 @@ export class QueueService {
     this.queueGateway.emitQueueUpdate();
 
     return updatedToken;
+  }
+
+  /**
+   * Helper method to dispatch push notifications to called patient & upcoming 1st, 2nd, and 5th waiting patients
+   */
+  private async dispatchQueueNotifications(calledToken: Token): Promise<void> {
+    const serviceType = calledToken.serviceType;
+    const roomName = serviceType === 'medicine' ? 'Doctor Consultation Room 1' : 'Treatment Room';
+    const serviceName = serviceType === 'medicine' ? 'Medicine Consultation' : 'Treatment';
+    const startOfToday = this.getStartOfTodayIST();
+
+    // 1. Send "Now Serving" alert to the called patient
+    this.notificationsService.sendToPatient(
+      calledToken.patientId,
+      `🔔 It's Your Turn! (Token ${calledToken.tokenNumber})`,
+      `Token ${calledToken.tokenNumber}: Please proceed to ${roomName} now.`,
+      { type: 'TOKEN_CALLED', tokenNumber: calledToken.tokenNumber, serviceType },
+    ).catch(err => console.error(`[PUSH ERROR] Failed to send token call push for ${calledToken.tokenNumber}: ${err.message}`));
+
+    // 2. Send "Approaching Turn" alerts to the next waiting patients
+    try {
+      const upcoming = await this.tokenRepository.find({
+        where: {
+          serviceType,
+          status: 'waiting',
+          generatedAt: MoreThanOrEqual(startOfToday),
+        },
+        order: { sequenceNumber: 'ASC' },
+        take: 5,
+      });
+
+      upcoming.forEach((tok, index) => {
+        const spotsAhead = index + 1; // 1 to 5
+
+        // Skip 3rd and 4th spot notifications as requested
+        if (![1, 2, 5].includes(spotsAhead)) {
+          return;
+        }
+
+        let title = '';
+        let body = '';
+
+        if (spotsAhead === 1) {
+          title = `⏳ You are Next! (Token ${tok.tokenNumber})`;
+          body = `Token ${tok.tokenNumber}: The doctor is now serving Token ${calledToken.tokenNumber}. You are next in line.`;
+        } else {
+          title = `⏳ Turn Approaching (Token ${tok.tokenNumber})`;
+          body = `Token ${tok.tokenNumber}: ${spotsAhead} patients ahead for ${serviceName}.`;
+        }
+
+        console.log(`[PUSH QUEUE ALERT] Sending ${spotsAhead}-spot ahead alert to token ${tok.tokenNumber} (Patient ID: ${tok.patientId})`);
+
+        this.notificationsService.sendToPatient(
+          tok.patientId,
+          title,
+          body,
+          { type: `QUEUE_AHEAD_${spotsAhead}`, tokenNumber: tok.tokenNumber, spotsAhead },
+        ).catch(err => console.error(`[PUSH ERROR] Proximity push failed for ${tok.tokenNumber}: ${err.message}`));
+      });
+    } catch (err: any) {
+      console.error(`[PUSH ERROR] Proximity tokens query error: ${err.message}`);
+    }
   }
 
   async updateTokenPayment(

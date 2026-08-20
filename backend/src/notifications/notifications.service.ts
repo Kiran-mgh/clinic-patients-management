@@ -46,7 +46,7 @@ export class NotificationsService {
     try {
       const patient = await this.patientRepository.findOne({ where: { id: patientId } });
       if (!patient || !patient.pushToken) {
-        this.logger.debug(`No push token registered for patient ${patientId}`);
+        this.logger.warn(`No push token registered for patient ${patientId} (${patient?.fullName || 'Unknown'})`);
         return false;
       }
 

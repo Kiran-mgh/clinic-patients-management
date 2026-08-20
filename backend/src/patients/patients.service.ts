@@ -595,6 +595,7 @@ export class PatientsService {
     patient.pushToken = pushToken;
     patient.pushTokenUpdatedAt = new Date();
     await this.patientRepository.save(patient);
+    console.log(`[PUSH REGISTRATION] Successfully saved push token for patient ${patient.fullName} (${patient.patientId || patient.id}): ${pushToken.slice(0, 25)}...`);
     return { success: true };
   }
 

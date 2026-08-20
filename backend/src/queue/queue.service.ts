@@ -283,6 +283,12 @@ export class QueueService {
     }).then(upcoming => {
       upcoming.forEach((tok, index) => {
         const spotsAhead = index + 1; // 1 to 5
+
+        // Skip 3rd and 4th spot notifications as requested
+        if (![1, 2, 5].includes(spotsAhead)) {
+          return;
+        }
+
         let title = '';
         let body = '';
 

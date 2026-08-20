@@ -940,12 +940,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                         </Text>
                       </View>
 
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                      <View style={{ marginTop: 8 }}>
                         <Text style={{ fontSize: 12, color: '#64748b', fontWeight: '600' }}>
                           🗓️ Date: {formatToIndianDate(tok.generatedAt)}
-                        </Text>
-                        <Text style={{ fontSize: 12, color: tok.paymentStatus === 'paid' ? '#16a34a' : '#d97706', fontWeight: '700' }}>
-                          {tok.paymentStatus === 'paid' ? '✓ Paid' : '⏳ Unpaid'}
                         </Text>
                       </View>
 

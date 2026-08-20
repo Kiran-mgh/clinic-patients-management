@@ -542,7 +542,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                         >
                           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                             <Text style={[styles.genButtonTitle, { color: isMedicineDay ? '#ffffff' : '#64748b' }]}>
-                              💊 Medicine Consultation Token
+                              Medicine Consultation Token
                             </Text>
                             {tokenLoading && <ActivityIndicator color="#ffffff" size="small" />}
                           </View>
@@ -565,7 +565,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
                         >
                           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                             <Text style={[styles.genButtonTitle, { color: isTreatmentDay ? '#18181b' : '#64748b' }]}>
-                              🩺 Treatment / Dressing Token
+                              Treatment / Dressing Token
                             </Text>
                             {tokenLoading && <ActivityIndicator color="#18181b" size="small" />}
                           </View>

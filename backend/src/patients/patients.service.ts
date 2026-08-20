@@ -43,6 +43,7 @@ export class PatientsService {
       isExisting: boolean;
       existingPatientId?: string;
       previousSurgeryDetails?: string;
+      pushToken?: string;
     },
   ): Promise<Patient> {
     const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['patient'] });
@@ -59,8 +60,6 @@ export class PatientsService {
       status = 'pending_verification'; // Case 2: Existing patient without Patient ID
     }
 
-
-
     const patient = this.patientRepository.create({
       id: userId,
       fullName: data.fullName,
@@ -74,9 +73,14 @@ export class PatientsService {
       isExisting: data.isExisting,
       patientId: data.isExisting ? data.existingPatientId : null,
       status,
+      pushToken: data.pushToken || null,
+      pushTokenUpdatedAt: data.pushToken ? new Date() : null,
     });
 
     const savedPatient = await this.patientRepository.save(patient);
+    if (data.pushToken) {
+      console.log(`[PUSH REGISTRATION] Saved push token during patient registration for ${data.fullName} (${savedPatient.id}): ${data.pushToken.slice(0, 25)}...`);
+    }
 
     // Audit log
     await this.logAction(

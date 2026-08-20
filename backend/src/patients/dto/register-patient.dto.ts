@@ -32,4 +32,7 @@ export class RegisterPatientDto {
 
   @IsOptional()
   previousSurgeryDetails?: string;
+
+  @IsOptional()
+  pushToken?: string;
 }

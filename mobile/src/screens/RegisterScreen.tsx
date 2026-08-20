@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../api';
-import { sendLocalNotification } from '../services/notificationService';
+import { sendLocalNotification, registerForPushNotificationsAsync } from '../services/notificationService';
 
 interface RegisterScreenProps {
   onRegistrationSuccess: (token: string) => void;
@@ -117,7 +117,9 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
 
       const token = authRes.accessToken;
 
-      // Step 2: Create patient profile using the new JWT
+      // Step 2: Fetch device push token BEFORE saving patient profile so DB gets pushToken immediately
+      const pushToken = await registerForPushNotificationsAsync(token).catch(() => null);
+
       await api.post('/patients/register', {
         fullName: fullName.trim(),
         gender,
@@ -129,6 +131,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ onRegistrationSu
         previousSurgeryDetails: previousSurgeryDetails.trim() || undefined,
         isExisting,
         existingPatientId: (isExisting && hasPatientId) ? existingPatientId.trim() : null,
+        pushToken: pushToken || undefined,
       }, token);
 
       sendLocalNotification(

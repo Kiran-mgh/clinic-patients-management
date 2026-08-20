@@ -44,7 +44,13 @@ export class NotificationsService {
     data: Record<string, any> = {},
   ): Promise<boolean> {
     try {
-      const patient = await this.patientRepository.findOne({ where: { id: patientId } });
+      let patient = await this.patientRepository.findOne({ where: { id: patientId } });
+      if (!patient || !patient.pushToken) {
+        patient = await this.patientRepository.findOne({
+          where: [{ id: patientId }, { patientId: patientId }],
+        });
+      }
+
       if (!patient || !patient.pushToken) {
         this.logger.warn(`No push token registered for patient ${patientId} (${patient?.fullName || 'Unknown'})`);
         return false;

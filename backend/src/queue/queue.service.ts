@@ -302,10 +302,6 @@ export class QueueService {
 
     if (status === 'in_progress') {
       token.calledAt = now;
-      // Dispatch push notifications asynchronously to called patient and upcoming 1st, 2nd, 5th waiting patients
-      this.dispatchQueueNotifications(token).catch(err =>
-        console.error(`[PUSH ERROR] Failed dispatching queue notifications: ${err.message}`),
-      );
     } else if (status === 'served') {
       token.servedAt = now;
     } else if (status === 'cancelled') {
@@ -313,6 +309,13 @@ export class QueueService {
     }
 
     const updatedToken = await this.tokenRepository.save(token);
+
+    if (status === 'in_progress') {
+      // Dispatch push notifications AFTER token status is saved in DB
+      this.dispatchQueueNotifications(updatedToken).catch(err =>
+        console.error(`[PUSH ERROR] Failed dispatching queue notifications: ${err.message}`),
+      );
+    }
 
     await this.logAction(adminId, `TOKEN_${status.toUpperCase()}`, `Manually marked token ${token.tokenNumber} as ${status}`);
 

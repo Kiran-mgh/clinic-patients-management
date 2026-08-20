@@ -11,6 +11,12 @@ import { RecordCoursePaymentDto } from './dto/record-course-payment.dto';
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
 
+  @Get('my-ledger')
+  @UseGuards(JwtAuthGuard)
+  async getMyLedger(@Req() req: any) {
+    return this.billingService.getPatientLedger(req.user.id);
+  }
+
   @Get('patients/:id/ledger')
   @UseGuards(JwtAuthGuard)
   async getPatientLedger(@Param('id') patientId: string) {

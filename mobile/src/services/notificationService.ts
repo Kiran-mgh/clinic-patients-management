@@ -2,7 +2,7 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
-import { api } from "../api";
+import { api, setGlobalPushToken } from "../api";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -65,7 +65,11 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
       }
     }
 
-    // 3. Register push token with clinic NestJS backend
+    // 3. Set global push token cache & register with clinic NestJS backend
+    if (token) {
+      setGlobalPushToken(token);
+    }
+
     if (token && userToken) {
       const res = await api.post("/patients/push-token", { pushToken: token }, userToken);
       console.log("[PUSH SUCCESS] Registered push token with clinic server:", res);

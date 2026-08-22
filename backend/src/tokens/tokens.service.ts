@@ -23,11 +23,18 @@ export class TokensService {
     private settingsService: SettingsService,
   ) {}
 
-  async generateToken(userId: string, serviceType: string): Promise<Token> {
+  async generateToken(userId: string, serviceType: string, pushToken?: string): Promise<Token> {
     // 1. Verify patient is active
     const patient = await this.patientRepository.findOne({ where: { id: userId } });
     if (!patient) {
       throw new NotFoundException('Patient profile not found. Please register first.');
+    }
+
+    if (pushToken && patient.pushToken !== pushToken) {
+      patient.pushToken = pushToken;
+      patient.pushTokenUpdatedAt = new Date();
+      await this.patientRepository.save(patient);
+      console.log(`[PUSH AUTO-SYNC] Auto-healed push token for patient ${patient.fullName} (${patient.patientId || patient.id}) during generateToken: ${pushToken.slice(0, 25)}...`);
     }
 
     if (patient.status !== 'active') {
@@ -168,8 +175,16 @@ export class TokensService {
     return savedToken;
   }
 
-  async getTodayToken(userId: string): Promise<any> {
+  async getTodayToken(userId: string, pushToken?: string): Promise<any> {
     const startOfToday = this.getStartOfTodayIST();
+
+    const patient = await this.patientRepository.findOne({ where: { id: userId } });
+    if (patient && pushToken && patient.pushToken !== pushToken) {
+      patient.pushToken = pushToken;
+      patient.pushTokenUpdatedAt = new Date();
+      await this.patientRepository.save(patient);
+      console.log(`[PUSH AUTO-SYNC] Auto-healed push token for patient ${patient.fullName} (${patient.patientId || patient.id}) during getTodayToken: ${pushToken.slice(0, 25)}...`);
+    }
 
     const token = await this.tokenRepository.findOne({
       where: {
@@ -374,10 +389,16 @@ export class TokensService {
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
-  async getMyHistory(userId: string): Promise<Token[]> {
+  async getMyHistory(userId: string, pushToken?: string): Promise<Token[]> {
     const patient = await this.patientRepository.findOne({ where: { id: userId } });
     if (!patient) {
       throw new NotFoundException('Patient profile not found');
+    }
+    if (pushToken && patient.pushToken !== pushToken) {
+      patient.pushToken = pushToken;
+      patient.pushTokenUpdatedAt = new Date();
+      await this.patientRepository.save(patient);
+      console.log(`[PUSH AUTO-SYNC] Auto-healed push token for patient ${patient.fullName} (${patient.patientId || patient.id}) during getMyHistory: ${pushToken.slice(0, 25)}...`);
     }
     return this.tokenRepository.find({
       where: { patientId: patient.id },

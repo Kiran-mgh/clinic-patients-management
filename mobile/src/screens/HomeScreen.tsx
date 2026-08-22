@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as Notifications from 'expo-notifications';
 import {
   StyleSheet, Text, View, TouchableOpacity, ScrollView,
   ActivityIndicator, Alert, Image, Modal, TextInput, Linking
@@ -203,6 +204,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
 
   const prevTokenStatusRef = React.useRef<string | null>(null);
   const prevProfileStatusRef = React.useRef<string | null>(null);
+  const prevAheadRef = React.useRef<number | null>(null);
 
   const handleManualPushSync = async () => {
     setSyncingPush(true);
@@ -271,7 +273,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
               `Token ${currentTok.tokenNumber}: Please proceed to Doctor Consultation Room now.`
             );
           }
+          if (prevAheadRef.current !== null && prevAheadRef.current > 1 && currentTok.patientsAhead === 1 && currentTok.status === 'waiting') {
+            sendLocalNotification(
+              `⏳ You are Next! (Token ${currentTok.tokenNumber})`,
+              `Token ${currentTok.tokenNumber}: The doctor is now serving ${currentTok.currentServing || 'the previous patient'}. You are next in line.`
+            );
+          }
           prevTokenStatusRef.current = currentTok.status;
+          prevAheadRef.current = currentTok.patientsAhead;
         }
         setTodayToken(currentTok);
       }
@@ -284,6 +293,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
 
   useEffect(() => {
     fetchProfileAndToken();
+
+    // Foreground notification listener to pop up Alert dialog when push notification arrives
+    const notificationSubscription = Notifications.addNotificationReceivedListener((notification) => {
+      const { title, body } = notification.request.content;
+      console.log('[NOTIFICATION RECEIVED IN FOREGROUND]', title, body);
+      if (title && body) {
+        Alert.alert(title, body);
+      }
+    });
 
     const socketUrl = 'https://pms-api-staging.amarayurveda.in';
     const socket = io(socketUrl);
@@ -300,6 +318,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
     const fallbackInterval = setInterval(fetchProfileAndToken, 15000);
 
     return () => {
+      notificationSubscription.remove();
       socket.disconnect();
       clearInterval(fallbackInterval);
     };

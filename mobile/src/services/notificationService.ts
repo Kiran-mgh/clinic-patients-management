@@ -56,29 +56,41 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
       Constants?.easConfig?.projectId ??
       DEFAULT_PROJECT_ID;
 
-    // 1. Attempt Expo Push Token without args
+    // 1. Attempt Expo Push Token with experienceId & projectId
     try {
-      const pushTokenData = await Notifications.getExpoPushTokenAsync();
+      const pushTokenData = await Notifications.getExpoPushTokenAsync({
+        experienceId: "@kiranbhimanna-team/kiran",
+        projectId,
+      } as any);
       token = pushTokenData.data;
-      console.log("[PUSH] Expo Push Token (no args) generated successfully:", token);
+      console.log("[PUSH] Expo Push Token (experienceId) generated successfully:", token);
     } catch (err1: any) {
-      console.log("[PUSH WARN] Expo push token (no args) failed:", err1.message);
+      console.log("[PUSH WARN] Expo push token (experienceId) failed:", err1.message);
 
-      // 2. Attempt Expo Push Token with explicit projectId
+      // 2. Attempt with projectId only
       try {
         const pushTokenData = await Notifications.getExpoPushTokenAsync({ projectId });
         token = pushTokenData.data;
-        console.log("[PUSH] Expo Push Token (with projectId) generated successfully:", token);
+        console.log("[PUSH] Expo Push Token (projectId) generated successfully:", token);
       } catch (err2: any) {
-        console.log("[PUSH WARN] Expo push token (with projectId) failed:", err2.message);
+        console.log("[PUSH WARN] Expo push token (projectId) failed:", err2.message);
 
-        // 3. Fallback to Native Device Push Token (FCM on Android)
+        // 3. Attempt without args
         try {
-          const deviceTokenData = await Notifications.getDevicePushTokenAsync();
-          token = typeof deviceTokenData.data === "string" ? deviceTokenData.data : JSON.stringify(deviceTokenData.data);
-          console.log("[PUSH] Native Device Push Token generated successfully:", token);
+          const pushTokenData = await Notifications.getExpoPushTokenAsync();
+          token = pushTokenData.data;
+          console.log("[PUSH] Expo Push Token (no args) generated successfully:", token);
         } catch (err3: any) {
-          console.log("[PUSH ERROR] Native device push token fetch failed:", err3.message);
+          console.log("[PUSH WARN] Expo push token (no args) failed:", err3.message);
+
+          // 4. Fallback to Native Device Push Token (FCM on Android)
+          try {
+            const deviceTokenData = await Notifications.getDevicePushTokenAsync();
+            token = typeof deviceTokenData.data === "string" ? deviceTokenData.data : JSON.stringify(deviceTokenData.data);
+            console.log("[PUSH] Native Device Push Token generated successfully:", token);
+          } catch (err4: any) {
+            console.log("[PUSH ERROR] Native device push token fetch failed:", err4.message);
+          }
         }
       }
     }

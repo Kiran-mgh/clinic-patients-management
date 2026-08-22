@@ -47,25 +47,34 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
       Constants?.easConfig?.projectId ??
       DEFAULT_PROJECT_ID;
 
-    // 1. Attempt Expo Push Token
+    // 1. Attempt Expo Push Token without args
     try {
-      const pushTokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+      const pushTokenData = await Notifications.getExpoPushTokenAsync();
       token = pushTokenData.data;
-      console.log("[PUSH] Expo Push Token generated successfully:", token);
-    } catch (expoErr: any) {
-      console.log("[PUSH WARN] Expo push token fetch failed:", expoErr.message);
+      console.log("[PUSH] Expo Push Token (no args) generated successfully:", token);
+    } catch (err1: any) {
+      console.log("[PUSH WARN] Expo push token (no args) failed:", err1.message);
 
-      // 2. Fallback to Native Device Push Token (FCM on Android)
+      // 2. Attempt Expo Push Token with explicit projectId
       try {
-        const deviceTokenData = await Notifications.getDevicePushTokenAsync();
-        token = typeof deviceTokenData.data === "string" ? deviceTokenData.data : JSON.stringify(deviceTokenData.data);
-        console.log("[PUSH] Native Device Push Token generated successfully:", token);
-      } catch (deviceErr: any) {
-        console.log("[PUSH ERROR] Native device push token fetch also failed:", deviceErr.message);
+        const pushTokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+        token = pushTokenData.data;
+        console.log("[PUSH] Expo Push Token (with projectId) generated successfully:", token);
+      } catch (err2: any) {
+        console.log("[PUSH WARN] Expo push token (with projectId) failed:", err2.message);
+
+        // 3. Fallback to Native Device Push Token (FCM on Android)
+        try {
+          const deviceTokenData = await Notifications.getDevicePushTokenAsync();
+          token = typeof deviceTokenData.data === "string" ? deviceTokenData.data : JSON.stringify(deviceTokenData.data);
+          console.log("[PUSH] Native Device Push Token generated successfully:", token);
+        } catch (err3: any) {
+          console.log("[PUSH ERROR] Native device push token fetch failed:", err3.message);
+        }
       }
     }
 
-    // 3. Set global push token cache & register with clinic NestJS backend
+    // 4. Set global push token cache & register with clinic NestJS backend
     if (token) {
       setGlobalPushToken(token);
     }

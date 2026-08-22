@@ -273,9 +273,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         const currentTok = tokRes.token;
         if (currentTok) {
           const calledKey = `${currentTok.tokenNumber}_in_progress`;
-          const ahead1Key = `${currentTok.tokenNumber}_ahead_1`;
-          const ahead2Key = `${currentTok.tokenNumber}_ahead_2`;
-          const ahead5Key = `${currentTok.tokenNumber}_ahead_5`;
+          const currentServingId = currentTok.currentServing || 'none';
+          const ahead1Key = `${currentTok.tokenNumber}_ahead_1_serving_${currentServingId}`;
+          const ahead2Key = `${currentTok.tokenNumber}_ahead_2_serving_${currentServingId}`;
+          const ahead5Key = `${currentTok.tokenNumber}_ahead_5_serving_${currentServingId}`;
 
           if (currentTok.status === 'in_progress' && !notifiedKeysRef.current.has(calledKey)) {
             notifiedKeysRef.current.add(calledKey);

@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, In, Between } from 'typeorm';
+import { Repository, MoreThanOrEqual, MoreThan, In, Between } from 'typeorm';
 import { Token } from '../entities/token.entity';
 import { Patient } from '../entities/patient.entity';
 import { AuditLog } from '../entities/audit-log.entity';
@@ -348,6 +348,7 @@ export class QueueService {
         where: {
           serviceType,
           status: 'waiting',
+          sequenceNumber: MoreThan(calledToken.sequenceNumber),
           generatedAt: MoreThanOrEqual(startOfToday),
         },
         order: { sequenceNumber: 'ASC' },

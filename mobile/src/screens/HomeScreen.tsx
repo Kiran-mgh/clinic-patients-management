@@ -205,6 +205,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
   const prevTokenStatusRef = React.useRef<string | null>(null);
   const prevProfileStatusRef = React.useRef<string | null>(null);
   const prevAheadRef = React.useRef<number | null>(null);
+  const notifiedKeysRef = React.useRef<Set<string>>(new Set());
 
   const handleManualPushSync = async () => {
     setSyncingPush(true);
@@ -271,22 +272,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         const tokRes = await api.get('/tokens/today', token);
         const currentTok = tokRes.token;
         if (currentTok) {
-          if (prevTokenStatusRef.current && prevTokenStatusRef.current !== 'in_progress' && currentTok.status === 'in_progress') {
+          const calledKey = `${currentTok.tokenNumber}_in_progress`;
+          const ahead1Key = `${currentTok.tokenNumber}_ahead_1`;
+          const ahead2Key = `${currentTok.tokenNumber}_ahead_2`;
+          const ahead5Key = `${currentTok.tokenNumber}_ahead_5`;
+
+          if (currentTok.status === 'in_progress' && !notifiedKeysRef.current.has(calledKey)) {
+            notifiedKeysRef.current.add(calledKey);
             sendLocalNotification(
               `🔔 It's Your Turn! (Token ${currentTok.tokenNumber})`,
               `Token ${currentTok.tokenNumber}: Please proceed to Doctor Consultation Room now.`
             );
-          }
-          if (prevAheadRef.current !== null && prevAheadRef.current !== currentTok.patientsAhead && currentTok.status === 'waiting') {
-            if (currentTok.patientsAhead === 1) {
+          } else if (currentTok.status === 'waiting') {
+            if (currentTok.patientsAhead === 1 && !notifiedKeysRef.current.has(ahead1Key)) {
+              notifiedKeysRef.current.add(ahead1Key);
               sendLocalNotification(
                 `⏳ You are Next! (Token ${currentTok.tokenNumber})`,
                 `Token ${currentTok.tokenNumber}: The doctor is now serving ${currentTok.currentServing || 'the previous patient'}. You are next in line.`
               );
-            } else if (currentTok.patientsAhead === 2 || currentTok.patientsAhead === 5) {
+            } else if (currentTok.patientsAhead === 2 && !notifiedKeysRef.current.has(ahead2Key)) {
+              notifiedKeysRef.current.add(ahead2Key);
               sendLocalNotification(
                 `⏳ Turn Approaching (Token ${currentTok.tokenNumber})`,
-                `Token ${currentTok.tokenNumber}: ${currentTok.patientsAhead} patients ahead for Consultation.`
+                `Token ${currentTok.tokenNumber}: 2 patients ahead for Consultation.`
+              );
+            } else if (currentTok.patientsAhead === 5 && !notifiedKeysRef.current.has(ahead5Key)) {
+              notifiedKeysRef.current.add(ahead5Key);
+              sendLocalNotification(
+                `⏳ Turn Approaching (Token ${currentTok.tokenNumber})`,
+                `Token ${currentTok.tokenNumber}: 5 patients ahead for Consultation.`
               );
             }
           }

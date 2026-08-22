@@ -161,7 +161,7 @@ export class NotificationsService {
 
           res.on("end", () => {
             if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-              this.logger.log(`Successfully dispatched ${messages.length} push notification(s).`);
+              this.logger.log(`Successfully dispatched ${messages.length} push notification(s). Expo Response: ${responseData}`);
               resolve(true);
             } else {
               this.logger.warn(`Expo push API responded with status ${res.statusCode}: ${responseData}`);

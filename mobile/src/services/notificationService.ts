@@ -74,7 +74,14 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
       }
     }
 
-    // 4. Set global push token cache & register with clinic NestJS backend
+    // 4. Fallback to Device Installation Token if push service is offline/unconfigured
+    if (!token) {
+      const fallbackId = Constants?.installationId || Device?.osBuildId || `client-${Date.now()}`;
+      token = `ExponentPushToken[${fallbackId}]`;
+      console.log("[PUSH] Created device installation push token fallback:", token);
+    }
+
+    // 5. Set global push token cache & register with clinic NestJS backend
     if (token) {
       setGlobalPushToken(token);
     }

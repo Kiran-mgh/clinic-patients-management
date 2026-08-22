@@ -288,8 +288,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
             if (currentTok.patientsAhead === 1 && !notifiedKeysRef.current.has(ahead1Key)) {
               notifiedKeysRef.current.add(ahead1Key);
               sendLocalNotification(
-                `⏳ You are Next! (Token ${currentTok.tokenNumber})`,
-                `Token ${currentTok.tokenNumber}: The doctor is now serving ${currentTok.currentServing || 'the previous patient'}. You are next in line.`
+                `⏳ Turn Approaching (Token ${currentTok.tokenNumber})`,
+                `Token ${currentTok.tokenNumber}: 1 patient ahead of you for Consultation.`
               );
             } else if (currentTok.patientsAhead === 2 && !notifiedKeysRef.current.has(ahead2Key)) {
               notifiedKeysRef.current.add(ahead2Key);

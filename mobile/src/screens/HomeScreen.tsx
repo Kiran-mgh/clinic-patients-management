@@ -311,6 +311,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         setTodayToken(currentTok);
       }
     } catch (err: any) {
+      if (err.message && (err.message.includes('Patient profile not found') || err.message.includes('not found') || err.message.includes('404'))) {
+        Alert.alert(
+          'Account Removed',
+          'Your patient account has been removed by the clinic. If you believe this is an error, please contact clinic reception or re-register.',
+          [{ text: 'OK', onPress: () => onLogout() }]
+        );
+        onLogout();
+        return;
+      }
       setError(err.message || 'Failed to fetch status updates.');
     } finally {
       setLoading(false);

@@ -116,11 +116,15 @@ export async function sendLocalNotification(title: string, body: string, data: R
         title,
         body,
         sound: "default",
+        channelId: "clinic-queue",
+        priority: Notifications.AndroidNotificationPriority.MAX,
+        vibrate: [0, 250, 250, 250],
         data,
       },
       trigger: null,
     });
+    console.log("[LOCAL PUSH SUCCESS] Dispatched local notification:", title);
   } catch (err: any) {
-    console.log("[LOCAL NOTIFICATION ERROR]", err.message);
+    console.log("[LOCAL PUSH ERROR]", err.message);
   }
 }

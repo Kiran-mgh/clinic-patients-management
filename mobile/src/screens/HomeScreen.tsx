@@ -273,11 +273,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
               `Token ${currentTok.tokenNumber}: Please proceed to Doctor Consultation Room now.`
             );
           }
-          if (prevAheadRef.current !== null && prevAheadRef.current > 1 && currentTok.patientsAhead === 1 && currentTok.status === 'waiting') {
-            sendLocalNotification(
-              `⏳ You are Next! (Token ${currentTok.tokenNumber})`,
-              `Token ${currentTok.tokenNumber}: The doctor is now serving ${currentTok.currentServing || 'the previous patient'}. You are next in line.`
-            );
+          if (prevAheadRef.current !== null && prevAheadRef.current !== currentTok.patientsAhead && currentTok.status === 'waiting') {
+            if (currentTok.patientsAhead === 1) {
+              sendLocalNotification(
+                `⏳ You are Next! (Token ${currentTok.tokenNumber})`,
+                `Token ${currentTok.tokenNumber}: The doctor is now serving ${currentTok.currentServing || 'the previous patient'}. You are next in line.`
+              );
+            } else if (currentTok.patientsAhead === 2 || currentTok.patientsAhead === 5) {
+              sendLocalNotification(
+                `⏳ Turn Approaching (Token ${currentTok.tokenNumber})`,
+                `Token ${currentTok.tokenNumber}: ${currentTok.patientsAhead} patients ahead for Consultation.`
+              );
+            }
           }
           prevTokenStatusRef.current = currentTok.status;
           prevAheadRef.current = currentTok.patientsAhead;

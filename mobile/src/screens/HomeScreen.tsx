@@ -7,7 +7,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../api';
 import { io } from 'socket.io-client';
-import { registerForPushNotificationsAsync, sendLocalNotification } from '../services/notificationService';
+import { registerForPushNotificationsAsync, sendLocalNotification, getLastPushErrorLogs } from '../services/notificationService';
 
 interface HomeScreenProps {
   token: string | null;
@@ -210,15 +210,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
     setSyncingPush(true);
     try {
       const pTok = await registerForPushNotificationsAsync(token);
+      const errLogs = getLastPushErrorLogs();
       if (pTok) {
-        const res = await api.post('/patients/push-token', { pushToken: pTok }, token);
+        await api.post('/patients/push-token', { pushToken: pTok }, token);
         setPushStatusInfo(`Active (${pTok.slice(0, 18)}...)`);
-        Alert.alert('Push Notifications Active', `Device push token registered successfully with clinic server!\n\nToken: ${pTok}`);
+        Alert.alert(
+          'Push Registration Status',
+          `Device Push Token: ${pTok}\n\n${errLogs ? 'Expo Fetch Warnings:\n' + errLogs : 'Status: Genuine Push Token Active'}`
+        );
       } else {
         setPushStatusInfo('Permission Denied / Token Unavailable');
         Alert.alert(
-          'Notification Permission Required',
-          'Could not register push token. Please enable Notifications permission for Amar Ayurveda in your Android phone settings (Settings > Apps > Amar Ayurveda > Notifications > Allowed).'
+          'Push Registration Failed',
+          `Could not resolve push token.\n\nErrors:\n${errLogs || 'Permission denied in Android Settings'}`
         );
       }
     } catch (err: any) {

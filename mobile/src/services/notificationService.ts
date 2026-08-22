@@ -14,8 +14,15 @@ Notifications.setNotificationHandler({
 
 const DEFAULT_PROJECT_ID = "0489f480-11eb-4305-86b4-6207dbc695a0";
 
+let lastPushErrorLogs: string = '';
+
+export function getLastPushErrorLogs(): string {
+  return lastPushErrorLogs;
+}
+
 export async function registerForPushNotificationsAsync(userToken?: string | null): Promise<string | null> {
   let token: string | null = null;
+  lastPushErrorLogs = '';
 
   try {
     if (Platform.OS === "android") {
@@ -47,6 +54,7 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
     }
 
     if (finalStatus !== "granted") {
+      lastPushErrorLogs = "Permission not granted (status: " + finalStatus + ")";
       console.log("[PUSH] Notification permission not granted (status: " + finalStatus + ").");
       return null;
     }
@@ -55,6 +63,8 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
       Constants?.expoConfig?.extra?.eas?.projectId ??
       Constants?.easConfig?.projectId ??
       DEFAULT_PROJECT_ID;
+
+    const errors: string[] = [];
 
     // 1. Attempt Expo Push Token with experienceId & projectId
     try {
@@ -65,6 +75,7 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
       token = pushTokenData.data;
       console.log("[PUSH] Expo Push Token (experienceId) generated successfully:", token);
     } catch (err1: any) {
+      errors.push(`ExpID: ${err1.message}`);
       console.log("[PUSH WARN] Expo push token (experienceId) failed:", err1.message);
 
       // 2. Attempt with projectId only
@@ -73,6 +84,7 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
         token = pushTokenData.data;
         console.log("[PUSH] Expo Push Token (projectId) generated successfully:", token);
       } catch (err2: any) {
+        errors.push(`ProjID: ${err2.message}`);
         console.log("[PUSH WARN] Expo push token (projectId) failed:", err2.message);
 
         // 3. Attempt without args
@@ -81,6 +93,7 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
           token = pushTokenData.data;
           console.log("[PUSH] Expo Push Token (no args) generated successfully:", token);
         } catch (err3: any) {
+          errors.push(`NoArgs: ${err3.message}`);
           console.log("[PUSH WARN] Expo push token (no args) failed:", err3.message);
 
           // 4. Fallback to Native Device Push Token (FCM on Android)
@@ -89,10 +102,15 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
             token = typeof deviceTokenData.data === "string" ? deviceTokenData.data : JSON.stringify(deviceTokenData.data);
             console.log("[PUSH] Native Device Push Token generated successfully:", token);
           } catch (err4: any) {
+            errors.push(`FCM: ${err4.message}`);
             console.log("[PUSH ERROR] Native device push token fetch failed:", err4.message);
           }
         }
       }
+    }
+
+    if (errors.length > 0) {
+      lastPushErrorLogs = errors.join(" | ");
     }
 
     // 4. Fallback to User-Scoped Installation Token if push service is offline/unconfigured

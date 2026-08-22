@@ -23,6 +23,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
   const [error, setError] = useState('');
   const [tokenConfig, setTokenConfig] = useState<any>(null);
   const [announcement, setAnnouncement] = useState<any>(null);
+  const [pushStatusInfo, setPushStatusInfo] = useState<string>('Syncing push notifications...');
+  const [syncingPush, setSyncingPush] = useState<boolean>(false);
 
   // Edit Profile States
   const [showEditModal, setShowEditModal] = useState(false);
@@ -202,10 +204,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
   const prevTokenStatusRef = React.useRef<string | null>(null);
   const prevProfileStatusRef = React.useRef<string | null>(null);
 
+  const handleManualPushSync = async () => {
+    setSyncingPush(true);
+    try {
+      const pTok = await registerForPushNotificationsAsync(token);
+      if (pTok) {
+        const res = await api.post('/patients/push-token', { pushToken: pTok }, token);
+        setPushStatusInfo(`Active (${pTok.slice(0, 18)}...)`);
+        Alert.alert('Push Notifications Active', `Device push token registered successfully with clinic server!\n\nToken: ${pTok}`);
+      } else {
+        setPushStatusInfo('Permission Denied / Token Unavailable');
+        Alert.alert(
+          'Notification Permission Required',
+          'Could not register push token. Please enable Notifications permission for Amar Ayurveda in your Android phone settings (Settings > Apps > Amar Ayurveda > Notifications > Allowed).'
+        );
+      }
+    } catch (err: any) {
+      setPushStatusInfo(`Failed: ${err.message}`);
+      Alert.alert('Push Sync Error', err.message || 'Failed to register device push token.');
+    } finally {
+      setSyncingPush(false);
+    }
+  };
+
   const fetchProfileAndToken = async () => {
     setError('');
     try {
-      const pushTok = await registerForPushNotificationsAsync(token).catch(() => null);
+      const pushTok = await registerForPushNotificationsAsync(token).catch((err) => {
+        setPushStatusInfo(`Failed: ${err.message}`);
+        return null;
+      });
+      if (pushTok) {
+        setPushStatusInfo(`Active (${pushTok.slice(0, 16)}...)`);
+      } else {
+        setPushStatusInfo('Not Registered (Tap Sync)');
+      }
       const prof = await api.get('/patients/profile', token, pushTok);
       if (prof) {
         if (prevProfileStatusRef.current && prevProfileStatusRef.current !== 'active' && prof.status === 'active') {
@@ -397,6 +430,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
             ]}>
               {profile?.status?.replace('_', ' ')?.toUpperCase() || 'PENDING'}
             </Text>
+          </View>
+          <View style={[styles.statusRow, { marginTop: 8, justifyContent: 'space-between' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
+              <Text style={styles.statusLabel}>Push Alert:</Text>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: pushStatusInfo.startsWith('Active') ? '#16a34a' : '#d97706' }} numberOfLines={1}>
+                {pushStatusInfo}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={handleManualPushSync}
+              disabled={syncingPush}
+              style={{ backgroundColor: '#f1f5f9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#cbd5e1' }}
+            >
+              {syncingPush ? <ActivityIndicator size="small" color="#213932" /> : <Text style={{ fontSize: 11, fontWeight: '800', color: '#213932' }}>🔔 Sync Push</Text>}
+            </TouchableOpacity>
           </View>
         </View>
 

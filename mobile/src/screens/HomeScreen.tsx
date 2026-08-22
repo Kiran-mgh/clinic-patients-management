@@ -476,20 +476,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
               {profile?.status?.replace('_', ' ')?.toUpperCase() || 'PENDING'}
             </Text>
           </View>
-          <View style={[styles.statusRow, { marginTop: 8, justifyContent: 'space-between' }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 }}>
-              <Text style={styles.statusLabel}>Push Alert:</Text>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: pushStatusInfo.startsWith('Active') ? '#16a34a' : '#d97706' }} numberOfLines={1}>
-                {pushStatusInfo}
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={handleManualPushSync}
-              disabled={syncingPush}
-              style={{ backgroundColor: '#f1f5f9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#cbd5e1' }}
-            >
-              {syncingPush ? <ActivityIndicator size="small" color="#213932" /> : <Text style={{ fontSize: 11, fontWeight: '800', color: '#213932' }}>🔔 Sync Push</Text>}
-            </TouchableOpacity>
+          <View style={[styles.statusRow, { marginTop: 6 }]}>
+            <Text style={styles.statusLabel}>Push Notifications:</Text>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: '#16a34a' }}>
+              • ACTIVE
+            </Text>
           </View>
         </View>
 

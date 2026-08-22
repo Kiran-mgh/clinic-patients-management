@@ -206,6 +206,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
   const prevProfileStatusRef = React.useRef<string | null>(null);
   const prevAheadRef = React.useRef<number | null>(null);
   const notifiedKeysRef = React.useRef<Set<string>>(new Set());
+  const isFetchingRef = React.useRef<boolean>(false);
 
   const handleManualPushSync = async () => {
     setSyncingPush(true);
@@ -322,6 +323,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       }
       setError(err.message || 'Failed to fetch status updates.');
     } finally {
+      isFetchingRef.current = false;
       setLoading(false);
     }
   };

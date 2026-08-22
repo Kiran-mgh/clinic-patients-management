@@ -139,7 +139,19 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
   return token;
 }
 
+let lastNotificationKey = '';
+let lastNotificationTime = 0;
+
 export async function sendLocalNotification(title: string, body: string, data: Record<string, any> = {}) {
+  const now = Date.now();
+  const key = `${title}_${body}`;
+  if (key === lastNotificationKey && (now - lastNotificationTime) < 5000) {
+    console.log("[LOCAL PUSH DEBOUNCED] Ignored duplicate notification within 5s:", title);
+    return;
+  }
+  lastNotificationKey = key;
+  lastNotificationTime = now;
+
   try {
     await Notifications.scheduleNotificationAsync({
       content: {

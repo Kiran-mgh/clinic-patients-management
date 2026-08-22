@@ -12,6 +12,8 @@ export interface PushNotificationPayload {
   data?: Record<string, any>;
   channelId?: string;
   priority?: "default" | "normal" | "high";
+  badge?: number;
+  ttl?: number;
 }
 
 @Injectable()
@@ -86,6 +88,8 @@ export class NotificationsService {
       data: { ...data, timestamp: new Date().toISOString() },
       channelId: "clinic-queue",
       priority: "high",
+      badge: 1,
+      ttl: 3600,
     };
 
     return await this.postToExpoPushApi([message]);

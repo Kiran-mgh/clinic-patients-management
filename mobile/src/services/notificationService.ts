@@ -28,6 +28,15 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
         enableVibrate: true,
         showBadge: true,
       });
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "Default Notifications",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#213932",
+        sound: "default",
+        enableVibrate: true,
+        showBadge: true,
+      });
     }
 
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -74,9 +83,10 @@ export async function registerForPushNotificationsAsync(userToken?: string | nul
       }
     }
 
-    // 4. Fallback to Device Installation Token if push service is offline/unconfigured
+    // 4. Fallback to User-Scoped Installation Token if push service is offline/unconfigured
     if (!token) {
-      const fallbackId = Constants?.installationId || Device?.osBuildId || `client-${Date.now()}`;
+      const userHash = userToken ? userToken.replace(/[^a-zA-Z0-9]/g, '').slice(-12) : '';
+      const fallbackId = (userHash ? `usr-${userHash}` : '') || Constants?.installationId || Device?.osBuildId || `client-${Date.now()}`;
       token = `ExponentPushToken[${fallbackId}]`;
       console.log("[PUSH] Created device installation push token fallback:", token);
     }

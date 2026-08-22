@@ -273,39 +273,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
         const tokRes = await api.get('/tokens/today', token);
         const currentTok = tokRes.token;
         if (currentTok) {
-          const calledKey = `${currentTok.tokenNumber}_in_progress`;
-          const currentServingId = currentTok.currentServing || 'none';
-          const ahead1Key = `${currentTok.tokenNumber}_ahead_1_serving_${currentServingId}`;
-          const ahead2Key = `${currentTok.tokenNumber}_ahead_2_serving_${currentServingId}`;
-          const ahead5Key = `${currentTok.tokenNumber}_ahead_5_serving_${currentServingId}`;
-
-          if (currentTok.status === 'in_progress' && !notifiedKeysRef.current.has(calledKey)) {
-            notifiedKeysRef.current.add(calledKey);
-            sendLocalNotification(
-              `🔔 It's Your Turn! (Token ${currentTok.tokenNumber})`,
-              `Token ${currentTok.tokenNumber}: Please proceed to Doctor Consultation Room now.`
-            );
-          } else if (currentTok.status === 'waiting') {
-            if (currentTok.patientsAhead === 1 && !notifiedKeysRef.current.has(ahead1Key)) {
-              notifiedKeysRef.current.add(ahead1Key);
-              sendLocalNotification(
-                `⏳ Turn Approaching (Token ${currentTok.tokenNumber})`,
-                `Token ${currentTok.tokenNumber}: 1 patient ahead of you for Consultation.`
-              );
-            } else if (currentTok.patientsAhead === 2 && !notifiedKeysRef.current.has(ahead2Key)) {
-              notifiedKeysRef.current.add(ahead2Key);
-              sendLocalNotification(
-                `⏳ Turn Approaching (Token ${currentTok.tokenNumber})`,
-                `Token ${currentTok.tokenNumber}: 2 patients ahead for Consultation.`
-              );
-            } else if (currentTok.patientsAhead === 5 && !notifiedKeysRef.current.has(ahead5Key)) {
-              notifiedKeysRef.current.add(ahead5Key);
-              sendLocalNotification(
-                `⏳ Turn Approaching (Token ${currentTok.tokenNumber})`,
-                `Token ${currentTok.tokenNumber}: 5 patients ahead for Consultation.`
-              );
-            }
-          }
           prevTokenStatusRef.current = currentTok.status;
           prevAheadRef.current = currentTok.patientsAhead;
         }

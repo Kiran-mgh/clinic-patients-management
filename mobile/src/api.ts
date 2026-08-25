@@ -1,5 +1,5 @@
-// API client for Mobile App connecting directly to NestJS Staging/Production Backend
-const API_BASE = 'https://pms-api-staging.amarayurveda.in/api';
+// API client for Mobile App connecting directly to NestJS Production Backend
+const API_BASE = 'https://pms-api.amarayurveda.in/api';
 
 let currentPushToken: string | null = null;
 

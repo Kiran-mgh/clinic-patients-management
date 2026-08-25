@@ -336,7 +336,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ token, onNavigateToConta
       console.log('[NOTIFICATION RECEIVED IN FOREGROUND]', title, body);
     });
 
-    const socketUrl = 'https://pms-api-staging.amarayurveda.in';
+    const socketUrl = 'https://pms-api.amarayurveda.in';
     const socket = io(socketUrl);
 
     socket.on('connect', () => {

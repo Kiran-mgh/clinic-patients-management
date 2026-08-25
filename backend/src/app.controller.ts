@@ -11,49 +11,60 @@ export class AppController {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Privacy Policy - Amar Hospital</title>
+        <title>Privacy Policy - Amar Ayurveda (A Unit of Amar Hospital)</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 24px; color: #1e293b; line-height: 1.6; }
           h1 { color: #064e3b; font-size: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
           h2 { color: #047857; margin-top: 24px; font-size: 1.25rem; }
           p, li { font-size: 1rem; color: #334155; }
           ul { padding-left: 20px; }
+          .contact-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; borderRadius: 8px; margin-top: 16px; }
           .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 0.875rem; color: #64748b; }
         </style>
       </head>
       <body>
         <h1>Privacy Policy</h1>
-        <p><strong>Amar Hospital (Amar Ayurveda)</strong></p>
-        <p><em>Last updated: July 25, 2026</em></p>
+        <p><strong>Amar Ayurveda (A Unit of Amar Hospital)</strong></p>
+        <p><em>Last updated: August 26, 2026</em></p>
         
         <h2>1. Introduction</h2>
-        <p>Welcome to Amar Hospital. We are committed to protecting your personal data and respecting your privacy when using our hospital services, web portal, and mobile application.</p>
+        <p>Welcome to <strong>Amar Ayurveda (A Unit of Amar Hospital)</strong>. We respect your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our mobile application and web portal.</p>
         
         <h2>2. Information We Collect</h2>
-        <p>We collect essential information to manage clinic queue tokens and patient consultations:</p>
+        <p>We collect essential information required to verify patient identity, manage daily consultation tokens, and send queue status alerts:</p>
         <ul>
-          <li>Mobile phone numbers (for OTP verification and WhatsApp token notifications)</li>
-          <li>Patient names and basic registration details</li>
-          <li>Token numbers and consultation history</li>
+          <li><strong>Personal Identity Data:</strong> Full Name, Date of Birth, Gender, Town/Residence Area, Profession, and Blood Group.</li>
+          <li><strong>Contact Information:</strong> Mobile Phone Number and Email Address.</li>
+          <li><strong>Device & Notification Data:</strong> Device Push Tokens for delivering real-time queue position notifications (sound, vibration, and banner alerts).</li>
+          <li><strong>Authentication Data:</strong> Encrypted password credentials and OTP verification sessions.</li>
         </ul>
 
         <h2>3. How We Use Your Data</h2>
-        <p>Your information is used strictly for:</p>
+        <p>Your information is strictly used for clinic operational and patient care purposes:</p>
         <ul>
-          <li>Authenticating patient and staff identity via OTP (SMS and WhatsApp)</li>
-          <li>Generating and tracking clinic queue tokens</li>
-          <li>Sending real-time queue status alerts</li>
+          <li>Authenticating patient registration and account logins via SMS / Email OTP.</li>
+          <li>Generating daily medicine consultation and treatment tokens.</li>
+          <li>Broadcasting real-time queue turn alerts ("It's Your Turn!", "1 Patient Ahead").</li>
+          <li>Linking mobile registrations with clinic medical records.</li>
         </ul>
 
-        <h2>4. Data Security</h2>
-        <p>We implement strict security measures including SSL/TLS encryption and secure token authentication to safeguard your information.</p>
+        <h2>4. Data Sharing & Disclosure</h2>
+        <p>We implement strict security standards including SSL/TLS encryption. We <strong>DO NOT</strong> sell, trade, rent, or share your personal health data or contact information with third-party advertisers or external marketers.</p>
 
-        <h2>5. Contact Us</h2>
-        <p>If you have any questions, please contact us at:</p>
-        <p>Email: privacy@amarhospital.com<br>Website: https://amar.vistarafabtech.com</p>
+        <h2>5. Data Retention & Deletion Rights</h2>
+        <p>Your data is retained for as long as your account remains active. Patients have the right to request deletion of their account and associated profile data at any time by contacting clinic reception or emailing <a href="mailto:no-reply@amarayurveda.in">no-reply@amarayurveda.in</a>.</p>
+
+        <h2>6. Contact Us</h2>
+        <p>If you have any questions, concerns, or data requests regarding this Privacy Policy, please contact us:</p>
+        <div class="contact-box">
+          <p><strong>Amar Ayurveda (A Unit of Amar Hospital)</strong><br>
+          #226/4, 7th Cross, R.T. Street, Bengaluru - 560053<br>
+          <strong>Email:</strong> <a href="mailto:no-reply@amarayurveda.in">no-reply@amarayurveda.in</a><br>
+          <strong>Website:</strong> <a href="https://amarayurveda.in" target="_blank" rel="noopener">https://amarayurveda.in</a></p>
+        </div>
 
         <div class="footer">
-          &copy; 2026 Amar Hospital (Amar Ayurveda). All rights reserved.
+          &copy; 2026 Amar Ayurveda (A Unit of Amar Hospital). All rights reserved.
         </div>
       </body>
       </html>

@@ -81,9 +81,9 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.amarhospitalmobile'
+    namespace 'com.amarayurveda.mobile'
     defaultConfig {
-        applicationId 'com.anonymous.amarhospitalmobile'
+        applicationId 'com.amarayurveda.mobile'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

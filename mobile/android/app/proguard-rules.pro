@@ -7,8 +7,18 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# react-native-reanimated
+# Add project specific ProGuard rules here.
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.facebook.react.turbomodule.** { *; }
 
-# Add any project specific keep options here:
+# Expo modules keep rules
+-keep class expo.modules.** { *; }
+-keep class com.facebook.react.** { *; }
+-keep class com.facebook.soloader.** { *; }
+-keep class com.facebook.jni.** { *; }
+-keep class io.socket.** { *; }
+-keep class okhttp3.** { *; }
+
+-dontwarn expo.modules.**
+-dontwarn com.facebook.react.**
+-dontwarn io.socket.**

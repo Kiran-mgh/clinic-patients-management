@@ -698,7 +698,7 @@ export const DisplayScreen: React.FC = () => {
               color: 'hsl(var(--primary))',
               fontFamily: 'Outfit, sans-serif'
             }}>
-              Ksharasutra & Dressing Room
+              Dressing Room
             </h2>
             <p style={{ margin: '2px 0 0 0', fontSize: '0.95rem', color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
               Specialized Ayurvedic Therapy & Wound Care

@@ -13,6 +13,8 @@ import { Token } from './entities/token.entity';
 import { OtpSession } from './entities/otp-session.entity';
 import { AuditLog } from './entities/audit-log.entity';
 import { SystemSetting } from './entities/system-setting.entity';
+import { TreatmentCourse } from './entities/treatment-course.entity';
+import { CoursePayment } from './entities/course-payment.entity';
 
 // Modules
 import { AuthModule } from './auth/auth.module';
@@ -20,6 +22,8 @@ import { PatientsModule } from './patients/patients.module';
 import { TokensModule } from './tokens/tokens.module';
 import { QueueModule } from './queue/queue.module';
 import { SettingsModule } from './settings/settings.module';
+import { BillingModule } from './billing/billing.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -46,7 +50,7 @@ import { SettingsModule } from './settings/settings.module';
             username: dbUsername,
             password: dbPassword,
             database: dbName,
-            entities: [User, Patient, Token, OtpSession, AuditLog, SystemSetting],
+            entities: [User, Patient, Token, OtpSession, AuditLog, SystemSetting, TreatmentCourse, CoursePayment],
             synchronize: true, // Set false and use migrations in strict production
           };
         } else {
@@ -54,7 +58,7 @@ import { SettingsModule } from './settings/settings.module';
           return {
             type: 'sqlite',
             database: 'amar_hospital.sqlite',
-            entities: [User, Patient, Token, OtpSession, AuditLog, SystemSetting],
+            entities: [User, Patient, Token, OtpSession, AuditLog, SystemSetting, TreatmentCourse, CoursePayment],
             synchronize: true,
           };
         }
@@ -65,6 +69,8 @@ import { SettingsModule } from './settings/settings.module';
     TokensModule,
     QueueModule,
     SettingsModule,
+    BillingModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
 })

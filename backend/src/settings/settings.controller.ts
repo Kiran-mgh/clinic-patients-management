@@ -1,9 +1,10 @@
-import { Controller, Get, Put, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UpdateTokenSettingsDto } from './dto/update-token-settings.dto';
+import { UpdateAnnouncementDto } from './dto/update-announcement.dto';
 
 @Controller('settings')
 export class SettingsController {
@@ -22,5 +23,28 @@ export class SettingsController {
     @Body() dto: UpdateTokenSettingsDto,
   ) {
     return this.settingsService.updateTokenSettings(req.user.id, dto);
+  }
+
+  @Get('announcement')
+  async getAnnouncement() {
+    return this.settingsService.getAnnouncement();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'doctor')
+  @Put('announcement')
+  async updateAnnouncement(
+    @Body() dto: UpdateAnnouncementDto,
+  ) {
+    return this.settingsService.updateAnnouncement(dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'doctor')
+  @Post('announcement')
+  async postAnnouncement(
+    @Body() dto: UpdateAnnouncementDto,
+  ) {
+    return this.settingsService.updateAnnouncement(dto);
   }
 }

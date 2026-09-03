@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '../api';
-import { Search, User, Trash2, CheckCircle, XCircle, CreditCard, Upload } from 'lucide-react';
+import { Search, User, Trash2, CheckCircle, XCircle, CreditCard, Upload, Layers, FileText, Package } from 'lucide-react';
 import { formatToIndianDate, formatDobInput } from '../utils/dateUtils';
+import { TreatmentLedgerView } from '../components/TreatmentLedgerView';
 
 interface PatientSearchProps {
   token: string | null;
@@ -114,6 +115,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [modalActiveTab, setModalActiveTab] = useState<'ledger' | 'profile' | 'visits'>('ledger');
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -123,6 +125,7 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
 
   const handlePatientClick = async (p: any) => {
     setSelectedPatient(p);
+    setModalActiveTab('ledger');
     setDetailLoading(true);
     setDetailError('');
     try {
@@ -835,187 +838,209 @@ export const PatientSearch: React.FC<PatientSearchProps> = ({ token }) => {
                 </button>
               </div>
 
-              {/* Details table */}
+              {/* Navigation Tabs for Selected Patient */}
               <div style={{
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                padding: '16px',
-                background: 'hsl(var(--bg-primary))',
-                borderRadius: '12px',
-                fontSize: '0.9rem'
+                gap: '8px',
+                borderBottom: '1px solid hsl(var(--border-color))',
+                paddingBottom: '4px',
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
-                  <span style={{ color: 'hsl(var(--text-muted))' }}>Mobile:</span>
-                  <span style={{ fontWeight: 600 }}>{selectedPatient.user?.mobileNumber}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
-                  <span style={{ color: 'hsl(var(--text-muted))' }}>Email:</span>
-                  <span style={{ fontWeight: 600 }}>{selectedPatient.user?.email || selectedPatient.email || '—'}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
-                  <span style={{ color: 'hsl(var(--text-muted))' }}>Gender:</span>
-                  <span style={{ fontWeight: 600 }}>{selectedPatient.gender}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
-                  <span style={{ color: 'hsl(var(--text-muted))' }}>Date of Birth:</span>
-                  <span style={{ fontWeight: 600 }}>{formatToIndianDate(selectedPatient.dateOfBirth)}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
-                  <span style={{ color: 'hsl(var(--text-muted))' }}>Town/Residence:</span>
-                  <span style={{ fontWeight: 600 }}>{selectedPatient.town}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
-                  <span style={{ color: 'hsl(var(--text-muted))' }}>Profession:</span>
-                  <span style={{ fontWeight: 600 }}>{selectedPatient.profession}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
-                  <span style={{ color: 'hsl(var(--text-muted))' }}>Blood Group:</span>
-                  <span style={{ fontWeight: 600 }}>{selectedPatient.bloodGroup || 'Not Specified'}</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingTop: '4px' }}>
-                  <span style={{ color: 'hsl(var(--text-muted))' }}>Piles / Fistula / Fissures Surgery History:</span>
-                  <span style={{ fontWeight: 600, color: selectedPatient.previousSurgeryDetails ? '#d97706' : 'hsl(var(--text-main))' }}>
-                    {selectedPatient.previousSurgeryDetails || 'None Reported'}
-                  </span>
-                </div>
+                <button
+                  onClick={() => setModalActiveTab('ledger')}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px 8px 0 0',
+                    border: 'none',
+                    borderBottom: modalActiveTab === 'ledger' ? '2.5px solid hsl(var(--primary))' : '2.5px solid transparent',
+                    background: modalActiveTab === 'ledger' ? 'hsla(var(--primary) / 0.1)' : 'transparent',
+                    color: modalActiveTab === 'ledger' ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <CreditCard size={16} />
+                  Treatment & Billing Ledger
+                </button>
+
+                <button
+                  onClick={() => setModalActiveTab('profile')}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px 8px 0 0',
+                    border: 'none',
+                    borderBottom: modalActiveTab === 'profile' ? '2.5px solid hsl(var(--primary))' : '2.5px solid transparent',
+                    background: modalActiveTab === 'profile' ? 'hsla(var(--primary) / 0.1)' : 'transparent',
+                    color: modalActiveTab === 'profile' ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <User size={16} />
+                  Patient Profile
+                </button>
+
+                <button
+                  onClick={() => setModalActiveTab('visits')}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px 8px 0 0',
+                    border: 'none',
+                    borderBottom: modalActiveTab === 'visits' ? '2.5px solid hsl(var(--primary))' : '2.5px solid transparent',
+                    background: modalActiveTab === 'visits' ? 'hsla(var(--primary) / 0.1)' : 'transparent',
+                    color: modalActiveTab === 'visits' ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <FileText size={16} />
+                  Visits Log ({selectedPatient.tokens?.length || 0})
+                </button>
               </div>
 
-              {/* Payment History & Billing Records */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <CreditCard size={18} /> Payment & Billing History
-                  </h4>
-                  {selectedPatient.tokens && (
-                    <span style={{ padding: '2px 8px', borderRadius: '6px', background: 'hsla(150, 55%, 32%, 0.1)', color: 'hsl(var(--success))', fontSize: '0.75rem', fontWeight: 800 }}>
-                      Paid Transactions: {selectedPatient.tokens.filter((t: any) => t.paymentStatus === 'Paid').length}
-                    </span>
-                  )}
-                </div>
+              {/* Tab 1: Treatment & Billing Ledger */}
+              {modalActiveTab === 'ledger' && (
+                <TreatmentLedgerView
+                  patientId={selectedPatient.id}
+                  token={token}
+                  patientName={selectedPatient.fullName}
+                  patientCode={selectedPatient.patientId}
+                />
+              )}
 
-                {detailLoading ? (
-                  <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem', fontStyle: 'italic' }}>Loading payment history...</p>
-                ) : selectedPatient.tokens && selectedPatient.tokens.filter((t: any) => t.paymentStatus === 'Paid').length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
-                    {selectedPatient.tokens.filter((t: any) => t.paymentStatus === 'Paid').map((t: any) => {
-                      const dateStr = new Date(t.generatedAt).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      });
-                      return (
-                        <div key={`pay-${t.id}`} style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '10px 12px',
-                          background: 'hsl(var(--bg-primary))',
-                          border: '1px solid hsl(var(--border-color))',
-                          borderRadius: '8px',
-                          fontSize: '0.85rem'
-                        }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <div style={{ fontWeight: 700, color: 'hsl(var(--text-primary))' }}>
-                              Payment Date: {dateStr}
-                            </div>
-                            <div style={{ fontSize: '0.8rem', color: 'hsl(var(--text-muted))', fontStyle: t.paymentNotes ? 'normal' : 'italic' }}>
-                              Notes: {t.paymentNotes || 'No notes added'}
-                            </div>
-                          </div>
-                          <span style={{
-                            padding: '3px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.75rem',
-                            fontWeight: 800,
-                            background: 'hsla(150, 55%, 32%, 0.12)',
-                            color: 'hsl(var(--success))',
-                            border: '1px solid hsla(150, 55%, 32%, 0.25)'
-                          }}>
-                            ✓ Paid
-                          </span>
-                        </div>
-                      );
-                    })}
+              {/* Tab 2: Patient Profile Details */}
+              {modalActiveTab === 'profile' && (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  padding: '16px',
+                  background: 'hsl(var(--bg-primary))',
+                  borderRadius: '12px',
+                  fontSize: '0.9rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
+                    <span style={{ color: 'hsl(var(--text-muted))' }}>Mobile:</span>
+                    <span style={{ fontWeight: 600 }}>{selectedPatient.user?.mobileNumber}</span>
                   </div>
-                ) : (
-                  <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem', fontStyle: 'italic' }}>No paid transactions recorded for this patient.</p>
-                )}
-              </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
+                    <span style={{ color: 'hsl(var(--text-muted))' }}>Email:</span>
+                    <span style={{ fontWeight: 600 }}>{selectedPatient.user?.email || selectedPatient.email || '—'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
+                    <span style={{ color: 'hsl(var(--text-muted))' }}>Gender:</span>
+                    <span style={{ fontWeight: 600 }}>{selectedPatient.gender}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
+                    <span style={{ color: 'hsl(var(--text-muted))' }}>Date of Birth:</span>
+                    <span style={{ fontWeight: 600 }}>{formatToIndianDate(selectedPatient.dateOfBirth)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
+                    <span style={{ color: 'hsl(var(--text-muted))' }}>Town/Residence:</span>
+                    <span style={{ fontWeight: 600 }}>{selectedPatient.town}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
+                    <span style={{ color: 'hsl(var(--text-muted))' }}>Profession:</span>
+                    <span style={{ fontWeight: 600 }}>{selectedPatient.profession}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid hsl(var(--border-color))', paddingBottom: '8px' }}>
+                    <span style={{ color: 'hsl(var(--text-muted))' }}>Blood Group:</span>
+                    <span style={{ fontWeight: 600 }}>{selectedPatient.bloodGroup || 'Not Specified'}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingTop: '4px' }}>
+                    <span style={{ color: 'hsl(var(--text-muted))' }}>Piles / Fistula / Fissures Surgery History:</span>
+                    <span style={{ fontWeight: 600, color: selectedPatient.previousSurgeryDetails ? '#d97706' : 'hsl(var(--text-main))' }}>
+                      {selectedPatient.previousSurgeryDetails || 'None Reported'}
+                    </span>
+                  </div>
+                </div>
+              )}
 
-              {/* Visit History */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'hsl(var(--primary))' }}>Visit History & Service Records</h4>
-                {detailLoading ? (
-                  <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.9rem', fontStyle: 'italic' }}>Loading visit history...</p>
-                ) : detailError ? (
-                  <p style={{ color: 'hsl(var(--danger))', fontSize: '0.9rem' }}>{detailError}</p>
-                ) : selectedPatient.tokens && selectedPatient.tokens.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '300px', overflowY: 'auto', paddingRight: '4px' }}>
-                    {selectedPatient.tokens.map((t: any, index: number) => {
-                      const dateStr = new Date(t.generatedAt).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      });
-                      return (
-                        <div key={t.id} style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          padding: '12px',
-                          background: index === 0 ? 'hsla(150, 55%, 32%, 0.05)' : 'hsl(var(--bg-primary))',
-                          border: index === 0 ? '1px solid hsla(150, 55%, 32%, 0.15)' : '1px solid hsl(var(--border-color))',
-                          borderRadius: '8px'
-                        }}>
-                          <div>
-                            <div style={{ fontWeight: 700, color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              Token {t.tokenNumber}
-                              {index === 0 && (
-                                <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'hsl(var(--success))', background: 'hsla(150, 55%, 32%, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-                                  LATEST
-                                </span>
+              {/* Tab 3: Visits Log */}
+              {modalActiveTab === 'visits' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {detailLoading ? (
+                    <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.9rem', fontStyle: 'italic' }}>Loading visit history...</p>
+                  ) : detailError ? (
+                    <p style={{ color: 'hsl(var(--danger))', fontSize: '0.9rem' }}>{detailError}</p>
+                  ) : selectedPatient.tokens && selectedPatient.tokens.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '400px', overflowY: 'auto', paddingRight: '4px' }}>
+                      {selectedPatient.tokens.map((t: any, index: number) => {
+                        const dateStr = new Date(t.generatedAt).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        });
+                        return (
+                          <div key={t.id} style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '12px',
+                            background: index === 0 ? 'hsla(150, 55%, 32%, 0.05)' : 'hsl(var(--bg-primary))',
+                            border: index === 0 ? '1px solid hsla(150, 55%, 32%, 0.15)' : '1px solid hsl(var(--border-color))',
+                            borderRadius: '8px'
+                          }}>
+                            <div>
+                              <div style={{ fontWeight: 700, color: 'hsl(var(--primary))', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Token {t.tokenNumber}
+                                {index === 0 && (
+                                  <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'hsl(var(--success))', background: 'hsla(150, 55%, 32%, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                                    LATEST
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', marginTop: '2px' }}>
+                                {dateStr}
+                              </div>
+                              {t.notes && (
+                                <div style={{
+                                  fontSize: '0.8rem',
+                                  color: 'hsl(var(--text-primary))',
+                                  marginTop: '6px',
+                                  padding: '6px 10px',
+                                  background: 'hsl(var(--bg-secondary) / 0.4)',
+                                  borderLeft: '3px solid hsl(var(--primary))',
+                                  borderRadius: '4px',
+                                  fontStyle: 'italic',
+                                  maxWidth: '300px'
+                                }}>
+                                  <strong>Notes:</strong> {t.notes}
+                                </div>
                               )}
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', marginTop: '2px' }}>
-                              {dateStr}
+                            <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, color: 'hsl(var(--text-muted))' }}>
+                                {t.serviceType}
+                              </span>
+                              <span className={`badge badge-${t.status}`} style={{ fontSize: '0.7rem', padding: '3px 8px' }}>
+                                {t.status}
+                              </span>
                             </div>
-                            {t.notes && (
-                              <div style={{
-                                fontSize: '0.8rem',
-                                color: 'hsl(var(--text-primary))',
-                                marginTop: '6px',
-                                padding: '6px 10px',
-                                background: 'hsl(var(--bg-secondary) / 0.4)',
-                                borderLeft: '3px solid hsl(var(--primary))',
-                                borderRadius: '4px',
-                                fontStyle: 'italic',
-                                maxWidth: '300px'
-                              }}>
-                                <strong>Notes:</strong> {t.notes}
-                              </div>
-                            )}
                           </div>
-                          <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, color: 'hsl(var(--text-muted))' }}>
-                              {t.serviceType}
-                            </span>
-                            <span className={`badge badge-${t.status}`} style={{ fontSize: '0.7rem', padding: '3px 8px' }}>
-                              {t.status}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.9rem', fontStyle: 'italic' }}>
-                    No previous clinic visits recorded in the system.
-                  </p>
-                )}
-              </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                      No previous clinic visits recorded in the system.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div style={{

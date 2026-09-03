@@ -6,7 +6,7 @@ import { formatTo12HourTime } from '../utils/dateUtils';
 
 interface DashboardProps {
   token: string | null;
-  onNavigate: (page: any) => void;
+  onNavigate: (screen: 'dashboard' | 'verification' | 'queue' | 'search' | 'reports' | 'settings', subTab?: 'tokens' | 'notices') => void;
 }
 
 interface TimePicker12HProps {
@@ -253,9 +253,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
     }
   };
 
+  const [announcement, setAnnouncement] = useState<any>(null);
+
+  const fetchAnnouncement = async () => {
+    try {
+      const data = await api.get('/settings/announcement', token);
+      if (data) {
+        setAnnouncement(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch announcement on dashboard', err);
+    }
+  };
+
   useEffect(() => {
     fetchMetrics();
     fetchTokenSettings();
+    fetchAnnouncement();
 
     const socketUrl = import.meta.env.VITE_API_URL
       ? import.meta.env.VITE_API_URL.replace(/\/api$/, '')
@@ -271,13 +285,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
       console.log('[Socket] Received queue_updated, syncing dashboard...');
       fetchMetrics();
       fetchTokenSettings();
+      fetchAnnouncement();
     });
 
     // 15-second fallback polling interval
     const fallbackInterval = setInterval(() => {
       fetchMetrics();
       fetchTokenSettings();
+      fetchAnnouncement();
     }, 15000);
+
+    fetchAnnouncement();
 
     return () => {
       socket.disconnect();
@@ -305,6 +323,87 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
           Refresh
         </button>
       </div>
+
+      {/* Active Announcement / Vacation Notice Bar */}
+      {announcement && announcement.enabled && (
+        <div style={{
+          background: announcement.type === 'vacation' 
+            ? 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)' 
+            : announcement.type === 'emergency' 
+            ? 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)' 
+            : 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+          border: `1.5px solid ${announcement.type === 'vacation' ? '#fde68a' : announcement.type === 'emergency' ? '#fecaca' : '#bbf7d0'}`,
+          borderRadius: '16px',
+          padding: '18px 24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.04)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              fontSize: '1.8rem',
+              padding: '8px 12px',
+              background: '#ffffff',
+              borderRadius: '12px',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.05)'
+            }}>
+              {announcement.type === 'vacation' ? '🏖️' : announcement.type === 'emergency' ? '⚠️' : '📢'}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h4 style={{
+                  margin: 0,
+                  fontSize: '1.1rem',
+                  fontWeight: 800,
+                  color: announcement.type === 'vacation' ? '#92400e' : announcement.type === 'emergency' ? '#991b1b' : '#166534'
+                }}>
+                  {announcement.title || 'Dr Anit Goswamy on Leave / Active Advisory'}
+                </h4>
+                <span style={{
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  background: '#ffffff',
+                  color: '#b45309',
+                  border: '1px solid #fde68a'
+                }}>
+                  ACTIVE ADVISORY
+                </span>
+              </div>
+              <p style={{
+                margin: '4px 0 0 0',
+                fontSize: '0.88rem',
+                color: announcement.type === 'vacation' ? '#78350f' : announcement.type === 'emergency' ? '#7f1d1d' : '#14532d'
+              }}>
+                {announcement.message}
+                {(announcement.startDate || announcement.endDate) && (
+                  <span style={{ fontWeight: 700, marginLeft: '8px' }}>
+                    (🗓️ {announcement.startDate} {announcement.endDate ? `to ${announcement.endDate}` : ''})
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onNavigate('settings', 'notices')}
+            className="btn btn-secondary"
+            style={{
+              padding: '8px 16px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              borderRadius: '8px',
+              background: '#ffffff'
+            }}
+          >
+            Manage Notice
+          </button>
+        </div>
+      )}
 
       {error && (
         <div style={{
@@ -457,7 +556,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token, onNavigate }) => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => onNavigate('settings')}
+                  onClick={() => onNavigate('settings', 'tokens')}
                   className="btn btn-primary"
                   style={{
                     display: 'inline-flex',

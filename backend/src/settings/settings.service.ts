@@ -14,6 +14,17 @@ export interface TokenSettingsResponse {
   treatmentAllowedDays: number[];
 }
 
+export interface AnnouncementResponse {
+  enabled: boolean;
+  type: string; // 'vacation' | 'holiday' | 'emergency' | 'general'
+  title: string;
+  message: string;
+  startDate: string;
+  endDate: string;
+  autoPauseTokens: boolean;
+  updatedAt?: string;
+}
+
 @Injectable()
 export class SettingsService {
   constructor(
@@ -101,5 +112,62 @@ export class SettingsService {
     this.queueGateway.emitQueueUpdate();
 
     return this.getTokenSettings();
+  }
+
+  async getAnnouncement(): Promise<AnnouncementResponse> {
+    const raw = await this.getSetting('clinic_announcement', '');
+    if (!raw) {
+      return {
+        enabled: false,
+        type: 'vacation',
+        title: '',
+        message: '',
+        startDate: '',
+        endDate: '',
+        autoPauseTokens: false,
+      };
+    }
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {
+        enabled: false,
+        type: 'vacation',
+        title: '',
+        message: '',
+        startDate: '',
+        endDate: '',
+        autoPauseTokens: false,
+      };
+    }
+  }
+
+  async updateAnnouncement(data: {
+    enabled?: boolean;
+    type?: string;
+    title?: string;
+    message?: string;
+    startDate?: string;
+    endDate?: string;
+    autoPauseTokens?: boolean;
+  }): Promise<AnnouncementResponse> {
+    const current = await this.getAnnouncement();
+    const updated: AnnouncementResponse = {
+      enabled: data.enabled !== undefined ? data.enabled : current.enabled,
+      type: data.type || current.type || 'vacation',
+      title: data.title !== undefined ? data.title : current.title,
+      message: data.message !== undefined ? data.message : current.message,
+      startDate: data.startDate !== undefined ? data.startDate : current.startDate,
+      endDate: data.endDate !== undefined ? data.endDate : current.endDate,
+      autoPauseTokens: data.autoPauseTokens !== undefined ? data.autoPauseTokens : current.autoPauseTokens,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await this.setSetting('clinic_announcement', JSON.stringify(updated));
+
+    // Broadcast real-time update to all connected web and mobile clients
+    this.queueGateway.emitQueueUpdate();
+
+    return updated;
   }
 }

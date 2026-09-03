@@ -5,23 +5,32 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller('queue')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin', 'doctor')
 export class QueueController {
   constructor(private readonly queueService: QueueService) {}
 
+  @Get('public-live')
+  async getPublicLiveQueue() {
+    return this.queueService.getPublicLiveQueue();
+  }
+
   @Get('dashboard')
   @Get('overview')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'doctor')
   async getDashboardMetrics() {
     return this.queueService.getDashboardMetrics();
   }
 
   @Get('today')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'doctor')
   async getTodayQueue() {
     return this.queueService.getTodayQueue();
   }
 
   @Get('reports')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'doctor')
   async getReports(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
@@ -30,11 +39,15 @@ export class QueueController {
   }
 
   @Post('call-next')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'doctor')
   async callNext(@Req() req: any, @Body('serviceType') serviceType: string) {
     return this.queueService.callNext(req.user.id, serviceType);
   }
 
   @Patch('tokens/:id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'doctor')
   async updateTokenStatus(
     @Req() req: any,
     @Param('id') id: string,
@@ -47,6 +60,8 @@ export class QueueController {
   }
 
   @Patch('tokens/:id/payment')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'doctor')
   async updateTokenPayment(
     @Req() req: any,
     @Param('id') id: string,

@@ -1,6 +1,8 @@
 import { Entity, PrimaryColumn, Column, CreateDateColumn, OneToOne, JoinColumn, OneToMany, Index } from 'typeorm';
 import { User } from './user.entity';
 import { Token } from './token.entity';
+import { TreatmentCourse } from './treatment-course.entity';
+import { CoursePayment } from './course-payment.entity';
 
 @Entity('patients')
 export class Patient {
@@ -49,6 +51,18 @@ export class Patient {
 
   @OneToMany(() => Token, (token) => token.patient)
   tokens: Token[];
+
+  @OneToMany(() => TreatmentCourse, (course) => course.patient)
+  treatmentCourses: TreatmentCourse[];
+
+  @OneToMany(() => CoursePayment, (payment) => payment.patient)
+  payments: CoursePayment[];
+
+  @Column({ type: 'text', nullable: true })
+  pushToken: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  pushTokenUpdatedAt: Date;
 
   @Index()
   @CreateDateColumn()

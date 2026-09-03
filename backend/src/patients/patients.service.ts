@@ -11,6 +11,7 @@ import { AuditLog } from '../entities/audit-log.entity';
 import { OtpSession } from '../entities/otp-session.entity';
 import { RegisterPatientByStaffDto } from './dto/register-patient-by-staff.dto';
 import { QueueGateway } from '../queue/queue.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PatientsService {
@@ -26,6 +27,7 @@ export class PatientsService {
     @InjectDataSource()
     private dataSource: DataSource,
     private queueGateway: QueueGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   async register(
@@ -41,6 +43,7 @@ export class PatientsService {
       isExisting: boolean;
       existingPatientId?: string;
       previousSurgeryDetails?: string;
+      pushToken?: string;
     },
   ): Promise<Patient> {
     const user = await this.userRepository.findOne({ where: { id: userId }, relations: ['patient'] });
@@ -57,8 +60,6 @@ export class PatientsService {
       status = 'pending_verification'; // Case 2: Existing patient without Patient ID
     }
 
-
-
     const patient = this.patientRepository.create({
       id: userId,
       fullName: data.fullName,
@@ -72,9 +73,14 @@ export class PatientsService {
       isExisting: data.isExisting,
       patientId: data.isExisting ? data.existingPatientId : null,
       status,
+      pushToken: data.pushToken || null,
+      pushTokenUpdatedAt: data.pushToken ? new Date() : null,
     });
 
     const savedPatient = await this.patientRepository.save(patient);
+    if (data.pushToken) {
+      console.log(`[PUSH REGISTRATION] Saved push token during patient registration for ${data.fullName} (${savedPatient.id}): ${data.pushToken.slice(0, 25)}...`);
+    }
 
     // Audit log
     await this.logAction(
@@ -141,7 +147,7 @@ export class PatientsService {
     return savedPatient;
   }
 
-  async getProfile(userId: string): Promise<Patient> {
+  async getProfile(userId: string, pushToken?: string): Promise<Patient> {
     const patient = await this.patientRepository.findOne({
       where: { id: userId },
       relations: ['user'],
@@ -149,6 +155,13 @@ export class PatientsService {
 
     if (!patient) {
       throw new NotFoundException('Patient profile not found');
+    }
+
+    if (pushToken && patient.pushToken !== pushToken) {
+      patient.pushToken = pushToken;
+      patient.pushTokenUpdatedAt = new Date();
+      await this.patientRepository.save(patient);
+      console.log(`[PUSH AUTO-SYNC] Auto-healed push token for patient ${patient.fullName} (${patient.patientId || patient.id}): ${pushToken.slice(0, 25)}...`);
     }
 
     return patient;
@@ -194,6 +207,14 @@ export class PatientsService {
     this.sendApprovalEmail(updatedPatient).catch(err => {
       console.error(`[APPROVAL EMAIL ERROR] Failed to send approval email: ${err.message}`);
     });
+
+    // Send instant push notification to patient mobile app
+    this.notificationsService.sendToPatient(
+      patient.id,
+      '🎉 Account Approved!',
+      `Welcome ${patient.fullName}, your registration is approved. Your Patient ID is ${finalPatientId}. You can now generate daily tokens!`,
+      { type: 'ACCOUNT_APPROVED', patientId: finalPatientId },
+    ).catch(err => console.error(`[PUSH ERROR] Failed to send approval push: ${err.message}`));
 
     // Audit log
     await this.logAction(
@@ -574,6 +595,19 @@ export class PatientsService {
     this.queueGateway.emitQueueUpdate();
 
     return { message: `Successfully deleted patient ${patientName} (${patientDisplayId}).` };
+  }
+
+  async updatePushToken(userId: string, pushToken: string): Promise<{ success: boolean }> {
+    const patient = await this.patientRepository.findOne({ where: { id: userId } });
+    if (!patient) {
+      throw new NotFoundException('Patient not found');
+    }
+
+    patient.pushToken = pushToken;
+    patient.pushTokenUpdatedAt = new Date();
+    await this.patientRepository.save(patient);
+    console.log(`[PUSH REGISTRATION] Successfully saved push token for patient ${patient.fullName} (${patient.patientId || patient.id}): ${pushToken.slice(0, 25)}...`);
+    return { success: true };
   }
 
   private parseToIsoDate(dateStr: string): string {

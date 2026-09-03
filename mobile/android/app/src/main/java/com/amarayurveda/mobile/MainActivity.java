@@ -1,4 +1,4 @@
-package com.anonymous.amarhospitalmobile;
+package com.amarayurveda.mobile;
 
 import android.os.Build;
 import android.os.Bundle;

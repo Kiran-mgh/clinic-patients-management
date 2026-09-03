@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Play, Check, X, RefreshCw, Search, Edit } from 'lucide-react';
+import { Play, Check, X, RefreshCw, Search, Edit, CreditCard } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { createPortal } from 'react-dom';
+import { TreatmentLedgerView } from '../components/TreatmentLedgerView';
+import { formatToIndianDate } from '../utils/dateUtils';
 
 interface QueueManagementProps {
   token: string | null;
@@ -20,18 +22,21 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
   const [detailError, setDetailError] = useState('');
   const [servingToken, setServingToken] = useState<any>(null);
   const [healthNotes, setHealthNotes] = useState('');
-  const [paymentStatus, setPaymentStatus] = useState<'Unpaid' | 'Paid'>('Unpaid');
-  const [paymentNotes, setPaymentNotes] = useState('');
-  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [queueDetailTab, setQueueDetailTab] = useState<'ledger' | 'profile'>('ledger');
+  const [returnToServingToken, setReturnToServingToken] = useState<any>(null);
 
-  const [editingPaymentToken, setEditingPaymentToken] = useState<any>(null);
-  const [editPayStatus, setEditPayStatus] = useState<'Unpaid' | 'Paid'>('Unpaid');
-  const [editPayNotes, setEditPayNotes] = useState('');
-  const [savingPayment, setSavingPayment] = useState(false);
-  const [paymentModalError, setPaymentModalError] = useState('');
+  const handleClosePatientDetail = () => {
+    setSelectedPatientDetail(null);
+    setDetailError('');
+    if (returnToServingToken) {
+      setServingToken(returnToServingToken);
+      setReturnToServingToken(null);
+    }
+  };
 
-  const handlePatientClick = async (patientId: string) => {
+  const handlePatientClick = async (patientId: string, initialTab: 'ledger' | 'profile' = 'profile') => {
     if (!patientId) return;
+    setQueueDetailTab(initialTab);
     setDetailLoading(true);
     setDetailError('');
     try {
@@ -94,44 +99,16 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
     }
   };
 
-  const handleStatusUpdate = async (id: string, status: string, notes?: string, payStatus?: string, payNotes?: string) => {
+  const handleStatusUpdate = async (id: string, status: string, notes?: string) => {
     setError('');
     try {
       await api.patch(`/queue/tokens/${id}/status`, {
         status,
         notes,
-        paymentStatus: payStatus,
-        paymentNotes: payNotes,
       }, token);
       fetchQueue();
     } catch (err: any) {
       setError(err.message || 'Failed to update token status');
-    }
-  };
-
-  const openEditPaymentModal = (t: any) => {
-    setEditingPaymentToken(t);
-    setEditPayStatus(t.paymentStatus === 'Paid' ? 'Paid' : 'Unpaid');
-    setEditPayNotes(t.paymentNotes || '');
-    setPaymentModalError('');
-  };
-
-  const handleSavePaymentUpdate = async () => {
-    if (!editingPaymentToken) return;
-    setSavingPayment(true);
-    setPaymentModalError('');
-    try {
-      await api.patch(`/queue/tokens/${editingPaymentToken.id}/payment`, {
-        paymentStatus: editPayStatus,
-        paymentNotes: editPayNotes,
-      }, token);
-      setEditingPaymentToken(null);
-      fetchQueue();
-    } catch (err: any) {
-      console.error('Payment update error:', err);
-      setPaymentModalError(err.message || 'Failed to update payment status');
-    } finally {
-      setSavingPayment(false);
     }
   };
 
@@ -140,10 +117,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
     const matchesSearch = t.tokenNumber.toLowerCase().includes(searchToken.toLowerCase()) ||
                           t.patient?.fullName.toLowerCase().includes(searchToken.toLowerCase());
     const matchesType = filterType === 'all' || t.serviceType === filterType;
-    const matchesPayment = paymentFilter === 'all' ||
-      (paymentFilter === 'paid' && t.paymentStatus === 'Paid') ||
-      (paymentFilter === 'unpaid' && t.paymentStatus !== 'Paid');
-    return matchesSearch && matchesType && matchesPayment;
+    return matchesSearch && matchesType;
   });
 
   const medicineQueue = filteredQueue.filter((t) => t.serviceType === 'medicine');
@@ -212,28 +186,8 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
             <button className={`btn ${filterType === 'treatment' ? 'btn-primary' : 'btn-secondary'}`} style={{ padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => setFilterType('treatment')}>Treatment</button>
           </div>
 
-          {/* Payment Filter & Search */}
+          {/* Search */}
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <select
-              value={paymentFilter}
-              onChange={(e: any) => setPaymentFilter(e.target.value)}
-              style={{
-                borderRadius: '8px',
-                border: '1px solid hsl(var(--border-color))',
-                padding: '7px 12px',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                color: paymentFilter === 'unpaid' ? '#b91c1c' : paymentFilter === 'paid' ? '#15803d' : '#1a202c',
-                background: '#ffffff',
-                outline: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="all">All Payment Statuses</option>
-              <option value="unpaid">Unpaid Only</option>
-              <option value="paid">Paid Only</option>
-            </select>
-
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'hsl(var(--bg-primary))', border: '1px solid hsl(var(--border-color))', borderRadius: '8px', padding: '6px 12px', width: '260px' }}>
               <Search size={18} style={{ color: 'hsl(var(--text-muted))' }} />
               <input
@@ -259,7 +213,6 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                   <th>Token</th>
                   <th>Patient Info</th>
                   <th>Service</th>
-                  <th>Payment Status</th>
                   <th>Status</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -285,40 +238,6 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                       <span style={{ textTransform: 'capitalize' }}>{t.serviceType}</span>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditPaymentModal(t);
-                          }}
-                          title="Click to change payment status"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.75rem',
-                            fontWeight: 800,
-                            width: 'fit-content',
-                            background: t.paymentStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.12)' : 'hsla(350, 65%, 44%, 0.12)',
-                            color: t.paymentStatus === 'Paid' ? 'hsl(var(--success))' : 'hsl(var(--danger))',
-                            border: t.paymentStatus === 'Paid' ? '1px solid hsla(150, 55%, 32%, 0.25)' : '1px solid hsla(350, 65%, 44%, 0.25)',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <span>{t.paymentStatus === 'Paid' ? '✓ Paid' : '⏳ Unpaid'}</span>
-                          <Edit size={11} style={{ opacity: 0.8 }} />
-                        </button>
-                        {t.paymentNotes && (
-                          <span style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', fontWeight: 600 }}>
-                            {t.paymentNotes}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
                       {t.isMissed ? (
                         <span className="badge" style={{ backgroundColor: '#fffbe6', color: '#d46b08', borderColor: '#ffe58f', fontWeight: 700 }}>
                           ⚠️ Missed (Skipped)
@@ -330,7 +249,28 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                       )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        {t.patientId && (
+                          <button
+                            className="btn"
+                            style={{
+                              padding: '6px 10px',
+                              background: 'hsla(var(--primary) / 0.08)',
+                              color: 'hsl(var(--primary))',
+                              border: '1px solid hsla(var(--primary) / 0.2)',
+                              fontSize: '0.8rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                            onClick={() => handlePatientClick(t.patientId, 'ledger')}
+                            title="Open Patient Treatment & Billing Ledger"
+                          >
+                            <CreditCard size={13} /> Ledger
+                          </button>
+                        )}
                         {t.status === 'waiting' && (
                           <button 
                             className="btn btn-secondary" 
@@ -364,7 +304,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
       {/* Patient Detail Modal */}
       {(selectedPatientDetail || detailLoading || detailError) && (
         <div 
-          onClick={() => { setSelectedPatientDetail(null); setDetailError(''); }}
+          onClick={handleClosePatientDetail}
           style={{
             position: 'fixed',
             top: 0,
@@ -385,7 +325,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
             className="glass-card animate-fade-in" 
             style={{
               width: '100%',
-              maxWidth: '550px',
+              maxWidth: '700px',
               background: 'hsl(var(--bg-secondary))',
               maxHeight: '85vh',
               overflowY: 'auto',
@@ -397,7 +337,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
             }}
           >
             <button 
-              onClick={() => { setSelectedPatientDetail(null); setDetailError(''); }}
+              onClick={handleClosePatientDetail}
               style={{
                 position: 'absolute',
                 top: '20px',
@@ -418,7 +358,7 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
             ) : detailError ? (
               <div style={{ padding: '20px', textAlign: 'center' }}>
                 <p style={{ color: 'hsl(var(--danger))', marginBottom: '16px' }}>{detailError}</p>
-                <button className="btn btn-secondary" onClick={() => { setSelectedPatientDetail(null); setDetailError(''); }}>Close</button>
+                <button className="btn btn-secondary" onClick={handleClosePatientDetail}>Close</button>
               </div>
             ) : selectedPatientDetail ? (
               <>
@@ -431,98 +371,155 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
                   </p>
                 </div>
 
+                {/* Tab Navigation */}
                 <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '16px',
-                  padding: '20px',
-                  background: 'hsl(var(--bg-primary))',
-                  borderRadius: '12px',
-                  fontSize: '0.9rem'
+                  display: 'flex',
+                  gap: '8px',
+                  borderBottom: '1px solid hsl(var(--border-color))',
+                  paddingBottom: '4px',
                 }}>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Mobile</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.user?.mobileNumber || 'N/A'}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Gender</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.gender}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Date of Birth</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.dateOfBirth}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Blood Group</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.bloodGroup || 'Not Specified'}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Profession</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.profession}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Town/Residence</span>
-                    <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.town}</strong>
-                  </div>
-                  {selectedPatientDetail.email && (
-                    <div style={{ gridColumn: 'span 2' }}>
-                      <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Email</span>
-                      <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.email}</strong>
-                    </div>
-                  )}
+                  <button
+                    onClick={() => setQueueDetailTab('ledger')}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px 8px 0 0',
+                      border: 'none',
+                      borderBottom: queueDetailTab === 'ledger' ? '2.5px solid hsl(var(--primary))' : '2.5px solid transparent',
+                      background: queueDetailTab === 'ledger' ? 'hsla(var(--primary) / 0.1)' : 'transparent',
+                      color: queueDetailTab === 'ledger' ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <CreditCard size={16} />
+                    Treatment & Billing Ledger
+                  </button>
+
+                  <button
+                    onClick={() => setQueueDetailTab('profile')}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: '8px 8px 0 0',
+                      border: 'none',
+                      borderBottom: queueDetailTab === 'profile' ? '2.5px solid hsl(var(--primary))' : '2.5px solid transparent',
+                      background: queueDetailTab === 'profile' ? 'hsla(var(--primary) / 0.1)' : 'transparent',
+                      color: queueDetailTab === 'profile' ? 'hsl(var(--primary))' : 'hsl(var(--text-muted))',
+                      fontWeight: 700,
+                      fontSize: '0.85rem',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Profile & Visit History
+                  </button>
                 </div>
 
-                <div>
-                  <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px' }}>Visit History & Last Visited Details</h4>
-                  {selectedPatientDetail.tokens && selectedPatientDetail.tokens.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
-                      {selectedPatientDetail.tokens.map((t: any, index: number) => {
-                        const dateStr = new Date(t.generatedAt).toLocaleDateString('en-IN', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        });
-                        return (
-                          <div key={t.id} style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '12px',
-                            background: index === 0 ? 'hsla(150, 55%, 32%, 0.05)' : 'hsl(var(--bg-primary))',
-                            border: index === 0 ? '1px solid hsla(150, 55%, 32%, 0.15)' : '1px solid hsl(var(--border-color))',
-                            borderRadius: '8px'
-                          }}>
-                            <div>
-                              <div style={{ fontWeight: 700, color: 'hsl(var(--primary))' }}>
-                                Token {t.tokenNumber} {index === 0 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'hsl(var(--success))', background: 'hsla(150, 55%, 32%, 0.1)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px' }}>LATEST VISIT</span>}
-                              </div>
-                              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', marginTop: '2px' }}>
-                                {dateStr}
-                              </div>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, marginRight: '8px', color: 'hsl(var(--text-muted))' }}>
-                                {t.serviceType}
-                              </span>
-                              <span className={`badge badge-${t.status}`} style={{ fontSize: '0.75rem' }}>
-                                {t.status}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+                {queueDetailTab === 'ledger' ? (
+                  <TreatmentLedgerView
+                    patientId={selectedPatientDetail.id}
+                    token={token}
+                    patientName={selectedPatientDetail.fullName}
+                    patientCode={selectedPatientDetail.patientId}
+                  />
+                ) : (
+                  <>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '16px',
+                      padding: '20px',
+                      background: 'hsl(var(--bg-primary))',
+                      borderRadius: '12px',
+                      fontSize: '0.9rem'
+                    }}>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Mobile</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.user?.mobileNumber || 'N/A'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Gender</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.gender}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Date of Birth</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{formatToIndianDate(selectedPatientDetail.dateOfBirth)}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Blood Group</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.bloodGroup || 'Not Specified'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Profession</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.profession}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Town/Residence</span>
+                        <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.town}</strong>
+                      </div>
+                      {selectedPatientDetail.email && (
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <span style={{ color: 'hsl(var(--text-muted))', display: 'block', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Email</span>
+                          <strong style={{ color: 'hsl(var(--text-main))' }}>{selectedPatientDetail.email}</strong>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.9rem', fontStyle: 'italic' }}>
-                      No previous clinic visits recorded in the system.
-                    </p>
-                  )}
-                </div>
+
+                    <div>
+                      <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '12px' }}>Visit History & Last Visited Details</h4>
+                      {selectedPatientDetail.tokens && selectedPatientDetail.tokens.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '4px' }}>
+                          {selectedPatientDetail.tokens.map((t: any, index: number) => {
+                            const dateStr = new Date(t.generatedAt).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            });
+                            return (
+                              <div key={t.id} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '12px',
+                                background: index === 0 ? 'hsla(150, 55%, 32%, 0.05)' : 'hsl(var(--bg-primary))',
+                                border: index === 0 ? '1px solid hsla(150, 55%, 32%, 0.15)' : '1px solid hsl(var(--border-color))',
+                                borderRadius: '8px'
+                              }}>
+                                <div>
+                                  <div style={{ fontWeight: 700, color: 'hsl(var(--primary))' }}>
+                                    Token {t.tokenNumber} {index === 0 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'hsl(var(--success))', background: 'hsla(150, 55%, 32%, 0.1)', padding: '2px 6px', borderRadius: '4px', marginLeft: '6px' }}>LATEST VISIT</span>}
+                                  </div>
+                                  <div style={{ fontSize: '0.75rem', color: 'hsl(var(--text-muted))', marginTop: '2px' }}>
+                                    {dateStr}
+                                  </div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', fontWeight: 700, marginRight: '8px', color: 'hsl(var(--text-muted))' }}>
+                                    {t.serviceType}
+                                  </span>
+                                  <span className={`badge badge-${t.status}`} style={{ fontSize: '0.75rem' }}>
+                                    {t.status}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                          No previous clinic visits recorded in the system.
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
-                  <button className="btn btn-primary" onClick={() => setSelectedPatientDetail(null)} style={{ padding: '10px 24px', borderRadius: '8px' }}>
+                  <button className="btn btn-primary" onClick={handleClosePatientDetail} style={{ padding: '10px 24px', borderRadius: '8px' }}>
                     Close File
                   </button>
                 </div>
@@ -603,87 +600,90 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
               />
             </div>
 
-            {/* Payment Details Section */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '16px',
-              padding: '16px',
-              background: 'hsla(var(--primary) / 0.04)',
-              borderRadius: '12px',
-              border: '1px solid hsl(var(--border-color))'
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase' }}>
-                  Payment Status
-                </label>
-                <select
-                  value={paymentStatus}
-                  onChange={(e: any) => setPaymentStatus(e.target.value)}
+            {/* Treatment & Payment Ledger Quick Access Option */}
+            {servingToken.patientId && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '14px 18px',
+                background: 'hsla(var(--primary) / 0.05)',
+                borderRadius: '12px',
+                border: '1px solid hsla(var(--primary) / 0.2)',
+                gap: '12px',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    background: 'hsl(var(--primary))',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    <CreditCard size={20} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'hsl(var(--primary))' }}>
+                      Patient Payment & Treatment Ledger
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'hsl(var(--text-muted))' }}>
+                      Record treatment packages, advance payments, installments, or print receipts
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn"
                   style={{
-                    width: '100%',
-                    padding: '9px 12px',
+                    padding: '8px 14px',
+                    background: '#ffffff',
+                    color: 'hsl(var(--primary))',
+                    border: '1.5px solid hsl(var(--primary))',
                     borderRadius: '8px',
-                    border: '1px solid hsl(var(--border-color))',
-                    fontSize: '0.9rem',
                     fontWeight: 800,
-                    color: paymentStatus === 'Paid' ? '#15803d' : '#b91c1c',
-                    background: paymentStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.1)' : 'hsla(350, 65%, 44%, 0.1)',
-                    outline: 'none',
-                    cursor: 'pointer'
+                    fontSize: '0.82rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.06)'
+                  }}
+                  onClick={() => {
+                    const pId = servingToken.patientId;
+                    setReturnToServingToken(servingToken);
+                    setServingToken(null);
+                    handlePatientClick(pId, 'ledger');
                   }}
                 >
-                  <option value="Unpaid">⏳ Unpaid</option>
-                  <option value="Paid">✓ Paid</option>
-                </select>
+                  <CreditCard size={14} /> Open Ledger ➔
+                </button>
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
-                  Payment Notes / Ref
-                </label>
-                <input
-                  type="text"
-                  value={paymentNotes}
-                  onChange={(e) => setPaymentNotes(e.target.value)}
-                  placeholder="e.g. Cash ₹500, UPI #9821"
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid hsl(var(--border-color))',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    color: '#1a202c',
-                    background: '#ffffff',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-            </div>
+            )}
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
               <button 
                 className="btn btn-secondary" 
-                style={{ padding: '8px 16px', cursor: 'pointer' }}
+                style={{ padding: '9px 18px', cursor: 'pointer', fontWeight: 600 }}
                 onClick={() => {
                   setServingToken(null);
                   setHealthNotes('');
-                  setPaymentStatus('Unpaid');
-                  setPaymentNotes('');
                 }}
               >
                 Cancel
               </button>
               <button 
                 className="btn btn-success" 
-                style={{ padding: '8px 24px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ padding: '9px 24px', cursor: 'pointer', fontWeight: 700 }}
                 onClick={() => {
-                  handleStatusUpdate(servingToken.id, 'served', healthNotes, paymentStatus, paymentNotes);
+                  handleStatusUpdate(servingToken.id, 'served', healthNotes);
                   setServingToken(null);
                   setHealthNotes('');
-                  setPaymentStatus('Unpaid');
-                  setPaymentNotes('');
                 }}
               >
                 Complete & Serve
@@ -693,132 +693,6 @@ export const QueueManagement: React.FC<QueueManagementProps> = ({ token }) => {
         </div>
       )}
 
-      {/* Update Payment Status Modal */}
-      {editingPaymentToken && createPortal(
-        <div
-          onClick={() => setEditingPaymentToken(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(21, 35, 30, 0.5)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 10000,
-            padding: '20px'
-          }}
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="glass-card animate-fade-in" 
-            style={{
-              width: '100%',
-              maxWidth: '450px',
-              background: 'hsl(var(--bg-secondary))',
-              padding: '28px',
-              borderRadius: '16px',
-              border: '1px solid hsl(var(--border) / 0.15)',
-              boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px'
-            }}
-          >
-            <div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'hsl(var(--primary))', marginBottom: '6px' }}>
-                Update Payment Status
-              </h3>
-              <p style={{ color: 'hsl(var(--text-muted))', fontSize: '0.85rem' }}>
-                Updating payment details for Token <strong>{editingPaymentToken.tokenNumber}</strong> ({editingPaymentToken.patient?.fullName || 'Patient'})
-              </p>
-            </div>
-
-            {paymentModalError && (
-              <div style={{
-                backgroundColor: 'hsla(350, 80%, 55%, 0.15)',
-                color: 'hsl(350, 80%, 55%)',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                border: '1px solid hsla(350, 80%, 55%, 0.3)',
-                fontSize: '0.85rem'
-              }}>
-                {paymentModalError}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--primary))', textTransform: 'uppercase' }}>
-                Payment Status
-              </label>
-              <select
-                value={editPayStatus}
-                onChange={(e: any) => setEditPayStatus(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid hsl(var(--border-color))',
-                  fontSize: '0.95rem',
-                  fontWeight: 800,
-                  color: editPayStatus === 'Paid' ? '#15803d' : '#b91c1c',
-                  background: editPayStatus === 'Paid' ? 'hsla(150, 55%, 32%, 0.1)' : 'hsla(350, 65%, 44%, 0.1)',
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="Unpaid">⏳ Unpaid</option>
-                <option value="Paid">✓ Paid</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'hsl(var(--text-muted))', textTransform: 'uppercase' }}>
-                Payment Notes / Transaction Ref (Optional)
-              </label>
-              <input
-                type="text"
-                value={editPayNotes}
-                onChange={(e) => setEditPayNotes(e.target.value)}
-                placeholder="e.g. Cash ₹500, UPI #9821, Paid on GPay"
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid hsl(var(--border-color))',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  color: '#1a202c',
-                  background: '#ffffff',
-                  outline: 'none'
-                }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
-              <button 
-                className="btn btn-secondary" 
-                style={{ padding: '8px 16px', cursor: 'pointer' }}
-                onClick={() => setEditingPaymentToken(null)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-primary" 
-                style={{ padding: '8px 24px', cursor: 'pointer', fontWeight: 600 }}
-                onClick={handleSavePaymentUpdate}
-                disabled={savingPayment}
-              >
-                {savingPayment ? 'Saving...' : 'Save Payment Status'}
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </>
   );
 };

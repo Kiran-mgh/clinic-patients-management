@@ -1,10 +1,12 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, In, Between } from 'typeorm';
+import { Repository, MoreThanOrEqual, MoreThan, In, Between } from 'typeorm';
 import { Token } from '../entities/token.entity';
 import { Patient } from '../entities/patient.entity';
 import { AuditLog } from '../entities/audit-log.entity';
+import { SystemSetting } from '../entities/system-setting.entity';
 import { QueueGateway } from './queue.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class QueueService {
@@ -15,12 +17,121 @@ export class QueueService {
     private patientRepository: Repository<Patient>,
     @InjectRepository(AuditLog)
     private auditLogRepository: Repository<AuditLog>,
+    @InjectRepository(SystemSetting)
+    private systemSettingRepository: Repository<SystemSetting>,
     private queueGateway: QueueGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
-  async getDashboardMetrics(): Promise<any> {
+  private getStartOfTodayIST(): Date {
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    try {
+      const istDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' });
+      const istDateStr = istDateFormatter.format(now);
+      const [y, m, d] = istDateStr.split('-').map(Number);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        const utcMs = typeof Date.UTC === 'function' ? Date.UTC(y, m - 1, d, 0, 0, 0) : new Date(y, m - 1, d).getTime();
+        return new Date(utcMs - (5.5 * 60 * 60 * 1000));
+      }
+    } catch (e) {
+      // Fallback
+    }
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  async getPublicLiveQueue(): Promise<any> {
+    const startOfToday = this.getStartOfTodayIST();
+
+    const activeMedicineToken = await this.tokenRepository.findOne({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'medicine',
+        status: 'in_progress',
+      },
+    });
+
+    const activeTreatmentToken = await this.tokenRepository.findOne({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'treatment',
+        status: 'in_progress',
+      },
+    });
+
+    const waitingMedicineTokens = await this.tokenRepository.find({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'medicine',
+        status: 'waiting',
+      },
+      order: { sequenceNumber: 'ASC' },
+      take: 8,
+    });
+
+    const waitingTreatmentTokens = await this.tokenRepository.find({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'treatment',
+        status: 'waiting',
+      },
+      order: { sequenceNumber: 'ASC' },
+      take: 8,
+    });
+
+    const recentServedTokens = await this.tokenRepository.find({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        status: 'served',
+      },
+      order: { servedAt: 'DESC' },
+      take: 5,
+    });
+
+    const medicineWaitingCount = await this.tokenRepository.count({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'medicine',
+        status: 'waiting',
+      },
+    });
+
+    const treatmentWaitingCount = await this.tokenRepository.count({
+      where: {
+        generatedAt: MoreThanOrEqual(startOfToday),
+        serviceType: 'treatment',
+        status: 'waiting',
+      },
+    });
+
+    let announcement = null;
+    try {
+      const setting = await this.systemSettingRepository.findOne({ where: { key: 'clinic_announcement' } });
+      if (setting && setting.value) {
+        announcement = JSON.parse(setting.value);
+      }
+    } catch (e) {}
+
+    return {
+      currentServingMedicine: activeMedicineToken ? activeMedicineToken.tokenNumber : null,
+      currentServingTreatment: activeTreatmentToken ? activeTreatmentToken.tokenNumber : null,
+      medicineCalledAt: activeMedicineToken?.calledAt || null,
+      treatmentCalledAt: activeTreatmentToken?.calledAt || null,
+      medicineWaitingCount,
+      treatmentWaitingCount,
+      waitingMedicineTokens: waitingMedicineTokens.map(t => t.tokenNumber),
+      waitingTreatmentTokens: waitingTreatmentTokens.map(t => t.tokenNumber),
+      recentServedTokens: recentServedTokens.map(t => ({
+        tokenNumber: t.tokenNumber,
+        serviceType: t.serviceType,
+        servedAt: t.servedAt,
+      })),
+      announcement: announcement && announcement.enabled ? announcement : null,
+      serverTime: new Date().toISOString(),
+    };
+  }
+
+  async getDashboardMetrics(): Promise<any> {
+    const startOfToday = this.getStartOfTodayIST();
 
     const totalPatients = await this.tokenRepository.count({
       where: { generatedAt: MoreThanOrEqual(startOfToday) },
@@ -79,8 +190,7 @@ export class QueueService {
   }
 
   async getTodayQueue(): Promise<any[]> {
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = this.getStartOfTodayIST();
 
     const tokens = await this.tokenRepository.find({
       where: { generatedAt: MoreThanOrEqual(startOfToday) },
@@ -111,7 +221,7 @@ export class QueueService {
     }
 
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = this.getStartOfTodayIST();
 
     // 1. Automatically mark any currently in_progress token of this type as served
     const currentActiveToken = await this.tokenRepository.findOne({
@@ -149,6 +259,11 @@ export class QueueService {
 
     await this.logAction(adminId, 'TOKEN_CALL_NEXT', `Called token ${updatedToken.tokenNumber} for ${serviceType}`);
 
+    // Dispatch push notifications asynchronously to called patient and upcoming 1st, 2nd, 5th waiting patients
+    this.dispatchQueueNotifications(updatedToken).catch(err =>
+      console.error(`[PUSH ERROR] Failed dispatching queue notifications: ${err.message}`),
+    );
+
     // Broadcast real-time update
     this.queueGateway.emitQueueUpdate();
 
@@ -185,7 +300,9 @@ export class QueueService {
       token.paymentNotes = paymentNotes;
     }
 
-    if (status === 'served') {
+    if (status === 'in_progress') {
+      token.calledAt = now;
+    } else if (status === 'served') {
       token.servedAt = now;
     } else if (status === 'cancelled') {
       token.cancelledAt = now;
@@ -193,12 +310,82 @@ export class QueueService {
 
     const updatedToken = await this.tokenRepository.save(token);
 
+    if (status === 'in_progress') {
+      // Dispatch push notifications AFTER token status is saved in DB
+      this.dispatchQueueNotifications(updatedToken).catch(err =>
+        console.error(`[PUSH ERROR] Failed dispatching queue notifications: ${err.message}`),
+      );
+    }
+
     await this.logAction(adminId, `TOKEN_${status.toUpperCase()}`, `Manually marked token ${token.tokenNumber} as ${status}`);
 
     // Broadcast real-time update
     this.queueGateway.emitQueueUpdate();
 
     return updatedToken;
+  }
+
+  /**
+   * Helper method to dispatch push notifications to called patient & upcoming 1st, 2nd, and 5th waiting patients
+   */
+  private async dispatchQueueNotifications(calledToken: Token): Promise<void> {
+    const serviceType = calledToken.serviceType;
+    const roomName = serviceType === 'medicine' ? 'Doctor Consultation Room 1' : 'Treatment Room';
+    const serviceName = serviceType === 'medicine' ? 'Medicine Consultation' : 'Treatment';
+    const startOfToday = this.getStartOfTodayIST();
+
+    // 1. Send "Now Serving" alert to the called patient
+    this.notificationsService.sendToPatient(
+      calledToken.patientId,
+      `🔔 It's Your Turn! (Token ${calledToken.tokenNumber})`,
+      `Token ${calledToken.tokenNumber}: Please proceed to ${roomName} now.`,
+      { type: 'TOKEN_CALLED', tokenNumber: calledToken.tokenNumber, serviceType },
+    ).catch(err => console.error(`[PUSH ERROR] Failed to send token call push for ${calledToken.tokenNumber}: ${err.message}`));
+
+    // 2. Send "Approaching Turn" alerts to the next waiting patients
+    try {
+      const upcoming = await this.tokenRepository.find({
+        where: {
+          serviceType,
+          status: 'waiting',
+          sequenceNumber: MoreThan(calledToken.sequenceNumber),
+          generatedAt: MoreThanOrEqual(startOfToday),
+        },
+        order: { sequenceNumber: 'ASC' },
+        take: 5,
+      });
+
+      upcoming.forEach((tok, index) => {
+        const spotsAhead = index + 1; // 1 to 5
+
+        // Skip 3rd and 4th spot notifications as requested
+        if (![1, 2, 5].includes(spotsAhead)) {
+          return;
+        }
+
+        let title = '';
+        let body = '';
+
+        if (spotsAhead === 1) {
+          title = `⏳ You are Next! (Token ${tok.tokenNumber})`;
+          body = `Token ${tok.tokenNumber}: The doctor is now serving Token ${calledToken.tokenNumber}. You are next in line.`;
+        } else {
+          title = `⏳ Turn Approaching (Token ${tok.tokenNumber})`;
+          body = `Token ${tok.tokenNumber}: ${spotsAhead} patients ahead for ${serviceName}.`;
+        }
+
+        console.log(`[PUSH QUEUE ALERT] Sending ${spotsAhead}-spot ahead alert to token ${tok.tokenNumber} (Patient ID: ${tok.patientId})`);
+
+        this.notificationsService.sendToPatient(
+          tok.patientId,
+          title,
+          body,
+          { type: `QUEUE_AHEAD_${spotsAhead}`, tokenNumber: tok.tokenNumber, spotsAhead },
+        ).catch(err => console.error(`[PUSH ERROR] Proximity push failed for ${tok.tokenNumber}: ${err.message}`));
+      });
+    } catch (err: any) {
+      console.error(`[PUSH ERROR] Proximity tokens query error: ${err.message}`);
+    }
   }
 
   async updateTokenPayment(
@@ -243,7 +430,7 @@ export class QueueService {
         generatedAt: Between(start, end),
         status: 'served',
       },
-      relations: ['patient'],
+      relations: ['patient', 'patient.user'],
       order: { generatedAt: 'DESC' },
     });
 
@@ -251,6 +438,7 @@ export class QueueService {
       where: {
         createdAt: Between(start, end),
       },
+      relations: ['user'],
       order: { createdAt: 'DESC' },
     });
 
@@ -259,7 +447,7 @@ export class QueueService {
     const totalCount = tokens.length;
 
     // Monthly breakdown
-    const monthlyMap = new Map<string, { month: string; medicine: number; treatment: number; total: number }>();
+    const monthlyMap = new Map<string, { month: string; monthName: string; medicine: number; treatment: number; newPatients: number; total: number }>();
     
     for (const token of tokens) {
       const date = new Date(token.generatedAt);
@@ -267,8 +455,10 @@ export class QueueService {
       if (!monthlyMap.has(monthKey)) {
         monthlyMap.set(monthKey, {
           month: monthKey,
+          monthName: monthKey,
           medicine: 0,
           treatment: 0,
+          newPatients: 0,
           total: 0,
         });
       }
@@ -279,6 +469,23 @@ export class QueueService {
       } else if (token.serviceType === 'treatment') {
         monthData.treatment++;
       }
+    }
+
+    for (const patient of newPatients) {
+      const date = new Date(patient.createdAt);
+      const monthKey = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+      if (!monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, {
+          month: monthKey,
+          monthName: monthKey,
+          medicine: 0,
+          treatment: 0,
+          newPatients: 0,
+          total: 0,
+        });
+      }
+      const monthData = monthlyMap.get(monthKey)!;
+      monthData.newPatients++;
     }
 
     const monthlyBreakdown = Array.from(monthlyMap.values());
@@ -297,10 +504,13 @@ export class QueueService {
         serviceType: t.serviceType,
         status: t.status,
         date: t.generatedAt,
-        patientId: t.patient?.id || '',
-        patientName: t.patient?.fullName || '',
+        patientDbId: t.patient?.id || '',
+        patientId: t.patient?.patientId || t.patient?.id || '',
         patientCustomId: t.patient?.patientId || '',
+        patientName: t.patient?.fullName || '',
+        patientPhone: t.patient?.user?.mobileNumber || '',
         notes: t.notes || '',
+        servingNotes: t.notes || '',
         paymentStatus: t.paymentStatus || 'Unpaid',
         paymentNotes: t.paymentNotes || '',
         paymentDisplay: (t.paymentStatus || 'Unpaid') + (t.paymentNotes ? ` (${t.paymentNotes})` : ''),
@@ -309,6 +519,7 @@ export class QueueService {
         id: p.id,
         patientId: p.patientId || 'Pending Approval',
         fullName: p.fullName,
+        mobileNumber: p.user?.mobileNumber || '',
         gender: p.gender,
         dateOfBirth: p.dateOfBirth,
         town: p.town,

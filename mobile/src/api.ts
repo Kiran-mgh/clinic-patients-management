@@ -1,10 +1,22 @@
 // API client for Mobile App connecting directly to NestJS Production Backend
-const API_BASE = 'https://amar.vistarafabtech.com/api';
+const API_BASE = 'https://pms-api.amarayurveda.in/api';
 
-const getHeaders = (token: string | null) => ({
-  'Content-Type': 'application/json',
-  ...(token ? { Authorization: `Bearer ${token}` } : {}),
-});
+let currentPushToken: string | null = null;
+
+export const setGlobalPushToken = (pTok: string | null) => {
+  if (pTok) {
+    currentPushToken = pTok;
+  }
+};
+
+const getHeaders = (token: string | null, pushToken: string | null = null) => {
+  const finalPushToken = pushToken || currentPushToken;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(finalPushToken ? { 'x-push-token': finalPushToken } : {}),
+  };
+};
 
 const handleResponse = async (response: Response): Promise<any> => {
   const data = await response.json().catch(() => ({}));
@@ -35,11 +47,11 @@ export const api = {
     }
   },
 
-  async get(endpoint: string, token: string | null = null) {
+  async get(endpoint: string, token: string | null = null, pushToken: string | null = null) {
     try {
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'GET',
-        headers: getHeaders(token),
+        headers: getHeaders(token, pushToken),
       });
       return await handleResponse(response);
     } catch (err: any) {

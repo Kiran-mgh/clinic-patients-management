@@ -1,14 +1,21 @@
-import { Controller, Post, Put, Delete, Get, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Put, Delete, Get, Body, Param, Query, UseGuards, Req, Headers } from '@nestjs/common';
 import { PatientsService } from './patients.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RegisterPatientDto } from './dto/register-patient.dto';
 import { RegisterPatientByStaffDto } from './dto/register-patient-by-staff.dto';
+import { UpdatePushTokenDto } from './dto/update-push-token.dto';
 
 @Controller('patients')
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
+
+  @Post('push-token')
+  @UseGuards(JwtAuthGuard)
+  async updatePushToken(@Req() req: any, @Body() dto: UpdatePushTokenDto) {
+    return this.patientsService.updatePushToken(req.user.id, dto.pushToken);
+  }
 
   @Post('register')
   @UseGuards(JwtAuthGuard)
@@ -25,8 +32,8 @@ export class PatientsController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async getProfile(@Req() req: any) {
-    return this.patientsService.getProfile(req.user.id);
+  async getProfile(@Req() req: any, @Headers('x-push-token') pushToken?: string) {
+    return this.patientsService.getProfile(req.user.id, pushToken);
   }
 
   @Post('request-email-otp')

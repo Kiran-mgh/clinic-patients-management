@@ -7,9 +7,14 @@ import { PatientSearch } from './pages/PatientSearch';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
-import { LayoutDashboard, UserCheck, Stethoscope, Search, LogOut, Activity, BarChart3, Settings as SettingsIcon } from 'lucide-react';
+import { DisplayScreen } from './pages/DisplayScreen';
+import { LayoutDashboard, UserCheck, Stethoscope, Search, LogOut, Activity, BarChart3, Settings as SettingsIcon, Tv } from 'lucide-react';
 
 function App() {
+  if (typeof window !== 'undefined' && (window.location.pathname === '/display' || window.location.pathname === '/tv')) {
+    return <DisplayScreen />;
+  }
+
   if (typeof window !== 'undefined' && window.location.pathname === '/privacy-policy') {
     return <PrivacyPolicy />;
   }
@@ -17,6 +22,7 @@ function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('amar_staff_token'));
   const [user, setUser] = useState<any>(null);
   const [screen, setScreen] = useState<'dashboard' | 'verification' | 'queue' | 'search' | 'reports' | 'settings'>('dashboard');
+  const [settingsTab, setSettingsTab] = useState<'tokens' | 'notices'>('tokens');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('amar_staff_user');
@@ -93,10 +99,30 @@ function App() {
           </a>
           <a
             className={`nav-link ${screen === 'settings' ? 'active' : ''}`}
-            onClick={() => setScreen('settings')}
+            onClick={() => {
+              setSettingsTab('tokens');
+              setScreen('settings');
+            }}
           >
             <SettingsIcon size={18} />
             Clinic Settings
+          </a>
+          <a
+            className="nav-link"
+            href="/display"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              marginTop: '12px',
+              border: '1.5px dashed hsla(var(--primary) / 0.4)',
+              background: 'hsla(var(--primary) / 0.05)',
+              color: 'hsl(var(--primary))',
+              fontWeight: 700
+            }}
+            title="Open Large Waiting Room TV Display in New Window"
+          >
+            <Tv size={18} />
+            TV Queue Display ↗
           </a>
         </nav>
 
@@ -125,12 +151,20 @@ function App() {
 
       {/* Main Panel Content */}
       <main className="main-content">
-        {screen === 'dashboard' && <Dashboard token={token} onNavigate={(target) => setScreen(target)} />}
+        {screen === 'dashboard' && (
+          <Dashboard
+            token={token}
+            onNavigate={(target, subTab) => {
+              if (subTab) setSettingsTab(subTab);
+              setScreen(target);
+            }}
+          />
+        )}
         {screen === 'verification' && <PatientVerification token={token} />}
         {screen === 'queue' && <QueueManagement token={token} />}
         {screen === 'search' && <PatientSearch token={token} />}
         {screen === 'reports' && <Reports token={token} />}
-        {screen === 'settings' && <Settings token={token} />}
+        {screen === 'settings' && <Settings token={token} initialTab={settingsTab} />}
       </main>
     </div>
   );

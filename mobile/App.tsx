@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView, StyleSheet, Platform, StatusBar as RNStatusBar, Text, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { RegisterScreen } from './src/screens/RegisterScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ContactScreen } from './src/screens/ContactScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
+import { registerForPushNotificationsAsync } from './src/services/notificationService';
+import { saveAuthToken, getAuthToken, removeAuthToken } from './src/services/storage';
 
 import registerRootComponent from 'expo/build/launch/registerRootComponent';
 
@@ -18,11 +21,38 @@ if ((TextInput as any).defaultProps == null) (TextInput as any).defaultProps = {
 
 export default function App() {
   const [token, setToken] = useState<string | null>(null);
+  const [isAuthRestored, setIsAuthRestored] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [screen, setScreen] = useState<'home' | 'contact' | 'profile'>('home');
 
+  // Restore persistent token on startup
+  useEffect(() => {
+    getAuthToken().then(savedToken => {
+      if (savedToken) {
+        setToken(savedToken);
+      }
+      setIsAuthRestored(true);
+    }).catch(() => setIsAuthRestored(true));
+  }, []);
+
+  useEffect(() => {
+    if (token) {
+      registerForPushNotificationsAsync(token).catch(() => {});
+    }
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('[PUSH TAP] User tapped notification:', response.notification.request.content.data);
+      setScreen('home');
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription(responseListener);
+    };
+  }, [token]);
+
   // New user registers → single screen handles /auth/register + /patients/register
   const handleRegistrationSuccess = (newToken: string) => {
+    saveAuthToken(newToken);
     setToken(newToken);
     setShowRegister(false);
     setScreen('home');
@@ -30,15 +60,21 @@ export default function App() {
 
   // Existing user logs in
   const handleLoginSuccess = (newToken: string, user: any, isNewUser: boolean) => {
+    saveAuthToken(newToken);
     setToken(newToken);
     setShowRegister(false);
     setScreen('home');
   };
 
   const handleLogout = () => {
+    removeAuthToken();
     setToken(null);
     setShowRegister(false);
   };
+
+  if (!isAuthRestored) {
+    return null; // Brief splash check while restoring persistent login state
+  }
 
   if (!token) {
     if (showRegister) {

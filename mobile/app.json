@@ -10,10 +10,10 @@
       "web"
     ],
     "android": {
-      "package": "com.anonymous.amarhospitalmobile"
+      "package": "com.amarayurveda.mobile"
     },
     "ios": {
-      "bundleIdentifier": "com.anonymous.amarhospitalmobile"
+      "bundleIdentifier": "com.amarayurveda.mobile"
     },
     "extra": {
       "eas": {

@@ -23,11 +23,18 @@ export class TokensService {
     private settingsService: SettingsService,
   ) {}
 
-  async generateToken(userId: string, serviceType: string): Promise<Token> {
+  async generateToken(userId: string, serviceType: string, pushToken?: string): Promise<Token> {
     // 1. Verify patient is active
     const patient = await this.patientRepository.findOne({ where: { id: userId } });
     if (!patient) {
       throw new NotFoundException('Patient profile not found. Please register first.');
+    }
+
+    if (pushToken && patient.pushToken !== pushToken) {
+      patient.pushToken = pushToken;
+      patient.pushTokenUpdatedAt = new Date();
+      await this.patientRepository.save(patient);
+      console.log(`[PUSH AUTO-SYNC] Auto-healed push token for patient ${patient.fullName} (${patient.patientId || patient.id}) during generateToken: ${pushToken.slice(0, 25)}...`);
     }
 
     if (patient.status !== 'active') {
@@ -46,6 +53,13 @@ export class TokensService {
     const tokenSettings = await this.settingsService.getTokenSettings();
     if (!tokenSettings.enabled) {
       throw new BadRequestException('Token generation is currently paused by the clinic.');
+    }
+
+    // Check if Doctor Vacation / Clinic Notice is active and auto-pauses tokens
+    const announcement = await this.settingsService.getAnnouncement();
+    if (announcement.enabled && announcement.autoPauseTokens) {
+      const noticeMsg = announcement.message || announcement.title || 'Doctor is currently on leave / clinic is closed.';
+      throw new BadRequestException(`Token generation is currently paused: ${noticeMsg}`);
     }
 
     // 2. Dynamic Time Availability Validation (evaluated in IST)
@@ -161,8 +175,16 @@ export class TokensService {
     return savedToken;
   }
 
-  async getTodayToken(userId: string): Promise<any> {
+  async getTodayToken(userId: string, pushToken?: string): Promise<any> {
     const startOfToday = this.getStartOfTodayIST();
+
+    const patient = await this.patientRepository.findOne({ where: { id: userId } });
+    if (patient && pushToken && patient.pushToken !== pushToken) {
+      patient.pushToken = pushToken;
+      patient.pushTokenUpdatedAt = new Date();
+      await this.patientRepository.save(patient);
+      console.log(`[PUSH AUTO-SYNC] Auto-healed push token for patient ${patient.fullName} (${patient.patientId || patient.id}) during getTodayToken: ${pushToken.slice(0, 25)}...`);
+    }
 
     const token = await this.tokenRepository.findOne({
       where: {
@@ -303,11 +325,9 @@ export class TokensService {
   @Cron('0 17 * * *', { timeZone: 'Asia/Kolkata' })
   async handleDailyExpiration() {
     console.log('[CRON] Running daily token expiration reset at 5:00 PM IST');
-    const startOfToday = this.getStartOfTodayIST();
 
     const activeTokens = await this.tokenRepository.createQueryBuilder('token')
       .where('token.status IN (:...statuses)', { statuses: ['waiting', 'in_progress'] })
-      .andWhere('token.generatedAt >= :startOfToday', { startOfToday })
       .getMany();
 
     if (activeTokens.length > 0) {
@@ -367,6 +387,23 @@ export class TokensService {
       // Fallback
     }
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  async getMyHistory(userId: string, pushToken?: string): Promise<Token[]> {
+    const patient = await this.patientRepository.findOne({ where: { id: userId } });
+    if (!patient) {
+      throw new NotFoundException('Patient profile not found');
+    }
+    if (pushToken && patient.pushToken !== pushToken) {
+      patient.pushToken = pushToken;
+      patient.pushTokenUpdatedAt = new Date();
+      await this.patientRepository.save(patient);
+      console.log(`[PUSH AUTO-SYNC] Auto-healed push token for patient ${patient.fullName} (${patient.patientId || patient.id}) during getMyHistory: ${pushToken.slice(0, 25)}...`);
+    }
+    return this.tokenRepository.find({
+      where: { patientId: patient.id },
+      order: { generatedAt: 'DESC' },
+    });
   }
 
   private async logAction(userId: string | null, action: string, details: string) {
